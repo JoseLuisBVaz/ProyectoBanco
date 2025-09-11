@@ -1,0 +1,24 @@
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  padding: 20px 30px;
+  border-radius: 15px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.icon-left img,
+.icon-right img {
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+}
+
+.title h1 {
+  margin: 0;
+  font-size: 30px;
+  text-align: center;
+  flex-grow: 1;
+  color: blue;
+}
