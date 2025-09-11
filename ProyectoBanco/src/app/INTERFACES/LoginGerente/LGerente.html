@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JETTY - Login Gerente</title>
+    <link rel="stylesheet" href="LGerente.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="cliente-bg"></div>
+    <div class="cliente-container">
+        <header class="cliente-header">
+            <div class="back-btn">
+                <i class="fa-solid fa-arrow-left"></i>
+            </div>
+            <div class="cliente-title">JETTY</div>
+            <div class="cliente-header-icons">
+                <span class="visa-icon">VISA</span>
+                <span class="chip-icon">
+                    <svg width="28" height="20" viewBox="0 0 28 20">
+                        <rect x="2" y="4" width="24" height="12" rx="4" fill="#FFD600" stroke="#FFD600" stroke-width="2"/>
+                        <rect x="8" y="8" width="12" height="4" rx="2" fill="#fff" opacity="0.5"/>
+                    </svg>
+                </span>
+            </div>
+        </header>
+        <main class="cliente-main">
+            <section class="login-card">
+                <h2>¡BIENVENIDO!</h2>
+                <form>
+                    <div class="input-group">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" placeholder="Número de Empleado" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" placeholder="Contraseña" id="password" required>
+                        <span class="toggle-password" onclick="togglePassword()">
+                            <i class="fa-regular fa-eye" id="eyeIcon"></i>
+                        </span>
+                    </div>
+                    <button type="submit" class="btn-ingresar">Ingresar</button>
+                </form>
+            </section>
+            <aside class="aviso-privacidad">
+                <div class="aviso-title">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    Aviso de privacidad
+                </div>
+                <div class="aviso-text">
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo.
+                </div>
+            </aside>
+        </main>
+        <footer class="cliente-footer">
+            <div class="footer-bar">
+                <div class="footer-bar-content">
+                    <div class="footer-title">JETTY</div>
+                    <div class="footer-links">
+                        <span>Términos y condiciones</span>
+                        <span>Aviso Legal</span>
+                        <span>Costos y comisiones</span>
+                    </div>
+                </div>
+                <div class="footer-desc">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+    <script>
+        function togglePassword() {
+            const pwd = document.getElementById('password');
+            const eye = document.getElementById('eyeIcon');
+            if (pwd.type === "password") {
+                pwd.type = "text";
+                eye.classList.remove('fa-eye');
+                eye.classList.add('fa-eye-slash');
+            } else {
+                pwd.type = "password";
+                eye.classList.remove('fa-eye-slash');
+                eye.classList.add('fa-eye');
+            }
+        }
+    </script>
+</body>
+</html>
