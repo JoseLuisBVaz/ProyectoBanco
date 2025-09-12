@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-navbar',
+  standalone: true, 
   templateUrl: './navbar.html',
   styleUrls: ['./navbar.css']
 })
