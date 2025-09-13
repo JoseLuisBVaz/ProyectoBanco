@@ -12,8 +12,13 @@
   
   <div class="roles-menu" [class.show]="rolesMenuVisible">
     <div class="roles-title">Ocupación</div>
-    <div class="roles-option"><i class="fa-solid fa-user-gear"></i> Gerente</div>
-    <div class="roles-option"><i class="fa-solid fa-user-tie"></i> Ejecutivo</div>
+    <div class="roles-option" [routerLink]="['/login-gerente']">
+      <i class="fa-solid fa-user-gear"></i> Gerente
+    </div>
+    <div class="roles-option" [routerLink]="['/login-gerente']">
+      <i class="fa-solid fa-user-tie"></i> Ejecutivo
+    </div>
+
   </div>
 
   <section class="main-login-card">
@@ -28,7 +33,7 @@
       </p>
       <div class="main-login-buttons">
         <button class="btn-register">Regístrate</button>
-        <button class="btn-login">Iniciar</button>
+        <button class="btn-login" [routerLink]="['/login-cliente']">Iniciar</button>
       </div>
     </div>
   </section>
