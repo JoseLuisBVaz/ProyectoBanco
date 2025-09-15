@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Cancelación de cuenta</title>
+  <link rel="stylesheet" href="Cancelacion.css">
+  <script>
+    function mostrarModal(exito) {
+      var modal = document.getElementById('modalResultado');
+      var contenido = document.getElementById('modalContenido');
+      var icono = document.getElementById('modalIcono');
+      var mensaje = document.getElementById('modalMensaje');
+
+      if (exito) {
+        contenido.className = 'modal-contenido modal-aceptado';
+        icono.style.color = '#fff';
+        mensaje.innerHTML = '<strong>¡Felicidades!</strong><br>Tu cuenta fue eliminada con éxito.';
+      } else {
+        contenido.className = 'modal-contenido modal-rechazado';
+        icono.style.color = '#fff';
+        mensaje.innerHTML = '<strong>¡Lo sentimos!</strong><br>No puedes eliminar tu cuenta por adeudos pendientes.';
+      }
+      modal.style.display = 'flex';
+    }
+
+    function cerrarModal() {
+      document.getElementById('modalResultado').style.display = 'none';
+    }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <span class="back-arrow">&#8592;</span>
+      <span class="title">JETY</span>
+    </header>
+    <div class="main-box">
+      <div class="left-panel">
+        <img src="Usuario.jpg" alt="Usuario" class="user-photo">
+        <div class="user-name">Juan Alberto Sanchez<br>Sandoval</div>
+        <div class="id-row">
+          <span class="id-icon">&#128179;</span>
+          <span class="id-label">ID Cliente</span>
+        </div>
+      </div>
+      <div class="center-panel">
+        <form class="cancelacion-form" onsubmit="event.preventDefault();">
+          <label class="form-title">Motivo de cancelacion.</label>
+          <div class="motivos">
+            <label><input type="radio" name="motivo" value="banco"> <span class="radio-label">Cambio de banco.</span></label><br>
+            <label><input type="radio" name="motivo" value="no-uso"> <span class="radio-label">No uso de cuenta.</span></label><br>
+            <label><input type="radio" name="motivo" value="costos"> <span class="radio-label">Costos elevados.</span></label><br>
+            <label><input type="radio" name="motivo" value="otro"> <span class="radio-label">Otro (especificar).</span></label>
+          </div>
+          <label class="form-title" for="idcliente">ID Cliente</label>
+          <input type="text" id="idcliente" class="input-box" required>
+          <label class="form-title" for="contrasena">Contraseña</label>
+          <input type="password" id="contrasena" class="input-box" required>
+        </form>
+      </div>
+      <div class="right-panel">
+        <div class="aviso-card">
+          <div class="aviso-title">
+            <span class="aviso-icon">&#9432;</span>
+            <span class="aviso-heading">Aviso Importante</span>
+          </div>
+          <div class="aviso-text">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo.
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-box">
+      <div class="confirm-section">
+        <div class="confirm-title">
+          <span class="confirm-icon">&#9432;</span>
+          <span class="confirm-heading">¿Seguro que deseas cancelar la cuenta?</span>
+        </div>
+        <div class="confirm-text">
+          Esta opcion no se puede deshacer.
+        </div>
+        <div class="botones">
+          <button type="button" class="btn-aceptar" onclick="mostrarModal(false)">Aceptar</button>
+          <button type="button" class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de resultado -->
+  <div id="modalResultado" class="modal-resultado" style="display:none;">
+    <div id="modalContenido" class="modal-contenido">
+      <div class="modal-icono" id="modalIcono">&#9432;</div>
+      <div class="modal-mensaje" id="modalMensaje"></div>
+      <button class="modal-btn" onclick="cerrarModal()">ACEPTAR</button>
+    </div>
+  </div>
+</body>
+</html>
