@@ -3,9 +3,11 @@
   justify-content: space-between;
   align-items: center;
   background-color: white;
-  padding: 20px 30px;
+  padding: 15px 25px;
   border-radius: 15px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  position: relative;
+  z-index: 1100;
 }
 
 .icon-left img,
@@ -17,8 +19,100 @@
 
 .title h1 {
   margin: 0;
-  font-size: 30px;
+  font-size: 28px;
   text-align: center;
   flex-grow: 1;
   color: blue;
+  font-weight: bold;
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4);
+  z-index: 1100;
+}
+
+.side-menu {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background: linear-gradient(180deg, #006699, #004466);
+  color: white;
+  padding: 25px 20px;
+  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-top-left-radius: 15px;
+  border-bottom-left-radius: 15px;
+  transform: translateX(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+
+.side-menu.open {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.side-menu h2 {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.side-menu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex-grow: 1;
+}
+
+.side-menu ul li {
+  margin: 15px 0;
+}
+
+.side-menu ul li a {
+  text-decoration: none;
+  color: white;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.side-menu ul li a:hover {
+  color: #ffe600;
+  transform: translateX(5px);
+}
+
+.close-btn {
+  font-size: 16px;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding: 10px;
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
 }

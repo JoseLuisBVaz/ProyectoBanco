@@ -1,14 +1,36 @@
 <nav class="navbar">
-    <div class="icon-left" (click)="logout()">
+  <div class="icon-left" (click)="logout()">
     <img src="assets/icons/logout.png" alt="Logout">
-    </div>
+  </div>
 
-    <div class="title">
-    <h1>JETY</h1>
-    </div>
+  <div class="title">
+    <h1>JETTY</h1>
+  </div>
 
-    <div class="icon-right" (click)="goProfile()">
+  <div class="icon-right" (click)="toggleMenu()">
     <img src="assets/icons/profile.png" alt="Perfil">
-    </div>
-
+  </div>
 </nav>
+
+<!-- Fondo oscuro -->
+<div class="overlay" *ngIf="menuOpen" (click)="closeMenu()"></div>
+
+<!-- Menú lateral -->
+<div class="side-menu" [class.open]="menuOpen">
+  <h2>Juan Alberto Sanchez<br>Sandoval</h2>
+  <ul>
+    <li><a href="#"><i class="fa fa-cog"></i> Configuración</a></li>
+    <li><a href="#"><i class="fa fa-lock"></i> Seguridad y privacidad</a></li>
+    <li><a href="#"><i class="fa fa-mobile"></i> Token móvil</a></li>
+    <li><a href="#"><i class="fa fa-leaf"></i> Sostenibilidad</a></li>
+    <li><a href="#"><i class="fa fa-bell"></i> Emergencias</a></li>
+    <li><a href="#"><i class="fa fa-cash-register"></i> Zona de Cobro</a></li>
+    <li><a href="#"><i class="fa fa-star"></i> Puntos y proporciones</a></li>
+    <li><a href="#"><i class="fa fa-qrcode"></i> Operaciones QR + CoDi</a></li>
+    <li><a href="#"><i class="fa fa-credit-card"></i> Consulta retiro sin tarjeta</a></li>
+    <li><a href="#"><i class="fa fa-bank"></i> Sucursal y cajeros</a></li>
+  </ul>
+  <button class="close-btn" (click)="closeMenu()">
+    <i class="fa fa-sign-out"></i> Salir
+  </button>
+</div>

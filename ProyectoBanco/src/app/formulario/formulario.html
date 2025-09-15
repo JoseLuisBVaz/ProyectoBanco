@@ -1,0 +1,42 @@
+<div class="form-bg"></div>
+<div class="form-container">
+  <header class="form-header">
+    <app-navbar class="top-navbar"></app-navbar>
+  </header>
+  <main class="form-main">
+    <form class="formulario" [formGroup]="cuentaForm" (ngSubmit)="submitForm()">
+      <div class="form-fields">
+        <label>Nombre Completo:<input type="text" formControlName="nombre"></label>
+        <label>CURP:<input type="text" formControlName="curp"></label>
+        <label>Fecha de Nacimiento:<input type="date" formControlName="fechaNacimiento"></label>
+        <label>Calle:<input type="text" formControlName="calle"></label>
+        <label>C.P.:<input type="text" formControlName="cp"></label>
+        <label>Municipio:<input type="text" formControlName="municipio"></label>
+        <label>Estado:<input type="text" formControlName="estado"></label>
+        <label>Colonia:<input type="text" formControlName="colonia"></label>
+        <div class="form-btns">
+          <button type="submit" class="btn-crear">CREAR</button>
+          <button type="button" class="btn-limpiar" (click)="resetForm()">LIMPIAR</button>
+        </div>
+      </div>
+      <div class="form-side">
+        <div class="card-box">
+          <img src="assets/Tarjeta.png" alt="Tarjeta" class="card-img">
+          <div class="card-name">Juan Alberto Sanchez Sandoval</div>
+        </div>
+        <div class="pass-box">
+          <input type="password" placeholder="Ingresa Contraseña:" formControlName="pass1">
+          <input type="password" placeholder="Confirma tu Contraseña:" formControlName="pass2">
+        </div>
+      </div>
+    </form>
+  </main>
+</div>
+
+<div class="modal-bg" *ngIf="modalVisible">
+  <div class="modal-box" [ngClass]="{'error': modalError}">
+    <div class="modal-title">{{modalTitle}}</div>
+    <div class="modal-msg">{{modalMsg}}</div>
+    <button class="modal-btn" (click)="closeModal()">ACEPTAR</button>
+  </div>
+</div>
