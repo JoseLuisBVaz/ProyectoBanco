@@ -1,0 +1,75 @@
+<app-navbar class="top-navbar"></app-navbar>
+<div class="container">
+  <div class="main-box">
+
+    <div class="left-panel">
+      <img src="assets/icons/profile.png" alt="Usuario" class="user-photo">
+      <div class="user-name">Juan Alberto Sanchez<br>Sandoval</div>
+      <div class="id-row">
+        <span class="id-icon">&#128179;</span>
+        <span class="id-label">ID Cliente</span>
+      </div>
+      <button class="cuenta-btn">Detalles de cuenta</button>
+    </div>
+
+    <div class="center-panel">
+      <form [formGroup]="prestamoForm" class="prestamo-form" (ngSubmit)="aceptarPrestamo()">
+        <label class="form-title" for="monto">Monto</label>
+        <div class="input-group">
+          <input type="number" formControlName="monto" id="monto" />
+          <span class="currency">$</span>
+        </div>
+
+        <label class="form-title" for="plazo">Plazo</label>
+        <select formControlName="plazo" id="plazo">
+          <option value="" disabled selected>Seleccionar</option>
+          <option value="6">6 meses</option>
+          <option value="12">12 meses</option>
+          <option value="24">24 meses</option>
+        </select>
+
+        <label class="form-title" for="destino">Destino del crédito</label>
+        <input type="text" formControlName="destino" id="destino" />
+
+        <label class="form-title" for="ingresos">Ingresos Mensuales</label>
+        <input type="number" formControlName="ingresos" id="ingresos" />
+
+        <label class="form-title" for="domicilio">Ingresa domicilio</label>
+        <input type="text" formControlName="domicilio" id="domicilio" />
+      </form>
+    </div>
+
+    <div class="right-panel">
+      <div class="info-card">
+        <div class="info-title">
+          <span class="info-icon">&#128221;</span>
+          <span class="info-heading">Solicitud de préstamo.</span>
+        </div>
+        <p class="info-desc">Llena todos los campos para completar tu solicitud.</p>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png" alt="Visa" class="card-img"/>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-box">
+    <label class="form-title" for="contrasena">Contraseña</label>
+    <div class="password-section">
+      <div class="password-info">
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa.
+      </div>
+      <input type="password" formControlName="contrasena" id="contrasena" />
+      <div class="botones">
+        <button type="button" class="btn-aceptar" (click)="aceptarPrestamo()">Aceptar</button>
+        <button type="button" class="btn-cancelar" (click)="cancelarPrestamo()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-resultado" *ngIf="modalVisible">
+  <div class="modal-contenido" [ngClass]="modalClase">
+    <div class="modal-icono">{{modalIcono}}</div>
+    <div class="modal-mensaje" [innerHTML]="modalMensaje"></div>
+    <button class="modal-btn" (click)="cerrarModal()">ACEPTAR</button>
+  </div>
+</div>
