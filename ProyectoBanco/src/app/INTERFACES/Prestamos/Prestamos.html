@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Solicitud de Préstamo</title>
+  <link rel="stylesheet" href="Prestamos.css">
+  <script>
+    function aceptarPrestamo() {
+      var monto = document.getElementById('monto').value;
+      var plazo = document.getElementById('plazo').value;
+      var destino = document.getElementById('destino').value;
+      var ingresos = document.getElementById('ingresos').value;
+      var domicilio = document.getElementById('domicilio').value;
+      var contrasena = document.getElementById('contrasena').value;
+
+      var modal = document.getElementById('modalResultado');
+      var contenido = document.getElementById('modalContenido');
+      var icono = document.getElementById('modalIcono');
+      var mensaje = document.getElementById('modalMensaje');
+
+      if (
+        monto > 0 &&
+        plazo &&
+        destino &&
+        ingresos > 0 &&
+        domicilio &&
+        contrasena === '1234'
+      ) {
+        contenido.className = 'modal-contenido modal-aceptado';
+        icono.innerHTML = '<span style="font-size:3em;">&#9432;</span>';
+        mensaje.innerHTML = '<strong>¡Felicidades!</strong><br>El préstamo fue aceptado.';
+      } else {
+        contenido.className = 'modal-contenido modal-rechazado';
+        icono.innerHTML = '<span style="font-size:3em;">&#9432;</span>';
+        mensaje.innerHTML = '<strong>¡Lo sentimos!</strong><br>El préstamo no fue aceptado.';
+      }
+      modal.style.display = 'flex';
+    }
+
+    function cerrarModal() {
+      document.getElementById('modalResultado').style.display = 'none';
+    }
+
+    function cancelarPrestamo() {
+      document.getElementById('monto').value = '';
+      document.getElementById('plazo').value = '';
+      document.getElementById('destino').value = '';
+      document.getElementById('ingresos').value = '';
+      document.getElementById('domicilio').value = '';
+      document.getElementById('contrasena').value = '';
+      cerrarModal();
+    }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <div class="main-box">
+      <div class="left-panel">
+        <img src="Usuario.jpg" alt="Usuario" class="user-photo">
+        <div class="user-name">Juan Alberto Sanchez<br>Sandoval</div>
+        <div class="id-row">
+          <span class="id-icon">&#128179;</span>
+          <span class="id-label">ID Cliente</span>
+        </div>
+        <button class="cuenta-btn">Detalles de cuenta</button>
+      </div>
+      <div class="center-panel">
+        <form class="prestamo-form" onsubmit="event.preventDefault(); aceptarPrestamo();">
+          <label class="form-title" for="monto">Monto</label>
+          <div class="input-group">
+            <input type="number" id="monto" required />
+            <span class="currency">$</span>
+          </div>
+
+          <label class="form-title" for="plazo">Plazo</label>
+          <select id="plazo" required>
+            <option value="" disabled selected>Seleccionar</option>
+            <option value="6">6 meses</option>
+            <option value="12">12 meses</option>
+            <option value="24">24 meses</option>
+          </select>
+
+          <label class="form-title" for="destino">Destino del credito</label>
+          <input type="text" id="destino" required />
+
+          <label class="form-title" for="ingresos">Ingresos Mensuales</label>
+          <input type="number" id="ingresos" required />
+
+          <label class="form-title" for="domicilio">Ingresa domicilio</label>
+          <input type="text" id="domicilio" required />
+        </form>
+      </div>
+      <div class="right-panel">
+        <div class="info-card">
+          <div class="info-title">
+            <span class="info-icon">&#128221;</span>
+            <span class="info-heading">Solicitud de prestamo.</span>
+          </div>
+          <p class="info-desc">Llena todos los campos para completar tu solicitud.</p>
+          <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png" alt="Visa" class="card-img"/>
+        </div>
+      </div>
+    </div>
+    <!-- Solo una sección de contraseña, bien acomodada -->
+    <div class="bottom-box">
+      <label class="form-title" for="contrasena">Contraseña</label>
+      <div class="password-section">
+        <div class="password-info">
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.
+        </div>
+        <label class="form-title" for="contrasena">Ingresa Contraseña:</label>
+        <input type="password" id="contrasena" required />
+        <div class="botones">
+          <button type="button" class="btn-aceptar" onclick="aceptarPrestamo()">Aceptar</button>
+          <button type="button" class="btn-cancelar" onclick="cancelarPrestamo()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de resultado -->
+  <div id="modalResultado" class="modal-resultado" style="display:none;">
+    <div id="modalContenido" class="modal-contenido">
+      <div class="modal-icono" id="modalIcono">!</div>
+      <div class="modal-mensaje" id="modalMensaje"></div>
+      <button class="modal-btn" onclick="cerrarModal()">ACEPTAR</button>
+    </div>
+  </div>
+</body>
+</html>

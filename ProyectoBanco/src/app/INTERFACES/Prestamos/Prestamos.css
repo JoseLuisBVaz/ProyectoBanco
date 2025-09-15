@@ -1,0 +1,253 @@
+body {
+  background: #f3f3f3;
+  font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+.container {
+  max-width: 1200px;
+  margin: 32px auto;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px #0002;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.main-box {
+  display: flex;
+  gap: 24px;
+  padding: 32px;
+}
+.left-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+}
+.user-photo {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 2px solid #1976d2;
+  margin-bottom: 8px;
+}
+.user-name {
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 16px;
+  font-size: 1.1em;
+  font-family: 'Arial Black', Arial, sans-serif;
+}
+.id-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.id-icon {
+  font-size: 1.3em;
+  margin-right: 6px;
+}
+.id-label {
+  font-weight: bold;
+  font-family: 'Arial Black', Arial, sans-serif;
+}
+.cuenta-btn {
+  background: #00cfff;
+  color: #fff;
+  border: none;
+  border-radius: 16px;
+  padding: 8px 18px;
+  font-weight: bold;
+  font-size: 1em;
+  margin-top: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px #00cfff44;
+}
+.center-panel {
+  flex: 2;
+  padding: 0 24px;
+}
+.prestamo-form {
+  display: flex;
+  flex-direction: column;
+}
+.form-title {
+  font-size: 1.35em;
+  font-weight: bold;
+  margin-top: 18px;
+  margin-bottom: 4px;
+  font-family: 'Arial Black', Arial, sans-serif;
+}
+.input-group {
+  display: flex;
+  align-items: center;
+}
+.input-group input {
+  flex: 1;
+}
+.currency {
+  margin-left: 8px;
+  font-size: 1.2em;
+  font-weight: bold;
+}
+input, select {
+  width: 100%;
+  padding: 8px;
+  margin-top: 4px;
+  border: 2px solid #1976d2;
+  border-radius: 6px;
+  font-size: 1em;
+  font-family: inherit;
+}
+.password-section {
+  background: #f7f7f7;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 8px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 4px #0001;
+}
+.password-info {
+  font-size: 0.95em;
+  margin-bottom: 8px;
+}
+.botones {
+  display: flex;
+  gap: 24px;
+  margin-top: 24px;
+  justify-content: center;
+}
+.btn-aceptar, .btn-cancelar {
+  padding: 10px 32px;
+  border-radius: 8px;
+  border: none;
+  font-size: 1.1em;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 6px #0001;
+  font-family: 'Arial Black', Arial, sans-serif;
+  letter-spacing: 1px;
+}
+.btn-aceptar {
+  background: #1976d2;
+  color: #fff;
+}
+.btn-cancelar {
+  background: #fff;
+  color: #1976d2;
+  border: 2px solid #1976d2;
+}
+.right-panel {
+  flex: 1.2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 8px;
+}
+.info-card {
+  background: #f5f5f5;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  text-align: left;
+  box-shadow: 0 1px 4px #0001;
+  width: 100%;
+  min-width: 260px;
+}
+.info-title {
+  display: flex;
+  align-items: center;
+  font-size: 1.3em;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+.info-icon {
+  font-size: 1.5em;
+  margin-right: 8px;
+}
+.info-heading {
+  font-family: 'Arial Black', Arial, sans-serif;
+}
+.info-desc {
+  font-size: 1.15em;
+  font-weight: bold;
+  margin-bottom: 12px;
+  font-family: 'Arial Black', Arial, sans-serif;
+}
+.card-img {
+  width: 120px;
+  margin-top: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px #0002;
+}
+
+/* Modal de resultado */
+.modal-resultado {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.25);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.modal-contenido {
+  min-width: 420px;
+  max-width: 90vw;
+  padding: 36px 28px 28px 28px;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px #0006;
+  text-align: center;
+  position: relative;
+  font-family: 'Arial Black', Arial, sans-serif;
+  border: 3px solid #fff;
+}
+.modal-icono {
+  font-size: 3em;
+  margin-bottom: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.modal-mensaje {
+  font-size: 1.5em;
+  margin-bottom: 28px;
+  font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+  font-weight: bold;
+  color: #fff;
+}
+.modal-btn {
+  background: #00cfff;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 38px;
+  font-size: 1.15em;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 8px #0002;
+  font-family: 'Arial Black', Arial, sans-serif;
+  letter-spacing: 1px;
+  transition: background 0.2s, color 0.2s;
+}
+.modal-btn:hover {
+  background: #0099cc;
+}
+.modal-rechazado {
+  background: #b30000;
+  color: #fff;
+  border: 3px solid #7a0000;
+}
+.modal-aceptado {
+  background: #1976d2;
+  color: #fff;
+  border: 3px solid #1565c0;
+}
+.bottom-box {
+  margin: 32px auto 0 auto;
+  max-width: 95%;
+  width: 900px;
+}
