@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Location } from '@angular/common';
 
 @Component({
   selector: 'app-navbar',
@@ -13,10 +13,13 @@ import { RouterLink } from '@angular/router';
 export class Navbar {
   menuOpen = false;
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private location: Location
+  ) {}
 
-  logout() {
-    console.log('Cerrar sesión');
+  goBack() {
+    this.location.back();
   }
 
   toggleMenu() {
@@ -26,4 +29,5 @@ export class Navbar {
   closeMenu() {
     this.menuOpen = false;
   }
+
 }

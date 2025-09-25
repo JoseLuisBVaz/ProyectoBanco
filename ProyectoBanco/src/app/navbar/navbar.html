@@ -1,10 +1,10 @@
 <nav class="navbar">
-  <div class="icon-left" (click)="logout()">
-    <img src="assets/icons/logout.png" alt="Logout">
+  <div class="icon-left" (click)="goBack()">
+    <img src="assets/icons/back.png" alt="Prev">
   </div>
 
   <div class="title">
-    <h1>JETTY</h1>
+    <h1 [routerLink]="'/novedades'" style="cursor: pointer;">JETY</h1>
   </div>
 
   <div class="icon-right" (click)="toggleMenu()">
@@ -12,10 +12,8 @@
   </div>
 </nav>
 
-<!-- Fondo oscuro -->
 <div class="overlay" *ngIf="menuOpen" (click)="closeMenu()"></div>
 
-<!-- Menú lateral -->
 <div class="side-menu" [class.open]="menuOpen">
   <h2>Juan Alberto Sanchez<br>Sandoval</h2>
   <ul>

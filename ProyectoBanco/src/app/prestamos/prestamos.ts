@@ -31,15 +31,20 @@ export class Prestamo {
   aceptarPrestamo() {
     const { monto, plazo, destino, ingresos, domicilio, contrasena } = this.prestamoForm.value;
 
-    if (monto > 0 && plazo && destino && ingresos > 0 && domicilio && contrasena === '1234') {
+    if (!monto || !plazo || !destino || !ingresos || !domicilio || !contrasena) {
+      this.modalClase = 'modal-rechazado';
+      this.modalIcono = '⚠';
+      this.modalMensaje = '¡Atención!<br>Debes completar todos los campos.';
+    } else if (contrasena === '1234') {
       this.modalClase = 'modal-aceptado';
       this.modalIcono = 'ℹ';
       this.modalMensaje = '¡Felicidades!<br>El préstamo fue aceptado.';
     } else {
       this.modalClase = 'modal-rechazado';
       this.modalIcono = 'ℹ';
-      this.modalMensaje = '¡Lo sentimos!<br>El préstamo no fue aceptado.';
+      this.modalMensaje = '¡Lo sentimos!<br>Contraseña incorrecta. No se pudo aprobar el préstamo.';
     }
+
     this.modalVisible = true;
   }
 

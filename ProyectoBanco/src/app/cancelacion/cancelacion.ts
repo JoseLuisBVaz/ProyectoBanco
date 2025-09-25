@@ -25,16 +25,25 @@ export class Cancelacion {
     });
   }
 
-  mostrarModal(exito: boolean) {
-    if (exito) {
-      this.modalClase = 'modal-aceptado';
-      this.modalMensaje = '¡Felicidades!<br>Tu cuenta fue eliminada con éxito.';
-    } else {
+  mostrarModal() {
+    if (!this.cancelForm.valid) {
       this.modalClase = 'modal-rechazado';
-      this.modalMensaje = '¡Lo sentimos!<br>No puedes eliminar tu cuenta por adeudos pendientes.';
+      this.modalMensaje = '¡Atención!<br>Debes completar todos los campos.';
+    } else {
+      const tieneAdeudos = false;
+      if (!tieneAdeudos) {
+        this.modalClase = 'modal-aceptado';
+        this.modalMensaje = '¡Felicidades!<br>Tu cuenta fue eliminada con éxito.';
+      } else {
+        this.modalClase = 'modal-rechazado';
+        this.modalMensaje = '¡Lo sentimos!<br>No puedes eliminar tu cuenta por adeudos pendientes.';
+      }
     }
+
     this.modalVisible = true;
   }
+
+
 
   cerrarModal() {
     this.modalVisible = false;

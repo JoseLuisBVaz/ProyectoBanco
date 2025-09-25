@@ -1,7 +1,6 @@
 <app-navbar class="top-navbar"></app-navbar>
 <div class="container">
   <div class="main-box">
-
     <div class="left-panel">
       <img src="assets/icons/profile.png" alt="Usuario" class="user-photo">
       <div class="user-name">Juan Alberto Sanchez<br>Sandoval</div>
@@ -36,6 +35,14 @@
 
         <label class="form-title" for="domicilio">Ingresa domicilio</label>
         <input type="text" formControlName="domicilio" id="domicilio" />
+
+        <label class="form-title" for="contrasena">Contraseña</label>
+        <input type="password" formControlName="contrasena" id="contrasena" />
+
+        <div class="botones">
+          <button type="submit" class="btn-aceptar">Aceptar</button>
+          <button type="button" class="btn-cancelar" (click)="cancelarPrestamo()">Cancelar</button>
+        </div>
       </form>
     </div>
 
@@ -47,20 +54,6 @@
         </div>
         <p class="info-desc">Llena todos los campos para completar tu solicitud.</p>
         <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png" alt="Visa" class="card-img"/>
-      </div>
-    </div>
-  </div>
-
-  <div class="bottom-box">
-    <label class="form-title" for="contrasena">Contraseña</label>
-    <div class="password-section">
-      <div class="password-info">
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa.
-      </div>
-      <input type="password" formControlName="contrasena" id="contrasena" />
-      <div class="botones">
-        <button type="button" class="btn-aceptar" (click)="aceptarPrestamo()">Aceptar</button>
-        <button type="button" class="btn-cancelar" (click)="cancelarPrestamo()">Cancelar</button>
       </div>
     </div>
   </div>
