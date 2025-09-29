@@ -15,13 +15,10 @@ export class RoleGuard implements CanActivate {
       }
       const user = JSON.parse(raw);
       const rol = String(user?.rol || user?.role || '').toLowerCase().trim();
-      // Normalize short codes
       if (rol === 'm' || rol.startsWith('m')) {
-        // treat 'm' as manager/empleado (map to 'e'/'g')
-        if (allowed.includes('e') || allowed.includes('g') || allowed.includes('m')) return true;
+        if (allowed.includes('e') || allowed.includes('m')) return true;
       }
       if (allowed.includes(rol)) return true;
-      // not allowed
       this.router.navigate(['/login']);
       return false;
     } catch (e) {

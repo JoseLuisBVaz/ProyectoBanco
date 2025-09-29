@@ -13,9 +13,9 @@ import { RoleGuard } from './guards/role.guard';
 export const routes: Routes = [
     {path: '', component: Main},
     {path: 'login', component: LogIn},
-    {path: 'formulario', component: Formulario, canActivate: [AuthGuard, RoleGuard], data: { roles: ['g','e','m'] }},
+    {path: 'formulario', component: Formulario, canActivate: [AuthGuard, RoleGuard], data: { roles: ['e','m'] }},
     {path: 'prestamo', component: Prestamo},
-    {path: 'novedades', component: Novedades, canActivate: [AuthGuard, RoleGuard], data: { roles: ['g','e','m'] }},
-    {path: 'cancelacion', component: Cancelacion, canActivate: [AuthGuard, RoleGuard], data: { roles: ['g','e','m'] }},
+    {path: 'novedades', component: Novedades, canActivate: [AuthGuard, RoleGuard], data: { roles: ['e','m'] }},
+    {path: 'cancelacion', component: Cancelacion, canActivate: [AuthGuard, RoleGuard], data: { roles: ['e','m'] }},
     {path: 'cuenta', component: DetallesCuenta, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }}
 ]
