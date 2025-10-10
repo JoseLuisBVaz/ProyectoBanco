@@ -26,15 +26,15 @@ const server = app.listen(3000, () => console.log('🚀 Servidor corriendo en ht
 // durante diagnóstico; simplemente logueamos la señal. Si más tarde queremos
 // un cierre limpio podemos reactivar el exit.
 const shutdown = (code = 0) => {
-	console.log('shutdown() invoked with code', code, '- closing server (no exit)');
+	console.log('shutdown() invoked with code', code, '- closing server');
 	try {
 		server.close(() => {
 			console.log('Servidor cerrado (shutdown() callback)');
-			// NOTE: no hacemos process.exit() aquí para evitar terminar el proceso
-			// automáticamente mientras investigamos por qué llegan señales.
+			process.exit(code);
 		});
 	} catch (e) {
 		console.error('Error durante cierre:', e);
+		process.exit(1);
 	}
 };
 

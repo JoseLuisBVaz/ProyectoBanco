@@ -9,11 +9,13 @@ import { DetallesCuenta } from './user/user';
 import { Main } from './main/main';
 import { AuthGuard } from './guards/auth.guard';
 import { RoleGuard } from './guards/role.guard';
+import { Register } from './register/register';
 
 export const routes: Routes = [
     {path: '', component: Main},
     {path: 'login', component: LogIn},
     {path: 'formulario', component: Formulario, canActivate: [AuthGuard, RoleGuard], data: { roles: ['e','m'] }},
+    {path: 'register', component: Register},
     {path: 'prestamo', component: Prestamo},
     {path: 'novedades', component: Novedades, canActivate: [AuthGuard, RoleGuard], data: { roles: ['e','m'] }},
     {path: 'cancelacion', component: Cancelacion, canActivate: [AuthGuard, RoleGuard], data: { roles: ['e','m'] }},
