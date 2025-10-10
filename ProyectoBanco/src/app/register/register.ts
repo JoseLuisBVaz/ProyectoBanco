@@ -15,6 +15,7 @@ import { Router, RouterModule } from '@angular/router';
 export class Register {
   mail = '';
   pass = '';
+  confirmPass = '';
   rol = '';
   firstName = '';
   lastNameP = '';
@@ -26,6 +27,8 @@ export class Register {
   rfc = '';
   nss = '';
   errorMsg = '';
+  passwordVisible = false;
+  confirmPasswordVisible = false;
 
   constructor(private http: HttpClient, private router: Router) {}
 
@@ -33,9 +36,27 @@ export class Register {
     this.errorMsg = '';
   }
 
+  togglePassword() {
+    this.passwordVisible = !this.passwordVisible;
+  }
+
+  toggleConfirmPassword() {
+    this.confirmPasswordVisible = !this.confirmPasswordVisible;
+  }
+
   register() {
-    if (!this.mail || !this.pass || !this.rol) {
+    if (!this.mail || !this.pass || !this.confirmPass || !this.rol) {
       this.errorMsg = 'Completa los datos de acceso.';
+      return;
+    }
+
+    if (this.pass !== this.confirmPass) {
+      this.errorMsg = 'Las contraseñas no coinciden.';
+      return;
+    }
+
+    if (this.pass.length < 6) {
+      this.errorMsg = 'La contraseña debe tener al menos 6 caracteres.';
       return;
     }
 

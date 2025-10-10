@@ -92,6 +92,42 @@
     border-color: #1a2aff;
 }
 
+/* Estilos para contenedores de contraseña */
+.password-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.password-container input {
+    padding-right: 3rem; /* Espacio para el botón */
+    width: 100%;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 0.8rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #666;
+    font-size: 1.1rem;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.toggle-password:hover {
+    color: #1a2aff;
+}
+
+.toggle-password i {
+    font-size: 1rem;
+}
+
 .btn-registrar {
     width: 100%;
     padding: 0.8rem 0;
