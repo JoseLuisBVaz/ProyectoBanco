@@ -1,0 +1,189 @@
+.registro-container {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    width: 100vw;
+    display: flex;
+    justify-content: center; /* centrado horizontal */
+    align-items: flex-start; /* subida vertical */
+    background: #f5f6fa;
+    padding-top: 3rem; /* espacio superior */
+    box-sizing: border-box;
+}
+
+.registro-card {
+    background: #fff;
+    border-radius: 18px;
+    border: 3px solid #bdbdbd;
+    box-shadow: 3px 6px 6px rgba(60,60,60,0.18);
+    padding: 2.2rem 2.5rem 2rem;
+    width: 90%;        
+    max-width: 800px;  
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+.registro-card h2 {
+    color: #1a2aff;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+    letter-spacing: 1px;
+    text-align: center;
+}
+
+.form-section {
+    width: 100%;
+    margin-bottom: 1.5rem;
+}
+
+.form-section h3 {
+    font-weight: bold;
+    color: #222;
+    margin-bottom: 1rem;
+    font-size: 1.15rem;
+    border-bottom: 2px solid #00b0ff;
+    padding-bottom: 5px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    width: 100%;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.form-group label {
+    font-size: 0.95rem;
+    margin-bottom: 0.4rem;
+    color: #444;
+}
+
+.form-group input,
+.form-group select {
+    border: 2px solid #00b0ff;
+    border-radius: 10px;
+    padding: 0.5rem 1rem;
+    font-size: 1.1rem;
+    background: #ededed;
+    outline: none;
+    font-weight: bold;
+    color: #444;
+    transition: border 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.form-group input::placeholder {
+    color: #888;
+    font-weight: bold;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #1a2aff;
+}
+
+/* Estilos para contenedores de contraseña */
+.password-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.password-container input {
+    padding-right: 3rem; /* Espacio para el botón */
+    width: 100%;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 0.8rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #666;
+    font-size: 1.1rem;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.toggle-password:hover {
+    color: #1a2aff;
+}
+
+.toggle-password i {
+    font-size: 1rem;
+}
+
+.btn-registrar {
+    width: 100%;
+    padding: 0.8rem 0;
+    background: #2300ff;
+    color: #fff;
+    border: none;
+    border-radius: 22px;
+    font-size: 1.15rem;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 0.7rem;
+    transition: background 0.2s;
+    letter-spacing: 1px;
+    box-shadow: 0 2px 8px rgba(25, 118, 210, 0.10);
+}
+
+.btn-registrar:hover {
+    background: #00b0ff;
+}
+
+.error-msg {
+    color: #ff4d4f;
+    text-align: center;
+    font-weight: bold;
+    margin-top: 10px;
+    font-size: 0.95rem;
+    background-color: #ffe6e6;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #ff4d4f;
+}
+
+/* Responsive */
+@media (max-width: 1000px) {
+    .registro-card {
+        width: 95%;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr; /* inputs apilados */
+    }
+}
+
+@media (max-width: 500px) {
+    .registro-card {
+        padding: 1.5rem;
+    }
+
+    .form-group input,
+    .form-group select {
+        font-size: 1rem;
+        padding: 0.4rem 0.8rem;
+    }
+
+    .btn-registrar {
+        font-size: 1.05rem;
+        padding: 0.7rem 0;
+    }
+}

@@ -1,0 +1,115 @@
+<p>register-emp works!</p>
+<app-navbar class="top-navbar"></app-navbar>
+
+<div class="registro-container">
+  <main class="registro-main">
+    <section class="registro-card">
+      <h2>CREAR CUENTA</h2>
+
+      <!-- DATOS DE ACCESO -->
+      <div class="form-section">
+        <h3>Datos de acceso</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="mail">Correo electrónico</label>
+            <input type="email" id="mail" [(ngModel)]="mail" required>
+          </div>
+
+          <div class="form-group">
+            <label for="pass">Contraseña</label>
+            <div class="password-container">
+              <input 
+                [type]="passwordVisible ? 'text' : 'password'" 
+                id="pass" 
+                [(ngModel)]="pass" 
+                required>
+              <button 
+                type="button" 
+                class="toggle-password" 
+                (click)="togglePassword()">
+                <i [class]="passwordVisible ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="rol">Rol</label>
+            <select id="rol" [(ngModel)]="rol" (change)="onRoleChange()">
+              <option value="">Seleccione un rol</option>
+              <option value="e">Empleado</option>
+              <option value="m">Manager</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="confirmPass">Confirmar contraseña</label>
+            <div class="password-container">
+              <input 
+                [type]="confirmPasswordVisible ? 'text' : 'password'" 
+                id="confirmPass" 
+                [(ngModel)]="confirmPass" 
+                required>
+              <button 
+                type="button" 
+                class="toggle-password" 
+                (click)="toggleConfirmPassword()">
+                <i [class]="confirmPasswordVisible ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
+              </button>
+            </div>
+          </div>
+
+          
+        </div>
+      </div>
+
+
+      <div class="form-section" *ngIf="rol">
+        <h3>Datos personales</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nombre</label>
+            <input type="text" [(ngModel)]="firstName" required>
+          </div>
+          <div class="form-group">
+            <label>Fecha de nacimiento</label>
+            <input type="date" [(ngModel)]="birthday" required>
+          </div>
+          <div class="form-group">
+            <label>Apellido materno</label>
+            <input type="text" [(ngModel)]="lastNameM" required>
+          </div>
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input type="text" [(ngModel)]="phoneNumber" maxlength="12" required>
+          </div>
+          <div class="form-group">
+            <label>Apellido paterno</label>
+            <input type="text" [(ngModel)]="lastNameP" required>
+          </div>
+          <div class="form-group">
+            <label>Dirección</label>
+            <input type="text" [(ngModel)]="address" required>
+          </div>
+          <div class="form-group">
+            <label>CURP</label>
+            <input type="text" [(ngModel)]="curp" maxlength="18" required>
+          </div>
+          <div class="form-group">
+            <label>RFC</label>
+            <input type="text" [(ngModel)]="rfc" maxlength="13">
+          </div>
+
+
+          <div class="form-group" *ngIf="rol === 'e' || rol === 'm'">
+            <label>NSS</label>
+            <input type="text" [(ngModel)]="nss" maxlength="11">
+          </div>
+        </div>
+      </div>
+
+      <p class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</p>
+
+      <button class="btn-registrar" (click)="register()">Registrarse</button>
+    </section>
+  </main>
+</div>
