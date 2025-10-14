@@ -45,6 +45,21 @@ export class Register {
   }
 
   register() {
+    // Normalizar entradas
+    this.mail = this.mail?.trim();
+    this.pass = this.pass?.trim();
+    this.confirmPass = this.confirmPass?.trim();
+    this.rol = this.rol?.trim();
+    this.firstName = this.firstName?.trim();
+    this.lastNameP = this.lastNameP?.trim();
+    this.lastNameM = this.lastNameM?.trim();
+    this.phoneNumber = this.phoneNumber?.trim();
+    this.birthday = this.birthday?.trim();
+    this.address = this.address?.trim();
+    this.curp = this.curp?.trim();
+    this.rfc = this.rfc?.trim();
+    this.nss = this.nss?.trim();
+
     if (!this.mail || !this.pass || !this.confirmPass || !this.rol) {
       this.errorMsg = 'Completa los datos de acceso.';
       return;
@@ -77,10 +92,7 @@ export class Register {
       address: this.address,
       curp: this.curp,
       rfc: this.rfc,
-      nss: this.rol === 'c' ? null : this.nss,
-      balance: this.rol === 'c' ? 0 : null,
-      cardNum: null,
-      creditCardNum: null
+      nss: this.rol === 'c' ? null : this.nss
     };
 
     console.log('Datos enviados al backend:', userData);
@@ -91,8 +103,17 @@ export class Register {
         this.router.navigate(['/login']);
       },
       error: (err) => {
-        console.error(err);
-        this.errorMsg = 'Error al registrar. Intenta de nuevo.';
+        console.error('Error en registro:', err);
+        const backendMsg = err?.error?.msg;
+        if (backendMsg) {
+          this.errorMsg = backendMsg;
+        } else if (err?.status === 0) {
+          this.errorMsg = 'No se pudo conectar con el servidor. Verifica que el backend esté corriendo.';
+        } else if (err?.status) {
+          this.errorMsg = `Error (${err.status}): Intenta de nuevo.`;
+        } else {
+          this.errorMsg = 'Error al registrar. Intenta de nuevo.';
+        }
       }
     });
   }

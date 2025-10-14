@@ -12,8 +12,7 @@ const testData = {
   birthday: "1990-01-01",
   address: "Calle Falsa 123",
   curp: "ABCD123456HDFABC01",
-  rfc: "ABCD123456ABC",
-  balance: 0
+  rfc: "ABCD123456ABC"
 };
 
 console.log('Probando registro con datos:', testData);

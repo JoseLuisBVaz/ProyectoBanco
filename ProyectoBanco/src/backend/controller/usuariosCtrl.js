@@ -14,8 +14,7 @@ const getCustomers = (req, res) => {
   const query = `
     SELECT m.mainId, m.mail, m.rol,
            c.phoneNumber, c.firstName, c.lastNameP, c.lastNameM,
-           c.birthday, c.address, c.curp, c.rfc, c.balance,
-           c.cardNum, c.creditCardNum
+           c.birthday, c.address, c.curp, c.rfc
     FROM main m
     INNER JOIN customer c ON m.mainId = c.mainId
   `;
@@ -122,12 +121,38 @@ const login = async (req, res) => {
 const registerUser = async (req, res) => {
   console.log('[REGISTRO] Iniciando proceso de registro');
   console.log('[REGISTRO] Request body:', req.body);
-  const { mail, pass, rol, firstName, lastNameP, lastNameM, phoneNumber, birthday, address, curp, rfc, nss, balance } = req.body;
+  let { mail, pass, rol, firstName, lastNameP, lastNameM, phoneNumber, birthday, address, curp, rfc, nss } = req.body;
+
+  // Normalización/trim para evitar errores por espacios o valores undefined
+  const trimOr = (v, fallback = '') => (typeof v === 'string' ? v.trim() : (v ?? fallback));
+  mail = trimOr(mail);
+  pass = trimOr(pass);
+  rol = trimOr(rol);
+  firstName = trimOr(firstName);
+  lastNameP = trimOr(lastNameP);
+  lastNameM = trimOr(lastNameM);
+  phoneNumber = trimOr(phoneNumber);
+  birthday = trimOr(birthday); // YYYY-MM-DD esperado
+  address = trimOr(address);
+  curp = trimOr(curp);
+  rfc = trimOr(rfc, null);
+  nss = trimOr(nss, null);
 
   // Validaciones básicas
-  if (!mail || !pass || !rol || !firstName || !lastNameP || !phoneNumber || !curp) {
-    console.warn('[REGISTRO] Campos faltantes en registro:', req.body);
-    return res.status(400).json({ msg: 'Faltan campos obligatorios' });
+  // Alinear con restricciones NOT NULL de la tabla customer
+  const missing = [];
+  if (!mail) missing.push('mail');
+  if (!pass) missing.push('pass');
+  if (!rol) missing.push('rol');
+  if (!firstName) missing.push('firstName');
+  if (!lastNameP) missing.push('lastNameP');
+  if (!phoneNumber) missing.push('phoneNumber');
+  if (!birthday) missing.push('birthday');
+  if (!address) missing.push('address');
+  if (!curp) missing.push('curp');
+  if (missing.length) {
+    console.warn('[REGISTRO] Campos faltantes en registro:', missing);
+    return res.status(400).json({ msg: `Faltan campos obligatorios: ${missing.join(', ')}` });
   }
 
   console.log('[REGISTRO] Contraseña recibida (longitud):', pass.length);
@@ -170,13 +195,12 @@ const registerUser = async (req, res) => {
         if (rol === 'c') {
           // Cliente
           const insertCustomerQuery = `
-            INSERT INTO customer (mainId, phoneNumber, firstName, lastNameP, lastNameM, birthday, address, curp, rfc, balance, cardNum, creditCardNum)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO customer (mainId, phoneNumber, firstName, lastNameP, lastNameM, birthday, address, curp, rfc)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
           `;
           const customerValues = [
             mainId, phoneNumber, firstName, lastNameP, lastNameM || '',
-            birthday || null, address || '', curp, rfc || null,
-            balance || 0, null, null
+            birthday || null, address || '', curp, rfc || null
           ];
 
           db.query(insertCustomerQuery, customerValues, (err, customerResult) => {

@@ -16,7 +16,8 @@ export class Register {
   mail = '';
   pass = '';
   confirmPass = '';
-  rol = '';
+  // Registro exclusivo para clientes
+  rol = 'c';
   firstName = '';
   lastNameP = '';
   lastNameM = '';
@@ -25,16 +26,11 @@ export class Register {
   address = '';
   curp = '';
   rfc = '';
-  nss = '';
   errorMsg = '';
   passwordVisible = false;
   confirmPasswordVisible = false;
 
   constructor(private http: HttpClient, private router: Router) {}
-
-  onRoleChange() {
-    this.errorMsg = '';
-  }
 
   togglePassword() {
     this.passwordVisible = !this.passwordVisible;
@@ -45,7 +41,22 @@ export class Register {
   }
 
   register() {
-    if (!this.mail || !this.pass || !this.confirmPass || !this.rol) {
+    // Normalizar entradas (trim) para evitar errores por espacios
+    this.mail = this.mail?.trim();
+    this.pass = this.pass?.trim();
+    this.confirmPass = this.confirmPass?.trim();
+    // rol fijo como 'c' (cliente)
+    this.rol = 'c';
+    this.firstName = this.firstName?.trim();
+    this.lastNameP = this.lastNameP?.trim();
+    this.lastNameM = this.lastNameM?.trim();
+    this.phoneNumber = this.phoneNumber?.trim();
+    this.birthday = this.birthday?.trim();
+    this.address = this.address?.trim();
+    this.curp = this.curp?.trim();
+    this.rfc = this.rfc?.trim();
+
+    if (!this.mail || !this.pass || !this.confirmPass) {
       this.errorMsg = 'Completa los datos de acceso.';
       return;
     }
@@ -60,12 +71,12 @@ export class Register {
       return;
     }
 
-    if (!this.firstName || !this.lastNameP || !this.phoneNumber || !this.curp) {
-      this.errorMsg = 'Completa todos los datos personales.';
+    if (!this.firstName || !this.lastNameP || !this.phoneNumber || !this.curp || !this.birthday || !this.address) {
+      this.errorMsg = 'Completa todos los datos personales (incluye fecha de nacimiento y dirección).';
       return;
     }
 
-    const mainData = { mail: this.mail, pass: this.pass, rol: this.rol };
+  const mainData = { mail: this.mail, pass: this.pass, rol: 'c' };
 
     const userData: any = {
       ...mainData,
@@ -76,11 +87,7 @@ export class Register {
       birthday: this.birthday,
       address: this.address,
       curp: this.curp,
-      rfc: this.rfc,
-      nss: this.rol === 'c' ? null : this.nss,
-      balance: this.rol === 'c' ? 0 : null,
-      cardNum: null,
-      creditCardNum: null
+      rfc: this.rfc
     };
 
     console.log('Datos enviados al backend:', userData);
@@ -91,8 +98,18 @@ export class Register {
         this.router.navigate(['/login']);
       },
       error: (err) => {
-        console.error(err);
-        this.errorMsg = 'Error al registrar. Intenta de nuevo.';
+        console.error('Error en registro:', err);
+        // Mostrar mensaje específico del backend cuando esté disponible
+        const backendMsg = err?.error?.msg;
+        if (backendMsg) {
+          this.errorMsg = backendMsg;
+        } else if (err?.status === 0) {
+          this.errorMsg = 'No se pudo conectar con el servidor. Verifica que el backend esté corriendo.';
+        } else if (err?.status) {
+          this.errorMsg = `Error (${err.status}): Intenta de nuevo.`;
+        } else {
+          this.errorMsg = 'Error al registrar. Intenta de nuevo.';
+        }
       }
     });
   }
