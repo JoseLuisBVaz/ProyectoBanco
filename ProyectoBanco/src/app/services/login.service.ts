@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { catchError, map, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class LoginService {
@@ -11,15 +11,49 @@ export class LoginService {
 
   login(mail: string, password: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/login`, { mail, password }).pipe(
-      tap((res: any) => {
+      switchMap((res: any) => {
+        if (res && res.success && res.user?.mainId) {
+          // Intentar obtener el perfil completo inmediatamente para tener firstName/lastName
+          const minimal = res.user;
+          return this.http.get(`${this.apiUrl}/usuario/${minimal.mainId}`).pipe(
+            map((profile: any) => {
+              const normalized = {
+                mainId: profile?.mainId ?? minimal.mainId,
+                mail: profile?.mail ?? minimal.mail,
+                rol: profile?.rol ?? minimal.rol,
+                firstName: profile?.firstName ?? null,
+                lastNameP: profile?.lastNameP ?? null,
+                lastNameM: profile?.lastNameM ?? null,
+                phoneNumber: profile?.phoneNumber ?? null,
+                birthday: profile?.birthday ?? null,
+                address: profile?.address ?? null,
+                curp: profile?.curp ?? null,
+                rfc: profile?.rfc ?? null,
+                nss: profile?.nss ?? null
+              };
+              try {
+                localStorage.setItem('currentUser', JSON.stringify({ ...minimal, ...normalized }));
+              } catch (e) {
+                console.warn('Could not persist merged user in localStorage', e);
+              }
+              return res; // propagamos la respuesta original
+            }),
+            catchError((err) => {
+              // Si falla el perfil, guardamos al menos el user mínimo
+              try {
+                localStorage.setItem('currentUser', JSON.stringify(minimal));
+              } catch {}
+              return of(res);
+            })
+          );
+        }
+        // Caso sin mainId: guardamos lo que haya
         if (res && res.success) {
-          // persist minimal user info
           try {
             localStorage.setItem('currentUser', JSON.stringify(res.user || { mail, rol: res.rol }));
-          } catch (e) {
-            console.warn('Could not persist user in localStorage', e);
-          }
+          } catch {}
         }
+        return of(res);
       })
     );
   }

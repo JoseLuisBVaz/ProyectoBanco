@@ -52,8 +52,8 @@ export class LogIn {
               console.log('Navegación a /novedades exitosa (rol m)');
             });
           } else if (rol === 'c' || rol.startsWith('c') || rol.includes('cliente') || rol.includes('cust')) {
-            this.router.navigate(['/cuenta']).then(() => {
-              console.log('Navegación a /cuenta exitosa');
+            this.router.navigate(['/home']).then(() => {
+              console.log('Navegación a /home exitosa');
             });
           } else {
             if (res && (res as any).success === true) {

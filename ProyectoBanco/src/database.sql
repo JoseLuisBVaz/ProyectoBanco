@@ -50,6 +50,7 @@ create table cAccount (
         clabe varchar(18) not null,
         accNum varchar(10) not null,
         accPhone varchar(10),
+        accType enum ('Debito', 'Credito') not null
         constraint fk_caccount_main foreign key (mainId) references main(mainId)
             on delete cascade
             on update cascade,

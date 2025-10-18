@@ -51,12 +51,12 @@ function createDefaultAccount(db, mainId, phoneNumber, cb, attempt = 0) {
   const clabe = generateClabe();
   const accNum = generateAccNum(mainId);
   const accPhone = sanitizePhone(phoneNumber);
-  const sql = `INSERT INTO cAccount (mainId, cardNum, balance, clabe, accNum, accPhone) VALUES (?, ?, 0, ?, ?, ?)`;
-  db.query(sql, [mainId, cardNum, clabe, accNum, accPhone], (err, result) => {
+  const sql = `INSERT INTO cAccount (mainId, cardNum, balance, clabe, accNum, accPhone, accType) VALUES (?, ?, 0, ?, ?, ?, ?)`;
+  db.query(sql, [mainId, cardNum, clabe, accNum, accPhone, 'Debito'], (err, result) => {
     if (err && err.code === 'ER_DUP_ENTRY' && attempt < 5) {
       return createDefaultAccount(db, mainId, phoneNumber, cb, attempt + 1);
     }
-    cb(err, { accountId: result?.insertId, mainId, cardNum, clabe, accNum, accPhone });
+    cb(err, { accountId: result?.insertId, mainId, cardNum, clabe, accNum, accPhone, accType: 'Debito' });
   });
 }
 
@@ -328,5 +328,30 @@ const registerUser = async (req, res) => {
   }
 };
 
-module.exports = { getMain, getCustomers, getEmployees, getUsuario, login, registerUser };
+// Obtener cuentas por usuario (mainId)
+const getAccountsByUser = (req, res) => {
+  const { mainId } = req.params;
+  console.log('[ACCOUNTS] Solicitud de cuentas para mainId:', mainId, 'url:', req.originalUrl);
+  if (!mainId) {
+    console.warn('[ACCOUNTS] mainId faltante en params');
+    return res.status(400).json({ msg: 'mainId requerido' });
+  }
+  const sql = `
+    SELECT accountId, mainId, cardNum, balance, clabe, accNum, accPhone,
+           COALESCE(accType, 'Debito') AS accType
+    FROM cAccount
+    WHERE mainId = ?
+    ORDER BY accountId ASC
+  `;
+  db.query(sql, [mainId], (err, results) => {
+    if (err) {
+      console.error('[ACCOUNTS] Error consultando cuentas:', err);
+      return res.status(500).send(err);
+    }
+    console.log('[ACCOUNTS] resultados:', Array.isArray(results) ? results.length : results);
+    res.json(results || []);
+  });
+};
+
+module.exports = { getMain, getCustomers, getEmployees, getUsuario, login, registerUser, getAccountsByUser };
 

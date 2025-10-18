@@ -1,5 +1,85 @@
 <app-navbar class="top-navbar"></app-navbar>
 
-<header class="home-header">
-  <h2>Bienvenido, {{ userName || 'Usuario' }}</h2>
-</header>
+<div class="home-container">
+  <section class="home-panel">
+  <h2 class="home-title">Hola, {{ userName }}</h2>
+
+    <div class="actions-grid">
+      <a class="action-item" href="#" title="Transferencia">
+        <div class="action-icon"><i class="fa-solid fa-right-left"></i></div>
+        <div class="action-label">Transferencia</div>
+      </a>
+
+      <a class="action-item" href="#" title="Depósito">
+        <div class="action-icon"><i class="fa-solid fa-piggy-bank"></i></div>
+        <div class="action-label">Deposito</div>
+      </a>
+
+      <a class="action-item" href="#" title="Recarga Celular">
+        <div class="action-icon"><i class="fa-solid fa-mobile-screen"></i></div>
+        <div class="action-label">Recarga Celular</div>
+      </a>
+
+      <a class="action-item" href="#" title="Pago de servicios">
+        <div class="action-icon"><i class="fa-solid fa-lightbulb"></i></div>
+        <div class="action-label">Pago de servicios</div>
+      </a>
+
+      <a class="action-item" [routerLink]="'/prestamo'" title="Préstamos">
+        <div class="action-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+        <div class="action-label">Prestamos</div>
+      </a>
+
+      <a class="action-item" [routerLink]="'/cuenta'" title="Estado de cuenta">
+        <div class="action-icon"><i class="fa-solid fa-table-list"></i></div>
+        <div class="action-label">Estado de cuenta</div>
+      </a>
+
+      <a class="action-item" href="#" title="Más">
+        <div class="action-icon"><i class="fa-solid fa-bars"></i></div>
+        <div class="action-label">Más</div>
+      </a>
+    </div>
+    
+    <!-- Cuenta seleccionada (principal) -->
+    <div class="account-card colorful" *ngIf="account as acc" [ngStyle]="cardStyle">
+      <div class="account-row">
+        <div class="account-left">
+          <div class="account-name">Cuenta principal 
+            <span class="badge" *ngIf="acc.accType">
+              <i [ngClass]="acc.accType === 'Credito' ? 'fa-solid fa-credit-card' : 'fa-solid fa-money-check'"></i>
+              {{ acc.accType }}
+            </span>
+          </div>
+          <div class="account-num">{{ maskAcc(acc.accNum) }}</div>
+          <div class="account-clabe">CLABE: {{ acc.clabe }}</div>
+        </div>
+        <div class="account-right">
+          <div class="account-balance">${{ acc.balance | number:'1.2-2' }}</div>
+          <div class="account-cardnum">{{ maskCard(acc.cardNum) }}</div>
+        </div>
+      </div>
+    </div>
+    <!-- Otras cuentas -->
+    <div class="other-accounts" *ngIf="otherAccounts?.length">
+      <h3 class="other-title">Otras cuentas</h3>
+      <div class="other-list">
+        <div class="other-item" *ngFor="let o of otherAccounts">
+          <div class="other-left">
+            <div class="other-name">{{ maskAcc(o.accNum) }} 
+              <span class="badge" *ngIf="o.accType">
+                <i [ngClass]="o.accType === 'Credito' ? 'fa-solid fa-credit-card' : 'fa-solid fa-money-check'"></i>
+                {{ o.accType }}
+              </span>
+            </div>
+            <div class="other-clabe">CLABE: {{ o.clabe }}</div>
+          </div>
+          <div class="other-right">
+            <div class="other-balance">${{ o.balance | number:'1.2-2' }}</div>
+            <div class="other-cardnum">{{ maskCard(o.cardNum) }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

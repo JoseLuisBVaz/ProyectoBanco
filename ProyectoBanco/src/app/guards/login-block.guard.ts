@@ -3,27 +3,28 @@ import { CanActivate, Router, UrlTree } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
 
 @Injectable({ providedIn: 'root' })
-export class AuthGuard implements CanActivate {
+export class LoginBlockGuard implements CanActivate {
   constructor(private router: Router, @Inject(PLATFORM_ID) private platformId: Object) {}
 
   canActivate(): boolean | UrlTree {
-    // In SSR, avoid touching localStorage and do not redirect; let client decide.
+    // In SSR, do nothing; client will redirect after hydration if needed.
     if (!isPlatformBrowser(this.platformId)) {
       return true;
     }
     try {
       const raw = localStorage.getItem('currentUser');
-      if (!raw) {
-        return this.router.parseUrl('/login');
-      }
+      if (!raw) return true;
       const user = JSON.parse(raw);
-      if (!user || (!user.mail && !user.mainId)) {
-        return this.router.parseUrl('/login');
+      if (user && (user.mail || user.mainId)) {
+        // Already logged in -> send to role-specific home
+        const rol = String(user.rol || user.role || '').toLowerCase();
+        if (rol === 'c') return this.router.parseUrl('/home');
+        if (rol === 'e' || rol === 'm') return this.router.parseUrl('/novedades');
+        return this.router.parseUrl('/');
       }
       return true;
-    } catch (e) {
-      console.warn('AuthGuard parse error:', e);
-      return this.router.parseUrl('/login');
+    } catch {
+      return true;
     }
   }
 }
