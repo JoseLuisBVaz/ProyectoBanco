@@ -43,15 +43,20 @@ create table employee (
 );
 
 create table cAccount (
-	mainId int auto_increment primary key,
-    foreign key (mainId) references main(mainId)
-    on delete cascade
-    on update cascade,
-    cardNum varchar(16) not null,
-    balance double not null default "0",
-    clabe varchar (18) not null,
-    accNum varchar (10) not null,
-    accPhone varchar (10)
+        accountId int auto_increment primary key,
+        mainId int not null,
+        cardNum varchar(16) not null,
+        balance decimal(12,2) not null default 0,
+        clabe varchar(18) not null,
+        accNum varchar(10) not null,
+        accPhone varchar(10),
+        constraint fk_caccount_main foreign key (mainId) references main(mainId)
+            on delete cascade
+            on update cascade,
+        unique key uq_caccount_cardNum (cardNum),
+        unique key uq_caccount_clabe (clabe),
+        unique key uq_caccount_accNum (accNum),
+        index idx_caccount_mainId (mainId)
 );
 
 create table transfer (

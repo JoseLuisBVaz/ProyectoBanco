@@ -1,6 +1,65 @@
 const db = require('../db');
 const bcrypt = require('bcrypt');
 
+// Utilidades para generar identificadores de cuenta
+const randomDigits = (len) => Array.from({ length: len }, () => Math.floor(Math.random() * 10)).join('');
+
+// Calcula dígito verificador Luhn para números de tarjeta
+function luhnCheckDigit(numberWithoutCheck) {
+  const digits = numberWithoutCheck.split('').map(d => parseInt(d, 10)).reverse();
+  const sum = digits.reduce((acc, d, idx) => {
+    if (idx % 2 === 0) {
+      // posiciones pares desde la derecha (original impares) se duplican
+      const doubled = d * 2;
+      return acc + (doubled > 9 ? doubled - 9 : doubled);
+    }
+    return acc + d;
+  }, 0);
+  const mod = sum % 10;
+  return mod === 0 ? '0' : String(10 - mod);
+}
+
+function generateCardNumber(mainId) {
+  // Prefijo simple tipo VISA 4000 + parte del mainId + aleatorio, y calculamos Luhn para el último dígito
+  const prefix = '4000';
+  const idPart = String(mainId % 10000).padStart(4, '0');
+  const randomPart = randomDigits(7); // 4 + 4 + 7 = 15, falta 1 para el dígito verificador
+  const base = `${prefix}${idPart}${randomPart}`;
+  const check = luhnCheckDigit(base);
+  return base + check; // 16 dígitos
+}
+
+function generateClabe() {
+  // CLABE simplificada: 646 (STP) + 15 dígitos aleatorios -> 18 dígitos en total
+  return '646' + randomDigits(15);
+}
+
+function generateAccNum(mainId) {
+  // 10 dígitos: parte del mainId + aleatorio
+  const idPart = String(mainId % 1000000).padStart(6, '0');
+  return idPart + randomDigits(4);
+}
+
+// Inserta una cuenta por defecto para el cliente, reintentando si hay colisiones de unicidad
+function createDefaultAccount(db, mainId, phoneNumber, cb, attempt = 0) {
+  const sanitizePhone = (p) => {
+    if (!p) return null;
+    const digits = String(p).replace(/\D/g, '');
+    return digits.length >= 10 ? digits.slice(-10) : digits || null;
+  };
+  const cardNum = generateCardNumber(mainId);
+  const clabe = generateClabe();
+  const accNum = generateAccNum(mainId);
+  const accPhone = sanitizePhone(phoneNumber);
+  const sql = `INSERT INTO cAccount (mainId, cardNum, balance, clabe, accNum, accPhone) VALUES (?, ?, 0, ?, ?, ?)`;
+  db.query(sql, [mainId, cardNum, clabe, accNum, accPhone], (err, result) => {
+    if (err && err.code === 'ER_DUP_ENTRY' && attempt < 5) {
+      return createDefaultAccount(db, mainId, phoneNumber, cb, attempt + 1);
+    }
+    cb(err, { accountId: result?.insertId, mainId, cardNum, clabe, accNum, accPhone });
+  });
+}
+
 // Obtener todos los main
 const getMain = (req, res) => {
   db.query('SELECT * FROM main', (err, results) => {
@@ -39,12 +98,22 @@ const getEmployees = (req, res) => {
   });
 };
 
-// Obtener un usuario por id
+// Obtener un usuario por id con campos normalizados
 const getUsuario = (req, res) => {
   const { id } = req.params;
   const query = `
-    SELECT m.mainId, m.mail, m.rol,
-           c.firstName AS customerName, e.firstName AS employeeName
+    SELECT 
+      m.mainId, m.mail, m.rol,
+      COALESCE(c.firstName, e.firstName) AS firstName,
+      COALESCE(c.lastNameP, e.lastNameP) AS lastNameP,
+      COALESCE(c.lastNameM, e.lastNameM) AS lastNameM,
+      COALESCE(c.phoneNumber, e.phoneNumber) AS phoneNumber,
+      COALESCE(c.birthday, e.birthday) AS birthday,
+      COALESCE(c.address, e.address) AS address,
+      COALESCE(c.curp, e.curp) AS curp,
+      c.rfc AS customerRfc,
+      e.rfc AS employeeRfc,
+      e.nss AS nss
     FROM main m
     LEFT JOIN customer c ON m.mainId = c.mainId
     LEFT JOIN employee e ON m.mainId = e.mainId
@@ -52,7 +121,12 @@ const getUsuario = (req, res) => {
   `;
   db.query(query, [id], (err, results) => {
     if (err) return res.status(500).send(err);
-    res.json(results[0] || {});
+    const row = results && results[0] ? results[0] : null;
+    if (!row) return res.json({});
+    // Unificar RFC según origen
+    const rfc = row.customerRfc || row.employeeRfc || null;
+    const { customerRfc, employeeRfc, ...rest } = row;
+    res.json({ ...rest, rfc });
   });
 };
 
@@ -122,8 +196,7 @@ const registerUser = async (req, res) => {
   console.log('[REGISTRO] Iniciando proceso de registro');
   console.log('[REGISTRO] Request body:', req.body);
   let { mail, pass, rol, firstName, lastNameP, lastNameM, phoneNumber, birthday, address, curp, rfc, nss } = req.body;
-
-  // Normalización/trim para evitar errores por espacios o valores undefined
+  
   const trimOr = (v, fallback = '') => (typeof v === 'string' ? v.trim() : (v ?? fallback));
   mail = trimOr(mail);
   pass = trimOr(pass);
@@ -132,14 +205,12 @@ const registerUser = async (req, res) => {
   lastNameP = trimOr(lastNameP);
   lastNameM = trimOr(lastNameM);
   phoneNumber = trimOr(phoneNumber);
-  birthday = trimOr(birthday); // YYYY-MM-DD esperado
+  birthday = trimOr(birthday); // YYYY-MM-DD
   address = trimOr(address);
   curp = trimOr(curp);
   rfc = trimOr(rfc, null);
   nss = trimOr(nss, null);
 
-  // Validaciones básicas
-  // Alinear con restricciones NOT NULL de la tabla customer
   const missing = [];
   if (!mail) missing.push('mail');
   if (!pass) missing.push('pass');
@@ -167,7 +238,6 @@ const registerUser = async (req, res) => {
     console.log('[REGISTRO] Hash generado (primeros 10 chars):', hashedPassword.substring(0, 10) + '...');
     console.log('[REGISTRO] Hash completo length:', hashedPassword.length);
 
-    // Verificar si el usuario ya existe
     const checkUserQuery = 'SELECT * FROM main WHERE mail = ?';
     db.query(checkUserQuery, [mail], (err, results) => {
       if (err) {
@@ -179,7 +249,6 @@ const registerUser = async (req, res) => {
         return res.status(400).json({ msg: 'El correo ya está registrado' });
       }
 
-      // Insertar en tabla main con contraseña hasheada
       console.log('[REGISTRO] Insertando en tabla main...');
       const insertMainQuery = 'INSERT INTO main (mail, pass, rol) VALUES (?, ?, ?)';
       db.query(insertMainQuery, [mail, hashedPassword, rol], (err, mainResult) => {
@@ -191,7 +260,6 @@ const registerUser = async (req, res) => {
         console.log('[REGISTRO] Usuario insertado en tabla main con ID:', mainResult.insertId);
         const mainId = mainResult.insertId;
 
-        // Insertar en tabla específica según el rol
         if (rol === 'c') {
           // Cliente
           const insertCustomerQuery = `
@@ -209,7 +277,23 @@ const registerUser = async (req, res) => {
               return res.status(500).json({ msg: 'Error registrando cliente' });
             }
             console.log('Cliente registrado exitosamente:', mainId);
-            res.status(201).json({ msg: 'Cliente registrado exitosamente', mainId: mainId });
+
+            // Crear cuenta por defecto para el cliente
+            createDefaultAccount(db, mainId, phoneNumber, (accErr, accountInfo) => {
+              if (accErr) {
+                console.error('Error creando cuenta por defecto:', accErr);
+                return res.status(201).json({
+                  msg: 'Cliente registrado, pero falló la creación de la cuenta',
+                  mainId: mainId
+                });
+              }
+              console.log('Cuenta por defecto creada:', accountInfo);
+              res.status(201).json({
+                msg: 'Cliente y cuenta creada exitosamente',
+                mainId: mainId,
+                account: accountInfo
+              });
+            });
           });
 
         } else if (rol === 'e' || rol === 'm') {
