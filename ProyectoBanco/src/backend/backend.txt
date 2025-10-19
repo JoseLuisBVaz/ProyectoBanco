@@ -1,0 +1,624 @@
+================================================================================
+                    DOCUMENTACIÓN COMPLETA DEL BACKEND
+                         Sistema Bancario - Banco Jety
+================================================================================
+
+📁 ESTRUCTURA DE ARCHIVOS
+================================================================================
+
+ProyectoBanco/src/backend/
+│
+├── 📄 server.js                    // Servidor principal Express
+├── 📄 db.js                        // Configuración de conexión a MySQL
+├── 📄 package.json                 // Dependencias del proyecto
+├── 📄 setup-sp.js                  // Script para crear stored procedures
+├── 📄 test-register.js             // Script de prueba de registro
+│
+├── 📁 controller/
+│   └── 📄 usuariosCtrl.js          // Controladores de lógica de negocio
+│
+├── 📁 routes/
+│   └── 📄 usuarios.js              // Definición de rutas/endpoints
+│
+└── 📁 sql/
+    └── 📄 sp_transfer_funds.sql    // Stored Procedure de transferencias
+
+
+================================================================================
+🔌 CONFIGURACIÓN DE CONEXIÓN A BASE DE DATOS
+================================================================================
+
+Archivo: db.js
+--------------
+• Librería: mysql2
+• Host: localhost
+• Usuario: root
+• Contraseña: root
+• Base de datos: Banco_Jety
+
+Configuración:
+--------------
+const db = mysql.createConnection({
+  host: 'localhost',
+  user: 'root',
+  password: 'root',
+  database: 'Banco_Jety',
+});
+
+Nota: La conexión se exporta para ser usada en todos los controladores.
+
+
+================================================================================
+🚀 SERVIDOR PRINCIPAL
+================================================================================
+
+Archivo: server.js
+------------------
+• Framework: Express.js
+• Puerto: 3000
+• Middlewares:
+  - express.json()          // Para parsear JSON en requests
+  - cors()                  // Para permitir peticiones desde Angular
+
+Rutas registradas:
+------------------
+• /api/usuarios             // Todas las operaciones de usuarios
+
+Inicio del servidor:
+--------------------
+node server.js
+(Escucha en http://localhost:3000)
+
+
+================================================================================
+📡 RUTAS (ENDPOINTS) DISPONIBLES
+================================================================================
+
+Archivo: routes/usuarios.js
+----------------------------
+
+1. GET /api/usuarios/main
+   • Descripción: Obtiene todos los registros de la tabla main
+   • Controlador: getMain
+   • Respuesta: Array de objetos main
+
+2. GET /api/usuarios/customers
+   • Descripción: Obtiene todos los clientes con sus datos completos
+   • Controlador: getCustomers
+   • Respuesta: Array con JOIN de main + customer
+
+3. GET /api/usuarios/employees
+   • Descripción: Obtiene todos los empleados con sus datos completos
+   • Controlador: getEmployees
+   • Respuesta: Array con JOIN de main + employee
+
+4. GET /api/usuarios/:id
+   • Descripción: Obtiene un usuario específico por mainId
+   • Controlador: getUsuario
+   • Parámetro: id (mainId)
+   • Respuesta: Objeto con datos normalizados del usuario
+
+5. POST /api/usuarios/login
+   • Descripción: Autenticación de usuarios
+   • Controlador: login
+   • Body: { mail: string, password: string }
+   • Respuesta: { success: boolean, rol: string, user: object }
+
+6. POST /api/usuarios/register
+   • Descripción: Registro de nuevos usuarios (clientes o empleados)
+   • Controlador: registerUser
+   • Body: {
+       mail: string,
+       pass: string,
+       rol: string,              // 'customer' o 'employee'
+       firstName: string,
+       lastNameP: string,
+       lastNameM: string,
+       phoneNumber: string,
+       birthday: date,
+       address: string,
+       curp: string,
+       rfc: string,              // Solo para customer
+       nss: string               // Solo para employee
+     }
+   • Respuesta: { success: boolean, mainId: number, accountInfo: object }
+
+7. GET /api/usuarios/accounts/:mainId
+   • Descripción: Obtiene todas las cuentas de un usuario
+   • Controlador: getAccountsByUser
+   • Parámetro: mainId
+   • Respuesta: Array de cuentas del usuario
+
+8. POST /api/usuarios/transfer
+   • Descripción: Realiza transferencias entre cuentas
+   • Controlador: transferFunds
+   • Body: {
+       origin: string,          // accNum o CLABE origen
+       destiny: string,         // accNum o CLABE destino
+       amount: number,          // Monto a transferir
+       description: string      // Descripción (opcional)
+     }
+   • Respuesta: { 
+       success: boolean, 
+       tranId: number,          // ID de la transferencia
+       fee: number,             // Comisión cobrada
+       msg: string 
+     }
+
+
+================================================================================
+🎮 CONTROLADORES
+================================================================================
+
+Archivo: controller/usuariosCtrl.js
+------------------------------------
+
+FUNCIÓN: getMain
+----------------
+• Descripción: Obtiene todos los usuarios de la tabla main
+• Query SQL: SELECT * FROM main
+• Sin parámetros
+
+FUNCIÓN: getCustomers
+---------------------
+• Descripción: Obtiene clientes con JOIN
+• Query SQL: SELECT main + customer con INNER JOIN
+• Retorna: mainId, mail, rol, datos personales del customer
+
+FUNCIÓN: getEmployees
+---------------------
+• Descripción: Obtiene empleados con JOIN
+• Query SQL: SELECT main + employee con INNER JOIN
+• Retorna: mainId, mail, rol, datos personales del employee + NSS
+
+FUNCIÓN: getUsuario
+-------------------
+• Descripción: Obtiene usuario específico (customer o employee)
+• Query SQL: LEFT JOIN con customer y employee
+• Parámetro: mainId
+• Retorna: Datos normalizados del usuario
+
+FUNCIÓN: login
+--------------
+• Descripción: Autenticación con bcrypt
+• Pasos:
+  1. Busca usuario por email en tabla main
+  2. Compara contraseña con bcrypt.compare()
+  3. Si es válido, retorna datos del usuario y rol
+• Seguridad: Contraseñas hasheadas con bcrypt
+
+FUNCIÓN: registerUser
+---------------------
+• Descripción: Registro completo de usuario
+• Flujo:
+  1. Valida datos de entrada
+  2. Hashea la contraseña con bcrypt (10 rounds)
+  3. Inserta en tabla main (mail, pass, rol)
+  4. Inserta en customer o employee según rol
+  5. Si es customer, crea cuenta por defecto
+  6. Genera automáticamente:
+     - Número de tarjeta (16 dígitos con Luhn check)
+     - CLABE (18 dígitos)
+     - Número de cuenta (10 dígitos)
+• Transacciones: Maneja rollback en caso de error
+
+FUNCIÓN: getAccountsByUser
+--------------------------
+• Descripción: Lista todas las cuentas de un usuario
+• Query SQL: SELECT * FROM cAccount WHERE mainId = ?
+• Parámetro: mainId
+• Retorna: Array con todas las cuentas del usuario
+
+FUNCIÓN: transferFunds ⭐ TRANSFERENCIAS
+----------------------------------------
+• Descripción: Realiza transferencias usando Stored Procedure
+• Parámetros de entrada:
+  - origin: accNum o CLABE de cuenta origen
+  - destiny: accNum o CLABE de cuenta destino
+  - amount: Monto a transferir (número positivo)
+  - description: Descripción de la transferencia (opcional)
+
+• Validaciones:
+  ✓ Campos obligatorios: origin, destiny, amount
+  ✓ amount debe ser número positivo
+  ✓ Conversión automática a número decimal
+
+• Llamada al SP:
+  CALL sp_transfer_funds(origin, destiny, amount, description)
+
+• Respuesta del SP:
+  - tranId: ID de la transferencia creada
+  - fee: Comisión cobrada
+
+• Manejo de errores:
+  - Errores del SP (SIGNAL) se capturan y retornan al cliente
+  - Incluye mensajes descriptivos del error
+
+• Logs detallados:
+  ✓ Parámetros recibidos
+  ✓ Llamada al SP
+  ✓ Resultado exitoso o error
+  ✓ Datos de respuesta (tranId, fee)
+
+
+================================================================================
+💾 STORED PROCEDURE: sp_transfer_funds
+================================================================================
+
+Archivo: sql/sp_transfer_funds.sql
+Ubicación en DB: Banco_Jety.sp_transfer_funds
+-------------------------------------------
+
+PARÁMETROS DE ENTRADA:
+----------------------
+• p_origin      VARCHAR(30)      // accNum o CLABE origen
+• p_destiny     VARCHAR(30)      // accNum o CLABE destino
+• p_amount      DECIMAL(12,2)    // Monto a transferir
+• p_description VARCHAR(300)     // Descripción (opcional)
+
+VARIABLES INTERNAS:
+-------------------
+• v_origin_accountId    INT              // ID de cuenta origen
+• v_dest_accountId      INT              // ID de cuenta destino
+• v_origin_balance      DECIMAL(12,2)    // Saldo actual del origen
+• v_tranId              INT              // ID de transferencia generado
+• v_fee                 DECIMAL(12,2)    // Comisión calculada
+• v_not_found           INT              // Flag para controlar NOT FOUND
+
+LÓGICA DEL PROCEDIMIENTO:
+--------------------------
+
+1. VALIDACIONES INICIALES:
+   ✓ Parámetros no nulos
+   ✓ Monto mayor a 0
+   ✓ Origen y destino diferentes
+
+2. CÁLCULO DE COMISIÓN:
+   • Fórmula: 
+     - $5 por cada $100
+     - $10 por cada $1,500
+   • Cálculo: v_fee = (FLOOR(amount/100) * 5) + (FLOOR(amount/1500) * 10)
+   • Ejemplo: 
+     - Monto $100 → Fee $5
+     - Monto $1,500 → Fee $17.50 ($15 + $10)
+
+3. INICIO DE TRANSACCIÓN:
+   START TRANSACTION;
+
+4. BLOQUEO DE CUENTA ORIGEN:
+   • SELECT ... FOR UPDATE (bloqueo pesimista)
+   • Obtiene accountId y balance
+   • Valida que exista la cuenta
+   • Si no existe → ROLLBACK + SIGNAL error
+
+5. BLOQUEO DE CUENTA DESTINO:
+   • SELECT ... FOR UPDATE
+   • Obtiene accountId
+   • Valida que exista la cuenta
+   • Si no existe → ROLLBACK + SIGNAL error
+
+6. VALIDACIÓN DE FONDOS:
+   • Verifica: balance_origen >= (amount + fee)
+   • Si no hay fondos → ROLLBACK + SIGNAL error
+
+7. ACTUALIZACIÓN DE SALDOS:
+   • Origen: balance = balance - (amount + fee)
+   • Destino: balance = balance + amount
+
+8. REGISTRO DE TRANSFERENCIA:
+   • INSERT INTO transfer (origin, destiny, ammount, fee, description, doDate)
+   • Obtiene ID con LAST_INSERT_ID()
+
+9. COMMIT DE TRANSACCIÓN:
+   • Si todo es exitoso, confirma cambios
+
+10. RETORNO DE RESULTADOS:
+    • SELECT tranId, fee
+    • El backend recibe estos valores
+
+MANEJO DE ERRORES:
+------------------
+• NOT FOUND: Cuando no encuentra una cuenta
+• SIGNAL SQLSTATE '45000': Para errores personalizados
+• ROLLBACK automático en cualquier error
+• Mensajes descriptivos en cada error
+
+
+================================================================================
+🔐 SEGURIDAD
+================================================================================
+
+AUTENTICACIÓN:
+--------------
+• Librería: bcrypt
+• Hash: bcrypt.hash(password, 10)
+• Verificación: bcrypt.compare(plainPassword, hashedPassword)
+• Rounds: 10 (balance entre seguridad y rendimiento)
+
+TRANSACCIONES EN BD:
+--------------------
+• START TRANSACTION - BEGIN
+• COMMIT - Confirma cambios
+• ROLLBACK - Revierte en caso de error
+• FOR UPDATE - Bloqueo pesimista para evitar race conditions
+
+VALIDACIONES:
+-------------
+✓ Validación de entrada en backend
+✓ Validación en stored procedure
+✓ Manejo de excepciones en todos los niveles
+✓ CORS configurado para el frontend
+
+
+================================================================================
+📊 TABLAS DE BASE DE DATOS UTILIZADAS
+================================================================================
+
+1. main
+   ------
+   • mainId (PK, AUTO_INCREMENT)
+   • mail (UNIQUE)
+   • pass (hasheado con bcrypt)
+   • rol ('customer', 'employee', 'admin')
+
+2. customer
+   --------
+   • mainId (FK → main.mainId)
+   • phoneNumber
+   • firstName, lastNameP, lastNameM
+   • birthday, address
+   • curp (UNIQUE)
+   • rfc
+
+3. employee
+   --------
+   • mainId (FK → main.mainId)
+   • phoneNumber
+   • firstName, lastNameP, lastNameM
+   • birthday, address
+   • curp (UNIQUE)
+   • rfc
+   • nss (UNIQUE)
+
+4. cAccount
+   --------
+   • accountId (PK, AUTO_INCREMENT)
+   • mainId (FK → main.mainId)
+   • cardNum (16 dígitos, UNIQUE)
+   • balance (DECIMAL)
+   • clabe (18 dígitos, UNIQUE)
+   • accNum (10 dígitos, UNIQUE)
+   • accPhone (10 dígitos)
+   • accType ('Debito', 'Credito')
+
+5. transfer
+   --------
+   • transferId (PK, AUTO_INCREMENT)
+   • origin (accNum o CLABE)
+   • destiny (accNum o CLABE)
+   • ammount (DECIMAL)
+   • fee (DECIMAL)
+   • description (VARCHAR)
+   • doDate (DATE)
+
+
+================================================================================
+🔄 FLUJO COMPLETO: TRANSFERENCIA
+================================================================================
+
+1. FRONTEND (Angular)
+   │
+   ├─→ Usuario completa formulario:
+   │   • Selecciona cuenta origen
+   │   • Ingresa cuenta destino
+   │   • Especifica monto
+   │   • Agrega descripción (opcional)
+   │
+   └─→ HTTP POST a: http://localhost:3000/api/usuarios/transfer
+       Body: { origin, destiny, amount, description }
+
+2. BACKEND (Node.js/Express)
+   │
+   ├─→ server.js recibe la petición
+   │
+   ├─→ Middleware express.json() parsea el body
+   │
+   ├─→ Router (usuarios.js) dirige a transferFunds
+   │
+   └─→ Controller (usuariosCtrl.js)
+       │
+       ├─→ Valida parámetros
+       ├─→ Convierte amount a número
+       └─→ Llama al Stored Procedure
+
+3. BASE DE DATOS (MySQL)
+   │
+   ├─→ Ejecuta sp_transfer_funds(origin, destiny, amount, description)
+   │
+   ├─→ Calcula comisión automáticamente
+   │
+   ├─→ Valida cuentas y fondos
+   │
+   ├─→ Realiza transacción:
+   │   • Descuenta de origen (monto + fee)
+   │   • Acredita a destino (solo monto)
+   │   • Registra en tabla transfer
+   │
+   └─→ Retorna: tranId y fee
+
+4. RESPUESTA AL FRONTEND
+   │
+   └─→ Backend envía JSON:
+       {
+         success: true,
+         tranId: 123,
+         fee: 5.00,
+         msg: 'Transferencia realizada exitosamente'
+       }
+
+
+================================================================================
+📦 DEPENDENCIAS (package.json)
+================================================================================
+
+{
+  "dependencies": {
+    "express": "^4.x.x",        // Framework web
+    "mysql2": "^3.x.x",         // Cliente MySQL
+    "cors": "^2.x.x",           // Cross-Origin Resource Sharing
+    "bcrypt": "^5.x.x"          // Encriptación de contraseñas
+  }
+}
+
+Instalación:
+-----------
+npm install
+
+
+================================================================================
+🚀 CÓMO INICIAR EL BACKEND
+================================================================================
+
+1. Asegurarse de tener MySQL corriendo con la base de datos Banco_Jety
+
+2. Ejecutar el Stored Procedure en MySQL Workbench:
+   • Abrir sql/sp_transfer_funds.sql
+   • Ejecutar todo el script
+
+3. Instalar dependencias (primera vez):
+   npm install
+
+4. Iniciar el servidor:
+   node server.js
+
+5. Verificar que esté corriendo:
+   Debe mostrar: "Servidor corriendo en puerto 3000"
+   Y: "Conectado a la base de datos MySQL"
+
+6. El backend estará disponible en:
+   http://localhost:3000
+
+
+================================================================================
+🧪 PRUEBAS
+================================================================================
+
+ENDPOINT DE PRUEBA: POST /api/usuarios/transfer
+-----------------------------------------------
+
+Ejemplo con cURL:
+-----------------
+curl -X POST http://localhost:3000/api/usuarios/transfer \
+  -H "Content-Type: application/json" \
+  -d '{
+    "origin": "0000026492",
+    "destiny": "646756986252423592",
+    "amount": 100,
+    "description": "Prueba de transferencia"
+  }'
+
+Ejemplo con Postman:
+-------------------
+• Método: POST
+• URL: http://localhost:3000/api/usuarios/transfer
+• Headers: Content-Type: application/json
+• Body (raw JSON):
+  {
+    "origin": "0000026492",
+    "destiny": "646756986252423592",
+    "amount": 100,
+    "description": "Prueba de transferencia"
+  }
+
+Respuesta esperada:
+------------------
+{
+  "success": true,
+  "tranId": 1,
+  "fee": 5,
+  "msg": "Transferencia realizada exitosamente"
+}
+
+
+================================================================================
+⚠️ MANEJO DE ERRORES
+================================================================================
+
+ERRORES COMUNES Y SUS MENSAJES:
+--------------------------------
+
+1. "Parámetros inválidos o nulos"
+   → Falta origin, destiny o amount
+
+2. "El monto debe ser mayor a 0"
+   → amount es negativo o cero
+
+3. "La cuenta origen y destino no pueden ser la misma"
+   → origin y destiny son iguales
+
+4. "Cuenta de origen no encontrada"
+   → No existe cuenta con ese accNum o CLABE origen
+
+5. "Cuenta de destino no encontrada"
+   → No existe cuenta con ese accNum o CLABE destino
+
+6. "Fondos insuficientes en la cuenta de origen"
+   → balance < (amount + fee)
+
+7. "Error en transferencia"
+   → Error genérico del servidor
+
+
+================================================================================
+📝 LOGS DEL SISTEMA
+================================================================================
+
+El sistema genera logs detallados en consola:
+
+[TRANSFER] ========== NUEVA SOLICITUD ==========
+[TRANSFER] Body recibido: { origin, destiny, amount, description }
+[TRANSFER] Llamando a sp_transfer_funds con:
+  - origin: 0000026492
+  - destiny: 646756986252423592
+  - amount: 100
+  - description: Prueba
+[TRANSFER] ✅ Transferencia exitosa
+[TRANSFER] Resultado del SP: { tranId: 1, fee: 5 }
+[TRANSFER] - tranId: 1
+[TRANSFER] - fee (comisión): 5
+
+
+================================================================================
+🔧 MANTENIMIENTO
+================================================================================
+
+MODIFICAR COMISIONES:
+---------------------
+Editar en sp_transfer_funds.sql la línea:
+SET v_fee = (FLOOR(p_amount / 100) * 5) + (FLOOR(p_amount / 1500) * 10);
+
+AGREGAR NUEVAS RUTAS:
+---------------------
+1. Agregar función en usuariosCtrl.js
+2. Exportar en module.exports
+3. Agregar ruta en usuarios.js
+
+CAMBIAR PUERTO DEL SERVIDOR:
+-----------------------------
+Editar en server.js:
+const PORT = 3000; // Cambiar por el puerto deseado
+
+
+================================================================================
+👥 CONTACTO Y SOPORTE
+================================================================================
+
+Repositorio: ProyectoBanco
+Rama: Joseluis
+Owner: JoseLuisBVaz
+
+Para reportar problemas o sugerencias, contactar al equipo de desarrollo.
+
+================================================================================
+                            FIN DE LA DOCUMENTACIÓN
+================================================================================

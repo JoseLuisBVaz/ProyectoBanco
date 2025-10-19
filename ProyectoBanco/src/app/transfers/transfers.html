@@ -1,0 +1,113 @@
+<app-navbar class="top-navbar"></app-navbar>
+
+<div class="registro-container">
+	<main class="registro-main">
+		<section class="registro-card">
+			<h2>TRANSFERENCIA</h2>
+
+					<form [formGroup]="transferForm" (ngSubmit)="enviarTransferencia()" class="full-width-form">
+						<!-- CUENTA ORIGEN (NO DOBLE COLUMNA) -->
+						<div class="form-section">
+							<h3>Cuenta origen</h3>
+							<div class="form-group">
+								<label for="origen">Selecciona tu cuenta</label>
+								<select id="origen" formControlName="origen" (change)="onOriginChange()">
+									<option value="" disabled selected>Seleccionar</option>
+									<option *ngFor="let acc of accounts" [ngValue]="acc">
+										{{ maskAcc(acc?.accNum) }} - CLABE {{ acc?.clabe }}
+									</option>
+								</select>
+							</div>
+
+							<!-- Card estilo Home mostrando cuenta seleccionada -->
+							<div class="account-card colorful" *ngIf="selectedOrigin as acc" [ngStyle]="selectedCardStyle">
+								<div class="account-row">
+									<div class="account-left">
+										<div class="account-name">Cuenta seleccionada
+											<span class="badge" *ngIf="acc.accType">
+												<i [ngClass]="acc.accType === 'Credito' ? 'fa-solid fa-credit-card' : 'fa-solid fa-money-check'"></i>
+												{{ acc.accType }}
+											</span>
+										</div>
+										<div class="account-num">{{ maskAcc(acc.accNum) }}</div>
+										<div class="account-clabe">CLABE: {{ acc.clabe }}</div>
+									</div>
+									<div class="account-right">
+										<div class="account-balance" *ngIf="acc.balance != null">${{ acc.balance | number:'1.2-2' }}</div>
+										<div class="account-cardnum" *ngIf="acc.cardNum">{{ maskCard(acc.cardNum) }}</div>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<!-- DATOS DEL DESTINO Y DETALLES -->
+						<div class="form-section">
+							<h3>Datos del destinatario</h3>
+							<div class="form-grid">
+								<div class="form-group">
+									<label for="destino">Cuenta/CLABE destino</label>
+									<input type="text" id="destino" formControlName="destino" placeholder="Ingresa CLABE o cuenta" />
+								</div>
+								<div class="form-group">
+									<label for="beneficiario">Nombre del beneficiario</label>
+									<input type="text" id="beneficiario" formControlName="beneficiario" placeholder="Nombre del beneficiario" />
+								</div>
+								<div class="form-group">
+									<label for="referencia">Referencia</label>
+									<input type="text" id="referencia" formControlName="referencia" placeholder="Referencia del envío" />
+								</div>
+								<div class="form-group">
+									<label for="monto">Monto</label>
+									<input type="number" id="monto" formControlName="monto" placeholder="0" />
+												<div class="fee-hint" *ngIf="transferForm.value.monto > 0">
+													Comisión: <b>${{ estimatedFee | number:'1.2-2' }}</b>
+													<span class="sep">•</span>
+													Total a debitar: <b>${{ totalToDebit | number:'1.2-2' }}</b>
+													<span class="sep" *ngIf="selectedOrigin">•</span>
+																	<ng-container *ngIf="selectedOrigin && remainingBalance !== null">
+														Saldo restante: 
+																		<b [class.negative]="remainingBalance < 0">
+																			${{ remainingBalance | number:'1.2-2' }}
+														</b>
+													</ng-container>
+												</div>
+								</div>
+							</div>
+						</div>
+
+						<!-- CONFIRMACION -->
+						<div class="form-section">
+							<h3>Confirmación</h3>
+							<div class="form-grid">
+								<div class="form-group">
+									<label for="contrasena">Contraseña</label>
+									<div class="password-container">
+										<input [type]="passwordVisible ? 'text' : 'password'" id="contrasena" formControlName="contrasena" placeholder="Ingresa tu contraseña" />
+										<button type="button" class="toggle-password" (click)="togglePassword()">
+											<i [class]="passwordVisible ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
+										</button>
+									</div>
+								</div>
+										<div class="form-group">
+											<label for="contrasena2">Confirmar contraseña</label>
+											<div class="password-container">
+												<input [type]="confirmPasswordVisible ? 'text' : 'password'" id="contrasena2" formControlName="contrasena2" placeholder="Repite tu contraseña" />
+												<button type="button" class="toggle-password" (click)="toggleConfirmPassword()">
+													<i [class]="confirmPasswordVisible ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
+												</button>
+											</div>
+										</div>
+							</div>
+						</div>
+
+								<p class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</p>
+								<div class="warn-msg" *ngIf="insufficientFunds">
+									Fondos insuficientes: el saldo restante quedaría negativo.
+								</div>
+						<p class="success-msg" *ngIf="successMsg">{{ successMsg }}</p>
+
+								<button type="submit" class="btn-registrar" [disabled]="insufficientFunds">Enviar transferencia</button>
+					</form>
+		</section>
+	</main>
+</div>

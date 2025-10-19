@@ -1,17 +1,29 @@
 const express = require('express');
 const router = express.Router();
-// Nota: el controlador está en ../controller (singular)
-const { getMain, getCustomers, getEmployees, getUsuario, login, registerUser, getAccountsByUser } = require('../controller/usuariosCtrl');
+const { 
+  getMain, 
+  getCustomers, 
+  getEmployees, 
+  getUsuario, 
+  login, 
+  registerUser, 
+  getAccountsByUser, 
+  transferFunds 
+} = require('../controller/usuariosCtrl');
 
-// Rutas de solo consulta
+// === RUTAS DE CONSULTA ===
+router.get('/health', (req, res) => res.json({ ok: true }));
 router.get('/main', getMain);
 router.get('/customers', getCustomers);
 router.get('/employees', getEmployees);
 router.get('/usuario/:id', getUsuario);
 router.get('/accounts/:mainId', getAccountsByUser);
-// Ruta de login
+
+// === AUTENTICACIÓN ===
 router.post('/login', login);
-// Ruta de registro
 router.post('/register', registerUser);
+
+// === TRANSFERENCIAS ===
+router.post('/transfer', transferFunds);
 
 module.exports = router;

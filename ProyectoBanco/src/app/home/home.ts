@@ -69,7 +69,14 @@ export class Home implements OnInit {
   private loadAccount(mainId: number) {
     this.usuariosService.getAccountsByUser(mainId).subscribe({
       next: (list) => {
-        const arr = Array.isArray(list) ? list : [];
+        const arr = (Array.isArray(list) ? list : []).map((a: any) => ({
+          ...a,
+          accNum: a.accNum ?? a.accountNumber ?? a.number ?? a.accnum,
+          clabe: a.clabe ?? a.CLABE ?? a.clabeNumber,
+          cardNum: a.cardNum ?? a.cardNumber,
+          balance: (a.balance != null ? Number(a.balance) : null),
+          accType: a.accType ?? a.type
+        }));
         this.allAccounts = arr;
         this.account = arr[0] ?? null;
         this.otherAccounts = this.account ? arr.slice(1) : [];

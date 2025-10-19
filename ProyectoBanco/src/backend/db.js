@@ -1,5 +1,6 @@
 const mysql = require('mysql2');
 
+// Configuración de conexión a MySQL
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
@@ -9,10 +10,10 @@ const db = mysql.createConnection({
 
 db.connect(err => {
   if (err) {
-    console.error('Error al conectar MySQL:', err);
+    console.error('❌ Error conectando a MySQL:', err);
     return;
   }
-  console.log('Conectado a MySQL');
+  console.log('✅ Conectado a MySQL - Base de datos: Banco_Jety');
 });
 
 module.exports = db;

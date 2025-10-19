@@ -11,6 +11,7 @@ import { AuthGuard } from './guards/auth.guard';
 import { RoleGuard } from './guards/role.guard';
 import { Register } from './register/register';
 import { Home } from './home/home';
+import { Transfers } from './transfers/transfers';
 
 export const routes: Routes = [
     {path: '', component: Main},
@@ -21,5 +22,6 @@ export const routes: Routes = [
     {path: 'novedades', component: Novedades, canActivate: [AuthGuard, RoleGuard], data: { roles: ['e','m'] }},
     {path: 'cancelacion', component: Cancelacion, canActivate: [AuthGuard, RoleGuard], data: { roles: ['e','m'] }},
     {path: 'cuenta', component: DetallesCuenta, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }},
-    {path: 'home', component: Home, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }}
-]
+    {path: 'home', component: Home, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }},
+    {path: 'transferencia', component: Transfers, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }}
+];
