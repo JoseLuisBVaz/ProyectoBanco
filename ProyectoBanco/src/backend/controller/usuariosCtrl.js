@@ -350,6 +350,181 @@ const transferFunds = (req, res) => {
   });
 };
 
+// ==================== CREACIÓN DE CUENTAS ====================
+
+const createAccount = async (req, res) => {
+  const { customerId, createdBy, accType, accPhone, password, curp } = req.body || {};
+  
+  // Validar campos requeridos
+  if (!customerId || !createdBy || !accType || !accPhone || !password || !curp) {
+    return res.status(400).json({ 
+      success: false,
+      msg: 'Todos los campos son requeridos: customerId, createdBy, accType, accPhone, password, curp' 
+    });
+  }
+
+  // Validar que los IDs sean números
+  const numericCustomerId = parseInt(customerId);
+  const numericCreatedBy = parseInt(createdBy);
+  
+  if (isNaN(numericCustomerId) || isNaN(numericCreatedBy)) {
+    return res.status(400).json({ 
+      success: false,
+      msg: 'customerId y createdBy deben ser números válidos' 
+    });
+  }
+
+  // Validar formato de teléfono (10 dígitos)
+  const sanitizedPhone = String(accPhone).replace(/\D/g, '');
+  if (sanitizedPhone.length !== 10) {
+    return res.status(400).json({ 
+      success: false,
+      msg: 'El teléfono debe tener exactamente 10 dígitos' 
+    });
+  }
+
+  // Validar tipo de cuenta
+  if (accType !== 'Debito' && accType !== 'Credito') {
+    return res.status(400).json({ 
+      success: false,
+      msg: 'El tipo de cuenta debe ser Debito o Credito' 
+    });
+  }
+
+  // Validar CURP
+  const sanitizedCurp = String(curp).trim().toUpperCase();
+  if (sanitizedCurp.length !== 18) {
+    return res.status(400).json({ 
+      success: false,
+      msg: 'El CURP debe tener exactamente 18 caracteres' 
+    });
+  }
+
+  try {
+    // 1️⃣ Verificar que el usuario creador (manager/empleado) tenga permisos
+    const checkCreatorSql = 'SELECT mainId, rol FROM main WHERE mainId = ?';
+    
+    db.query(checkCreatorSql, [numericCreatedBy], (err, creatorResults) => {
+      if (err) {
+        return res.status(500).json({ 
+          success: false,
+          msg: 'Error al verificar el usuario creador' 
+        });
+      }
+
+      if (creatorResults.length === 0) {
+        return res.status(404).json({ 
+          success: false,
+          msg: 'Usuario creador no encontrado' 
+        });
+      }
+
+      const creator = creatorResults[0];
+
+      // Validar que el creador sea manager ('m') o empleado ('e')
+      if (creator.rol !== 'm' && creator.rol !== 'e') {
+        return res.status(403).json({ 
+          success: false,
+          msg: 'Solo managers y empleados pueden crear cuentas para clientes' 
+        });
+      }
+
+      // 2️⃣ Verificar que el cliente exista y obtener sus datos
+      const checkCustomerSql = `
+        SELECT m.mainId, m.rol, m.pass, c.curp 
+        FROM main m
+        LEFT JOIN customer c ON m.mainId = c.mainId
+        WHERE m.mainId = ?
+      `;
+      
+      db.query(checkCustomerSql, [numericCustomerId], async (err, customerResults) => {
+        if (err) {
+          return res.status(500).json({ 
+            success: false,
+            msg: 'Error al verificar el cliente' 
+          });
+        }
+
+        if (customerResults.length === 0) {
+          return res.status(404).json({ 
+            success: false,
+            msg: 'Cliente no encontrado' 
+          });
+        }
+
+        const customer = customerResults[0];
+
+        // Validar que sea un cliente
+        if (customer.rol !== 'c') {
+          return res.status(403).json({ 
+            success: false,
+            msg: 'El usuario seleccionado no es un cliente' 
+          });
+        }
+
+        // 3️⃣ Verificar contraseña del cliente
+        const isPasswordValid = await bcrypt.compare(password, customer.pass);
+        if (!isPasswordValid) {
+          return res.status(401).json({ 
+            success: false,
+            msg: 'Contraseña del cliente incorrecta' 
+          });
+        }
+
+        // 4️⃣ Verificar CURP del cliente
+        if (customer.curp !== sanitizedCurp) {
+          return res.status(401).json({ 
+            success: false,
+            msg: 'El CURP no coincide con el registrado del cliente' 
+          });
+        }
+
+        // 5️⃣ Generar números únicos para la cuenta
+        const cardNum = generateCardNumber(numericCustomerId);
+        const clabe = generateClabe();
+        const accNum = generateAccNum(numericCustomerId);
+
+        // 6️⃣ Insertar la nueva cuenta
+        const insertSql = `
+          INSERT INTO cAccount (mainId, cardNum, balance, clabe, accNum, accPhone, accType) 
+          VALUES (?, ?, 0, ?, ?, ?, ?)
+        `;
+        
+        db.query(insertSql, [numericCustomerId, cardNum, clabe, accNum, sanitizedPhone, accType], (err, result) => {
+          if (err) {
+            if (err.code === 'ER_DUP_ENTRY') {
+              return res.status(400).json({ 
+                success: false,
+                msg: 'Error: número de cuenta duplicado. Intenta nuevamente' 
+              });
+            }
+            return res.status(500).json({ 
+              success: false,
+              msg: 'Error al crear la cuenta' 
+            });
+          }
+
+          // 7️⃣ Respuesta exitosa
+          return res.json({ 
+            success: true,
+            accountId: result.insertId,
+            cardNum,
+            clabe,
+            accNum,
+            msg: 'Cuenta creada exitosamente'
+          });
+        });
+      });
+    });
+    
+  } catch (error) {
+    return res.status(500).json({ 
+      success: false,
+      msg: 'Error en el servidor al crear la cuenta' 
+    });
+  }
+};
+
 module.exports = { 
   getMain, 
   getCustomers, 
@@ -358,5 +533,6 @@ module.exports = {
   login, 
   registerUser, 
   getAccountsByUser, 
-  transferFunds 
+  transferFunds,
+  createAccount
 };

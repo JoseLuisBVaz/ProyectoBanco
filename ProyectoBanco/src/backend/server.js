@@ -16,7 +16,8 @@ app.use((req, res, next) => {
 // === RUTAS ===
 app.use('/api', usuariosRoutes);
 
-app.use('/api', (req, res) => {
+// === MANEJO DE ERRORES 404 ===
+app.use((req, res) => {
 	res.status(404).json({ msg: 'Ruta no encontrada', path: req.originalUrl });
 });
 

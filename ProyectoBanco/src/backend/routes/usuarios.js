@@ -8,7 +8,8 @@ const {
   login, 
   registerUser, 
   getAccountsByUser, 
-  transferFunds 
+  transferFunds,
+  createAccount
 } = require('../controller/usuariosCtrl');
 
 // === RUTAS DE CONSULTA ===
@@ -25,5 +26,8 @@ router.post('/register', registerUser);
 
 // === TRANSFERENCIAS ===
 router.post('/transfer', transferFunds);
+
+// === CREACIÓN DE CUENTAS ===
+router.post('/create-account', createAccount);
 
 module.exports = router;

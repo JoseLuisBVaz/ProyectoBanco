@@ -1,40 +1,125 @@
 <app-navbar class="top-navbar"></app-navbar>
-<div class="form-bg"></div>
-<div class="form-container">
-  <main class="form-main">
-    <form class="formulario" [formGroup]="cuentaForm" (ngSubmit)="submitForm()">
-      <div class="form-fields">
-        <label>Nombre Completo:<input type="text" formControlName="nombre"></label>
-        <label>CURP:<input type="text" formControlName="curp"></label>
-        <label>Fecha de Nacimiento:<input type="date" formControlName="fechaNacimiento"></label>
-        <label>Calle:<input type="text" formControlName="calle"></label>
-        <label>C.P.:<input type="text" formControlName="cp"></label>
-        <label>Municipio:<input type="text" formControlName="municipio"></label>
-        <label>Estado:<input type="text" formControlName="estado"></label>
-        <label>Colonia:<input type="text" formControlName="colonia"></label>
-        <div class="form-btns">
-          <button type="submit" class="btn-crear">CREAR</button>
-          <button type="button" class="btn-limpiar" (click)="resetForm()">LIMPIAR</button>
+
+<div class="cuenta-container">
+  <main class="cuenta-main">
+    <section class="cuenta-card">
+      <h2>CREAR NUEVA CUENTA BANCARIA</h2>
+
+      <form [formGroup]="cuentaForm" (ngSubmit)="submitForm()">
+        
+        <!-- SELECCIÓN DE CLIENTE -->
+        <div class="form-section">
+          <h3>Seleccionar Cliente</h3>
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label for="mainId">Cliente</label>
+              <select id="mainId" formControlName="mainId" required (change)="onCustomerSelected()">
+                <option value="">{{ loadingCustomers ? 'Cargando clientes...' : '-- Seleccionar cliente --' }}</option>
+                <option *ngFor="let customer of customers" [value]="customer.mainId">
+                  {{ customer.firstName }} {{ customer.lastNameP }} {{ customer.lastNameM }} ({{ customer.mail }})
+                </option>
+              </select>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="form-side">
-        <div class="card-box">
-          <img src="assets/Tarjeta.png" alt="Tarjeta" class="card-img">
-          <div class="card-name">Juan Alberto Sanchez Sandoval</div>
+
+        <!-- TIPO DE CUENTA -->
+        <div class="form-section">
+          <h3>Tipo de cuenta</h3>
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label for="accType">Selecciona el tipo de cuenta</label>
+              <select id="accType" formControlName="accType" required>
+                <option value="">-- Seleccionar --</option>
+                <option value="Debito">Débito</option>
+                <option value="Credito">Crédito</option>
+              </select>
+            </div>
+          </div>
         </div>
-        <div class="pass-box">
-          <input type="password" placeholder="Ingresa Contraseña:" formControlName="pass1">
-          <input type="password" placeholder="Confirma tu Contraseña:" formControlName="pass2">
+
+        <!-- DATOS DE LA CUENTA -->
+        <div class="form-section">
+          <h3>Datos de la cuenta</h3>
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label for="accPhone">Teléfono asociado (10 dígitos)</label>
+              <input 
+                type="text" 
+                id="accPhone" 
+                formControlName="accPhone"
+                maxlength="10"
+                placeholder="1234567890"
+                required>
+              <small *ngIf="selectedCustomer" style="color: #666; font-size: 0.85rem; margin-top: 0.3rem;">
+                Teléfono registrado: {{ selectedCustomer.phoneNumber }}
+              </small>
+            </div>
+          </div>
         </div>
-      </div>
-    </form>
+
+        <!-- VERIFICACIÓN DE SEGURIDAD -->
+        <div class="form-section">
+          <h3>Verificación de Seguridad</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="password">Contraseña del cliente</label>
+              <div class="password-container">
+                <input 
+                  [type]="passwordVisible ? 'text' : 'password'" 
+                  id="password" 
+                  formControlName="password"
+                  placeholder="Ingrese la contraseña del cliente"
+                  required>
+                <button 
+                  type="button" 
+                  class="toggle-password" 
+                  (click)="togglePassword()">
+                  <i [class]="passwordVisible ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="curp">CURP del cliente</label>
+              <input 
+                type="text" 
+                id="curp" 
+                formControlName="curp"
+                placeholder="ABCD123456HMCLRN01"
+                maxlength="18"
+                style="text-transform: uppercase;"
+                required>
+              <small style="color: #666; font-size: 0.85rem; margin-top: 0.3rem;">
+                Para verificar la identidad del cliente
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTONES -->
+        <div class="form-actions">
+          <button type="button" class="btn-limpiar" (click)="resetForm()">
+            <i class="fa fa-times"></i> Limpiar
+          </button>
+          <button type="submit" class="btn-crear" [disabled]="cuentaForm.invalid || loading">
+            <i class="fa fa-check"></i> {{ loading ? 'Creando...' : 'Crear Cuenta' }}
+          </button>
+        </div>
+
+      </form>
+    </section>
   </main>
 </div>
 
-<div class="modal-bg" *ngIf="modalVisible">
-  <div class="modal-box" [ngClass]="{'error': modalError}">
-    <div class="modal-title">{{modalTitle}}</div>
-    <div class="modal-msg">{{modalMsg}}</div>
-    <button class="modal-btn" (click)="closeModal()">ACEPTAR</button>
+<!-- MODAL -->
+<div class="modal-overlay" *ngIf="modalVisible" (click)="closeModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()" [ngClass]="{'success': !modalError, 'error': modalError}">
+    <div class="modal-icon">
+      <i [class]="modalError ? 'fa fa-times-circle' : 'fa fa-check-circle'"></i>
+    </div>
+    <h3 class="modal-title">{{ modalTitle }}</h3>
+    <p class="modal-message">{{ modalMsg }}</p>
+    <button class="modal-btn" (click)="closeModal()">Aceptar</button>
   </div>
 </div>

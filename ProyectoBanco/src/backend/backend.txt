@@ -145,6 +145,33 @@ Archivo: routes/usuarios.js
        msg: string 
      }
 
+9. POST /api/usuarios/create-account
+   • Descripción: Crea una nueva cuenta bancaria para un cliente existente
+   • Controlador: createAccount
+   • Body: {
+       mainId: number,          // ID del usuario (debe ser Customer)
+       accType: string,         // 'Debito' o 'Credito'
+       accPhone: string         // Teléfono de 10 dígitos
+     }
+   • Respuesta: {
+       success: boolean,
+       accountId: number,       // ID de la cuenta creada
+       cardNum: string,         // Número de tarjeta generado (16 dígitos)
+       clabe: string,           // CLABE generada (18 dígitos)
+       accNum: string,          // Número de cuenta generado (10 dígitos)
+       msg: string
+     }
+   • Validaciones:
+     - mainId debe existir en la tabla main
+     - El usuario debe tener rol 'Customer'
+     - accPhone debe tener exactamente 10 dígitos
+     - accType solo acepta 'Debito' o 'Credito'
+   • Generación automática:
+     - cardNum: Algoritmo de Luhn con prefijo 4000
+     - clabe: Prefijo 646 + 15 dígitos aleatorios
+     - accNum: Basado en mainId + 4 dígitos aleatorios
+     - balance inicial: 0
+
 
 ================================================================================
 🎮 CONTROLADORES
@@ -239,6 +266,73 @@ FUNCIÓN: transferFunds ⭐ TRANSFERENCIAS
   ✓ Llamada al SP
   ✓ Resultado exitoso o error
   ✓ Datos de respuesta (tranId, fee)
+
+FUNCIÓN: createAccount ⭐ CREACIÓN DE CUENTAS
+----------------------------------------------
+• Descripción: Permite a managers y empleados crear cuentas bancarias para clientes
+  con validación de seguridad mediante contraseña y CURP del cliente.
+
+• Parámetros de entrada:
+  - customerId: ID del cliente para quien se crea la cuenta (número)
+  - createdBy: ID del manager/empleado que crea la cuenta (número)
+  - accType: Tipo de cuenta ('Debito' o 'Credito')
+  - accPhone: Teléfono de la cuenta (10 dígitos)
+  - password: Contraseña del cliente (para validación de seguridad)
+  - curp: CURP del cliente (18 caracteres, para validación de seguridad)
+
+• Flujo de validación (7 pasos):
+  1️⃣ Validar campos obligatorios
+  2️⃣ Validar que customerId y createdBy sean números
+  3️⃣ Validar formato de teléfono (10 dígitos)
+  4️⃣ Validar tipo de cuenta (Debito/Credito)
+  5️⃣ Validar CURP (18 caracteres)
+  6️⃣ Verificar usuario creador:
+     - Debe existir en tabla main
+     - Debe tener rol 'm' (manager) o 'e' (empleado)
+  7️⃣ Verificar cliente:
+     - Debe existir en tabla main
+     - Debe tener rol 'c' (customer)
+     - Contraseña debe coincidir (bcrypt.compare)
+     - CURP debe coincidir exactamente
+
+• Query SQL para verificar creador:
+  SELECT mainId, rol FROM main WHERE mainId = ?
+
+• Query SQL para verificar cliente:
+  SELECT m.mainId, m.rol, m.pass, c.curp 
+  FROM main m
+  LEFT JOIN customer c ON m.mainId = c.mainId
+  WHERE m.mainId = ?
+
+• Generación automática de números:
+  - cardNum: Algoritmo de Luhn con prefijo 4000 + customerId + aleatorios
+  - clabe: Prefijo 646 + 15 dígitos aleatorios
+  - accNum: customerId (últimos 6 dígitos) + 4 aleatorios
+  - balance: Siempre inicia en 0
+
+• Query SQL de inserción:
+  INSERT INTO cAccount (mainId, cardNum, balance, clabe, accNum, accPhone, accType)
+  VALUES (?, ?, 0, ?, ?, ?, ?)
+
+• Respuesta exitosa:
+  - success: true
+  - accountId: ID de la nueva cuenta
+  - cardNum, clabe, accNum: Números generados
+  - msg: "Cuenta creada exitosamente"
+
+• Manejo de errores:
+  - 400: Campos faltantes o inválidos
+  - 401: Contraseña o CURP incorrectos
+  - 403: Permisos insuficientes (no es manager/empleado o no es cliente)
+  - 404: Usuario creador o cliente no encontrado
+  - 500: Error de servidor o ER_DUP_ENTRY
+
+• Notas de seguridad: 
+  ⚠️ La tabla cAccount NO almacena contraseña
+  ⚠️ La contraseña solo se usa para validar la identidad del cliente
+  ⚠️ El CURP proporciona una capa adicional de seguridad
+  ⚠️ Solo managers (rol 'm') y empleados (rol 'e') pueden crear cuentas
+  ⚠️ Las contraseñas se validan con bcrypt (hash de 10 salt rounds)
 
 
 ================================================================================
@@ -540,6 +634,68 @@ Respuesta esperada:
 }
 
 
+ENDPOINT DE PRUEBA: POST /api/create-account
+---------------------------------------------
+
+⚠️ IMPORTANTE: Este endpoint permite a managers y empleados crear cuentas 
+bancarias para clientes. Requiere validación de seguridad mediante la contraseña 
+y CURP del cliente.
+
+Flujo de seguridad:
+1. Manager/Empleado selecciona un cliente
+2. Ingresa la contraseña del cliente
+3. Ingresa el CURP del cliente (18 caracteres)
+4. El sistema valida ambos datos antes de crear la cuenta
+
+Ejemplo con cURL:
+-----------------
+curl -X POST http://localhost:3000/api/create-account \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerId": 1,
+    "createdBy": 7,
+    "accType": "Debito",
+    "accPhone": "5512345678",
+    "password": "password123",
+    "curp": "ABCD123456HDFRRL09"
+  }'
+
+Ejemplo con Postman:
+-------------------
+• Método: POST
+• URL: http://localhost:3000/api/create-account
+• Headers: Content-Type: application/json
+• Body (raw JSON):
+  {
+    "customerId": 1,
+    "createdBy": 7,
+    "accType": "Debito",
+    "accPhone": "5512345678",
+    "password": "password123",
+    "curp": "ABCD123456HDFRRL09"
+  }
+
+Parámetros:
+-----------
+• customerId: ID del cliente para quien se crea la cuenta
+• createdBy: ID del manager/empleado que crea la cuenta
+• accType: Tipo de cuenta ("Debito" o "Credito")
+• accPhone: Teléfono de 10 dígitos
+• password: Contraseña del cliente (para validación)
+• curp: CURP del cliente de 18 caracteres (para validación)
+
+Respuesta esperada:
+------------------
+{
+  "success": true,
+  "accountId": 3,
+  "cardNum": "4000000123456789",
+  "clabe": "646123456789012345",
+  "accNum": "0000015678",
+  "msg": "Cuenta creada exitosamente"
+}
+
+
 ================================================================================
 ⚠️ MANEJO DE ERRORES
 ================================================================================
@@ -547,6 +703,8 @@ Respuesta esperada:
 ERRORES COMUNES Y SUS MENSAJES:
 --------------------------------
 
+TRANSFERENCIAS:
+---------------
 1. "Parámetros inválidos o nulos"
    → Falta origin, destiny o amount
 
@@ -567,6 +725,47 @@ ERRORES COMUNES Y SUS MENSAJES:
 
 7. "Error en transferencia"
    → Error genérico del servidor
+
+CREACIÓN DE CUENTAS:
+--------------------
+1. "Todos los campos son requeridos: customerId, createdBy, accType, accPhone, password, curp"
+   → Falta alguno de los campos requeridos
+
+2. "customerId y createdBy deben ser números válidos"
+   → Los IDs no son numéricos
+
+3. "El teléfono debe tener exactamente 10 dígitos"
+   → accPhone no tiene 10 dígitos
+
+4. "El tipo de cuenta debe ser Debito o Credito"
+   → accType tiene un valor inválido
+
+5. "El CURP debe tener exactamente 18 caracteres"
+   → curp no tiene 18 caracteres
+
+6. "Usuario creador no encontrado"
+   → No existe usuario con el createdBy proporcionado
+
+7. "Solo managers y empleados pueden crear cuentas para clientes"
+   → El usuario creador no tiene rol 'm' o 'e'
+
+8. "Cliente no encontrado"
+   → No existe usuario con el customerId proporcionado
+
+9. "El usuario seleccionado no es un cliente"
+   → El customerId no corresponde a un usuario con rol 'c'
+
+10. "Contraseña del cliente incorrecta"
+    → La password no coincide con la del cliente
+
+11. "El CURP no coincide con el registrado del cliente"
+    → El curp ingresado no coincide con el del cliente
+
+12. "Error: número de cuenta duplicado. Intenta nuevamente"
+    → Colisión en números generados (reintentar)
+
+13. "Error al crear la cuenta"
+    → Error genérico del servidor
 
 
 ================================================================================
