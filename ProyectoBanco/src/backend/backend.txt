@@ -145,13 +145,16 @@ Archivo: routes/usuarios.js
        msg: string 
      }
 
-9. POST /api/usuarios/create-account
-   • Descripción: Crea una nueva cuenta bancaria para un cliente existente
+9. POST /api/create-account
+   • Descripción: Crea una nueva cuenta bancaria para un cliente (solo managers/empleados)
    • Controlador: createAccount
    • Body: {
-       mainId: number,          // ID del usuario (debe ser Customer)
+       customerId: number,      // ID del cliente
+       createdBy: number,       // ID del manager/empleado
        accType: string,         // 'Debito' o 'Credito'
-       accPhone: string         // Teléfono de 10 dígitos
+       accPhone: string,        // Teléfono de 10 dígitos
+       password: string,        // Contraseña del cliente (validación)
+       curp: string             // CURP del cliente (18 caracteres)
      }
    • Respuesta: {
        success: boolean,
@@ -162,15 +165,45 @@ Archivo: routes/usuarios.js
        msg: string
      }
    • Validaciones:
-     - mainId debe existir en la tabla main
-     - El usuario debe tener rol 'Customer'
+     - customerId y createdBy deben existir
+     - createdBy debe ser manager ('m') o empleado ('e')
+     - customerId debe ser cliente ('c')
+     - password y curp del cliente deben coincidir
      - accPhone debe tener exactamente 10 dígitos
      - accType solo acepta 'Debito' o 'Credito'
    • Generación automática:
      - cardNum: Algoritmo de Luhn con prefijo 4000
      - clabe: Prefijo 646 + 15 dígitos aleatorios
-     - accNum: Basado en mainId + 4 dígitos aleatorios
+     - accNum: Basado en customerId + 4 dígitos aleatorios
      - balance inicial: 0
+
+10. GET /api/receipt/:tranId 🆕
+   • Descripción: Genera y descarga un comprobante PDF de una transferencia
+   • Controlador: generateReceipt
+   • Parámetros URL:
+       tranId: number           // ID de la transferencia
+   • Respuesta: Documento PDF (application/pdf)
+   • Headers de respuesta:
+       Content-Type: application/pdf
+       Content-Disposition: inline; filename=comprobante-{tranId}.pdf
+   • Contenido del PDF:
+     - Logo/nombre del banco
+     - Tipo de operación
+     - Fecha
+     - Importe con signo negativo ($ -X,XXX.XX)
+     - Nombre del ordenante (MAYÚSCULAS)
+     - Cuenta origen (CLABE)
+     - Nombre del beneficiario
+     - Cuenta destino (CLABE)
+     - Banco destino
+     - Concepto/descripción
+     - Fecha y hora de operación
+     - Referencia (tranId)
+     - Folio de operación (generado)
+     - Comisión (si aplica)
+   • Diseño: Estilo similar a comprobantes bancarios profesionales (BBVA)
+   • Librería utilizada: pdfkit
+   • Nota: El PDF se abre en una nueva pestaña del navegador
 
 
 ================================================================================
@@ -333,6 +366,88 @@ FUNCIÓN: createAccount ⭐ CREACIÓN DE CUENTAS
   ⚠️ El CURP proporciona una capa adicional de seguridad
   ⚠️ Solo managers (rol 'm') y empleados (rol 'e') pueden crear cuentas
   ⚠️ Las contraseñas se validan con bcrypt (hash de 10 salt rounds)
+
+
+FUNCIÓN: generateReceipt 🆕 GENERACIÓN DE COMPROBANTES PDF
+-----------------------------------------------------------
+• Descripción: Genera un comprobante en formato PDF de una transferencia realizada,
+  con diseño profesional similar a comprobantes bancarios (estilo BBVA).
+
+• Parámetro de entrada:
+  - tranId: ID de la transferencia (número, desde URL)
+
+• Flujo de generación:
+  1️⃣ Validar que tranId esté presente
+  2️⃣ Consultar información completa de la transferencia con JOIN:
+     - Datos de la transferencia (amount, fee, description, timestamp)
+     - Cuenta origen (accNum, clabe)
+     - Cuenta destino (accNum, clabe)
+     - Datos del ordenante (nombre completo)
+     - Datos del beneficiario (nombre completo)
+  3️⃣ Crear documento PDF con PDFDocument (pdfkit)
+  4️⃣ Configurar headers de respuesta HTTP:
+     - Content-Type: application/pdf
+     - Content-Disposition: inline (para abrir en navegador)
+  5️⃣ Diseñar el comprobante con las siguientes secciones:
+     - Header con nombre del banco (BANCO JETY)
+     - Título "Comprobante de la operación"
+     - Tipo de operación: "Transferencia a otros bancos"
+     - Fecha en formato largo (español)
+     - Importe destacado en grande con signo negativo ($ -X,XXX.XX)
+     - Nombre del ordenante en MAYÚSCULAS
+     - Cuenta origen (CLABE completa)
+     - Nombre del beneficiario (capitalizado)
+     - Cuenta destino (CLABE completa)
+     - Banco destino
+     - Concepto/descripción de la transferencia
+     - Fecha y hora de operación (formato: DD/MM/YYYY, HH:MM:SS h)
+     - Referencia (tranId)
+     - Folio de operación (generado: 00{tranId}{6 dígitos random})
+     - Comisión (solo si fee > 0)
+     - Footer: "Este comprobante es válido sin firma autógrafa"
+
+• Query SQL utilizado:
+  SELECT 
+    t.tranId, t.amount, t.fee, t.description, t.timestamp, t.tranStatus,
+    origin_acc.accNum, origin_acc.clabe,
+    dest_acc.accNum, dest_acc.clabe,
+    origin_main.name, origin_main.fLastName, origin_main.mLastName,
+    dest_main.name, dest_main.fLastName, dest_main.mLastName
+  FROM transfer t
+  INNER JOIN cAccount origin_acc ON t.origin = origin_acc.accountId
+  INNER JOIN cAccount dest_acc ON t.destiny = dest_acc.accountId
+  INNER JOIN main origin_main ON origin_acc.mainId = origin_main.mainId
+  INNER JOIN main dest_main ON dest_acc.mainId = dest_main.mainId
+  WHERE t.tranId = ?
+
+• Respuesta:
+  - Tipo: Documento PDF binario
+  - Nombre archivo: comprobante-{tranId}.pdf
+  - Visualización: Se abre en nueva pestaña del navegador
+
+• Manejo de errores:
+  - 400: tranId no proporcionado
+  - 404: Transferencia no encontrada
+  - 500: Error al consultar o generar PDF
+
+• Características del PDF:
+  - Tamaño: A4
+  - Márgenes: 50px
+  - Colores corporativos: #072146 (azul oscuro BBVA-style)
+  - Tipografías: Sans-serif con diferentes tamaños y pesos
+  - Secciones visualmente separadas con espaciado vertical
+  - Información destacada en negrita
+  - Etiquetas en gris (#666666) y valores en negro (#000000)
+
+• Librería: pdfkit (PDFDocument)
+• Uso desde frontend:
+  window.open(`http://localhost:3000/api/receipt/${tranId}`, '_blank')
+
+• Notas:
+  ⚠️ El PDF se genera en tiempo real, no se almacena en disco
+  ⚠️ Cada comprobante es único y no expira
+  ⚠️ Solo se requiere el tranId para regenerar el comprobante en cualquier momento
+  ⚠️ El folio de operación incluye dígitos aleatorios para mayor autenticidad
 
 
 ================================================================================
@@ -560,7 +675,8 @@ VALIDACIONES:
     "express": "^4.x.x",        // Framework web
     "mysql2": "^3.x.x",         // Cliente MySQL
     "cors": "^2.x.x",           // Cross-Origin Resource Sharing
-    "bcrypt": "^5.x.x"          // Encriptación de contraseñas
+    "bcrypt": "^5.x.x",         // Encriptación de contraseñas
+    "pdfkit": "^0.x.x"          // Generación de documentos PDF
   }
 }
 
@@ -696,6 +812,70 @@ Respuesta esperada:
 }
 
 
+ENDPOINT DE PRUEBA: GET /api/receipt/:tranId 🆕
+-----------------------------------------------
+
+⚠️ NUEVO: Este endpoint genera un comprobante PDF profesional de una transferencia.
+
+Ejemplo con navegador:
+----------------------
+http://localhost:3000/api/receipt/1
+
+Ejemplo con cURL (descarga):
+-----------------------------
+curl -X GET http://localhost:3000/api/receipt/1 \
+  --output comprobante.pdf
+
+Ejemplo con Postman:
+-------------------
+• Método: GET
+• URL: http://localhost:3000/api/receipt/1
+• Headers: (ninguno requerido)
+• Send and Download: Seleccionar esta opción para ver el PDF
+
+Ejemplo desde JavaScript/TypeScript:
+------------------------------------
+// Abrir en nueva pestaña
+window.open(`http://localhost:3000/api/receipt/${tranId}`, '_blank');
+
+// O descargar programáticamente
+fetch(`http://localhost:3000/api/receipt/${tranId}`)
+  .then(res => res.blob())
+  .then(blob => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `comprobante-${tranId}.pdf`;
+    a.click();
+  });
+
+Respuesta esperada:
+------------------
+Documento PDF con:
+• Header: BANCO JETY
+• Título: Comprobante de la operación
+• Tipo: Transferencia a otros bancos
+• Fecha: 18 octubre 2025
+• Importe: $ -1,400.00 (destacado en grande)
+• Nombre del ordenante: ERICK MANUEL HERNANDEZ CASTAÑEDA
+• Cuenta origen: 012290015282687005
+• Nombre del beneficiario: Erick Manuel Hernandez Castañeda
+• Cuenta destino: 722969010083306457
+• Banco destino: Banco Jety
+• Concepto: mimi
+• Fecha de operación: 18 octubre 2025, 18:03:02 h
+• Referencia: 810250
+• Folio de operación: 00699797476722
+• Footer: Este comprobante es válido sin firma autógrafa
+
+Notas:
+------
+• El PDF se abre directamente en el navegador (Content-Disposition: inline)
+• El diseño es profesional, similar a comprobantes de BBVA
+• Se puede regenerar el comprobante en cualquier momento usando el tranId
+• No requiere autenticación (público)
+
+
 ================================================================================
 ⚠️ MANEJO DE ERRORES
 ================================================================================
@@ -767,6 +947,20 @@ CREACIÓN DE CUENTAS:
 13. "Error al crear la cuenta"
     → Error genérico del servidor
 
+COMPROBANTES PDF:
+-----------------
+1. "Se requiere el ID de la transferencia"
+   → No se proporcionó tranId en la URL
+
+2. "Transferencia no encontrada"
+   → No existe transferencia con ese tranId
+
+3. "Error al obtener información de la transferencia"
+   → Error al consultar la base de datos
+
+4. "Error en el servidor al crear la cuenta"
+   → Error durante la generación del PDF
+
 
 ================================================================================
 📝 LOGS DEL SISTEMA
@@ -785,6 +979,9 @@ El sistema genera logs detallados en consola:
 [TRANSFER] Resultado del SP: { tranId: 1, fee: 5 }
 [TRANSFER] - tranId: 1
 [TRANSFER] - fee (comisión): 5
+
+[RECEIPT] 📄 Comprobante generado para transferencia #1
+❌ Error al consultar transferencia: [Error details]
 
 
 ================================================================================

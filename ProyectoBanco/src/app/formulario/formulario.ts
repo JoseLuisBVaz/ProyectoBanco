@@ -126,8 +126,8 @@ export class Formulario implements OnInit {
     const currentUser = currentUserData ? JSON.parse(currentUserData) : null;
 
     const accountData = {
-      customerId: this.cuentaForm.value.mainId,  // ID del cliente para quien se crea la cuenta
-      createdBy: currentUser?.mainId,  // ID del manager/empleado que crea la cuenta
+      customerId: this.cuentaForm.value.mainId,
+      createdBy: currentUser?.mainId,
       accType: this.cuentaForm.value.accType,
       accPhone: this.cuentaForm.value.accPhone,
       password: this.cuentaForm.value.password,

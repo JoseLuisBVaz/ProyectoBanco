@@ -104,7 +104,18 @@
 								<div class="warn-msg" *ngIf="insufficientFunds">
 									Fondos insuficientes: el saldo restante quedaría negativo.
 								</div>
-						<p class="success-msg" *ngIf="successMsg">{{ successMsg }}</p>
+						<p class="success-msg" *ngIf="successMsg">
+							{{ successMsg }}
+						</p>
+						
+						<!-- 🆕 Botón para ver comprobante -->
+						<button 
+							type="button" 
+							class="btn-comprobante" 
+							*ngIf="lastTransferId"
+							(click)="openReceipt()">
+							📄 Ver Comprobante
+						</button>
 
 								<button type="submit" class="btn-registrar" [disabled]="insufficientFunds">Enviar transferencia</button>
 					</form>

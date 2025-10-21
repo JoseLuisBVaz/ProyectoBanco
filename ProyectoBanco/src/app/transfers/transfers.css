@@ -112,6 +112,35 @@
 .fee-hint .sep { margin: 0 8px; color: #999; }
 .fee-hint .negative { color: #b30000; }
 
+/* 🆕 Botón de comprobante */
+.btn-comprobante {
+	background: linear-gradient(135deg, #072146 0%, #004ba0 100%);
+	color: #fff;
+	border: none;
+	border-radius: 12px;
+	padding: 0.8rem 1.5rem;
+	font-size: 1rem;
+	font-weight: 700;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	margin-top: 10px;
+	margin-bottom: 10px;
+	box-shadow: 0 4px 12px rgba(7, 33, 70, 0.3);
+	width: 100%;
+	text-align: center;
+}
+
+.btn-comprobante:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 16px rgba(7, 33, 70, 0.4);
+	background: linear-gradient(135deg, #004ba0 0%, #072146 100%);
+}
+
+.btn-comprobante:active {
+	transform: translateY(0);
+	box-shadow: 0 2px 8px rgba(7, 33, 70, 0.3);
+}
+
 /* Responsive */
 @media (max-width: 1000px) {
 	.registro-card { width: 95%; }

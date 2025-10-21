@@ -1,5 +1,6 @@
 ﻿const db = require('../db');
 const bcrypt = require('bcrypt');
+const PDFDocument = require('pdfkit');
 
 // ==================== UTILIDADES ====================
 
@@ -525,6 +526,375 @@ const createAccount = async (req, res) => {
   }
 };
 
+// ==================== GENERACIÓN DE COMPROBANTES ====================
+
+const generateReceipt = (req, res) => {
+  const { tranId } = req.params;
+
+  console.log('📄 [RECEIPT] Solicitud de comprobante para tranId:', tranId);
+
+  if (!tranId) {
+    console.log('❌ [RECEIPT] tranId no proporcionado');
+    return res.status(400).json({ 
+      success: false,
+      msg: 'Se requiere el ID de la transferencia' 
+    });
+  }
+
+  // Primero: obtener datos básicos de la transferencia
+  const sql = `
+    SELECT 
+      tranId,
+      origin,
+      destiny,
+      ammount as amount,
+      fee,
+      description,
+      doDate
+    FROM transfer
+    WHERE tranId = ?
+  `;
+
+  console.log('📊 [RECEIPT] Ejecutando query SQL para tranId:', tranId);
+
+  db.query(sql, [tranId], (err, results) => {
+    if (err) {
+      console.error('❌ [RECEIPT] Error al consultar transferencia:', err);
+      return res.status(500).json({ 
+        success: false,
+        msg: 'Error al obtener información de la transferencia',
+        error: err.message
+      });
+    }
+
+    console.log('✅ [RECEIPT] Query ejecutado, resultados:', results.length);
+
+    if (results.length === 0) {
+      console.log('⚠️ [RECEIPT] Transferencia no encontrada para tranId:', tranId);
+      return res.status(404).json({ 
+        success: false,
+        msg: 'Transferencia no encontrada' 
+      });
+    }
+
+    const transfer = results[0];
+    console.log('📄 [RECEIPT] Datos obtenidos:', transfer);
+
+    // Segundo: obtener nombres de los dueños de las cuentas
+    const sqlNames = `
+      SELECT 
+        ca.accNum,
+        ca.clabe,
+        m.name,
+        m.fLastName,
+        m.mLastName
+      FROM cAccount ca
+      INNER JOIN main m ON ca.mainId = m.mainId
+      WHERE ca.accNum IN (?, ?) OR ca.clabe IN (?, ?)
+    `;
+
+    db.query(sqlNames, [transfer.origin, transfer.destiny, transfer.origin, transfer.destiny], (errNames, namesResults) => {
+      if (errNames) {
+        console.error('⚠️ [RECEIPT] Error al obtener nombres (continuando sin nombres):', errNames);
+      }
+
+      // Mapear nombres a las cuentas
+      let originName = null, originFLastName = null, originMLastName = null;
+      let destName = null, destFLastName = null, destMLastName = null;
+
+      if (namesResults && namesResults.length > 0) {
+        namesResults.forEach(row => {
+          if (row.accNum === transfer.origin || row.clabe === transfer.origin) {
+            originName = row.name;
+            originFLastName = row.fLastName;
+            originMLastName = row.mLastName;
+          }
+          if (row.accNum === transfer.destiny || row.clabe === transfer.destiny) {
+            destName = row.name;
+            destFLastName = row.fLastName;
+            destMLastName = row.mLastName;
+          }
+        });
+      }
+
+      // Agregar nombres al objeto transfer
+      transfer.origin_name = originName;
+      transfer.origin_fLastName = originFLastName;
+      transfer.origin_mLastName = originMLastName;
+      transfer.dest_name = destName;
+      transfer.dest_fLastName = destFLastName;
+      transfer.dest_mLastName = destMLastName;
+
+      console.log('📄 [RECEIPT] Nombres obtenidos - Origen:', originName, 'Destino:', destName);
+
+      try {
+        // Crear documento PDF
+        const doc = new PDFDocument({ 
+          size: 'A4', 
+          margin: 50,
+          bufferPages: true
+        });
+
+        console.log('📄 [RECEIPT] Generando PDF...');
+
+        // Configurar headers para enviar PDF
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename=comprobante-${tranId}.pdf`);
+
+        // Pipe del PDF a la respuesta
+        doc.pipe(res);
+
+      // ========== DISEÑO DEL COMPROBANTE (estilo BBVA) ==========
+
+      // 1. HEADER - Logo y nombre del banco
+      doc.fontSize(36)
+         .fillColor('#072146')
+         .font('Times')
+         .text('BANCO JETY', 50, 50);
+
+      // 2. TÍTULO
+      doc.fontSize(20)
+         .fillColor('#000000')
+         .font('Times-Bold')
+         .text('Comprobante de la operación', 50, 105);
+
+      // Línea separadora
+      doc.moveTo(50, 145)
+         .lineTo(545, 145)
+         .strokeColor('#072146')
+         .lineWidth(2)
+         .stroke();
+
+      let yPos = 165;
+
+      // 3. TIPO DE OPERACIÓN
+      doc.fontSize(11)
+         .fillColor('#666666')
+         .font('Times-Roman')
+         .text('Tipo de operación', 50, yPos);
+      
+      yPos += 18;
+      doc.fontSize(14)
+         .fillColor('#000000')
+         .font('Times-Bold')
+         .text('Transferencia bancaria', 50, yPos);
+
+      yPos += 35;
+
+      // 4. FECHA (usar timestamp actual para mostrar fecha/hora real)
+      const fechaActual = new Date(); // Fecha y hora actual del servidor
+      const fechaDoDate = transfer.doDate ? new Date(transfer.doDate) : fechaActual;
+      const fechaFormato = fechaDoDate.toLocaleDateString('es-MX', { 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric' 
+      });
+
+      doc.fontSize(12)
+         .fillColor('#666666')
+         .font('Times-Italic')
+         .text(fechaFormato, 50, yPos);
+
+      yPos += 35;
+
+      // 5. IMPORTE (GRANDE Y DESTACADO)
+      doc.fontSize(13)
+         .fillColor('#666666')
+         .font('Times-Roman')
+         .text('Importe', 50, yPos);
+
+      yPos += 22;
+      const montoFormato = `$ -${Number(transfer.amount || 0).toFixed(2)}`;
+      doc.fontSize(42)
+         .fillColor('#072146')
+         .font('Times-Bold')
+         .text(montoFormato, 50, yPos);
+
+      yPos += 65;
+
+      // 6. NOMBRE DEL ORDENANTE (dueño de cuenta origen)
+      if (transfer.origin_name) {
+        doc.fontSize(11)
+           .fillColor('#666666')
+           .font('Times-Roman')
+           .text('Nombre del ordenante', 50, yPos);
+
+        yPos += 18;
+        const nombreOrdenante = `${transfer.origin_name} ${transfer.origin_fLastName} ${transfer.origin_mLastName}`.toUpperCase();
+        doc.fontSize(14)
+           .fillColor('#000000')
+           .font('Times-Bold')
+           .text(nombreOrdenante, 50, yPos);
+
+        yPos += 35;
+      }
+
+      // 7. CUENTA ORIGEN
+      doc.fontSize(11)
+         .fillColor('#666666')
+         .font('Times-Roman')
+         .text('Cuenta origen', 50, yPos);
+
+      yPos += 18;
+      doc.fontSize(14)
+         .fillColor('#000000')
+         .font('Times-Bold')
+         .text(transfer.origin || 'N/A', 50, yPos);
+
+      yPos += 35;
+
+      // 8. NOMBRE DEL BENEFICIARIO (dueño de cuenta destino)
+      if (transfer.dest_name) {
+        doc.fontSize(11)
+           .fillColor('#666666')
+           .font('Times-Roman')
+           .text('Nombre del beneficiario', 50, yPos);
+
+        yPos += 18;
+        const nombreBeneficiario = `${transfer.dest_name} ${transfer.dest_fLastName} ${transfer.dest_mLastName}`;
+        doc.fontSize(14)
+           .fillColor('#000000')
+           .font('Times-Bold')
+           .text(nombreBeneficiario, 50, yPos);
+
+        yPos += 35;
+      }
+
+      // 9. CUENTA DESTINO
+      doc.fontSize(11)
+         .fillColor('#666666')
+         .font('Times-Roman')
+         .text('Cuenta destino', 50, yPos);
+
+      yPos += 18;
+      doc.fontSize(14)
+         .fillColor('#000000')
+         .font('Times-Bold')
+         .text(transfer.destiny || 'N/A', 50, yPos);
+
+      yPos += 35;
+
+      // 10. BANCO DESTINO
+      doc.fontSize(11)
+         .fillColor('#666666')
+         .font('Times-Roman')
+         .text('Banco destino', 50, yPos);
+
+      yPos += 18;
+      doc.fontSize(14)
+         .fillColor('#000000')
+         .font('Times-Bold')
+         .text('Banco Jety', 50, yPos);
+
+      yPos += 35;
+
+      // 9. CONCEPTO
+      if (transfer.description) {
+        doc.fontSize(11)
+           .fillColor('#666666')
+           .font('Times-Roman')
+           .text('Concepto', 50, yPos);
+
+        yPos += 18;
+        doc.fontSize(13)
+           .fillColor('#000000')
+           .font('Times-Roman')
+           .text(transfer.description, 50, yPos, { width: 495 });
+
+        yPos += 35;
+      }
+
+      // 12. FECHA DE OPERACIÓN (hora actual real del servidor)
+      doc.fontSize(11)
+         .fillColor('#666666')
+         .font('Times-Roman')
+         .text('Fecha de operación', 50, yPos);
+
+      yPos += 18;
+      const fechaHora = fechaActual.toLocaleString('es-MX', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+      doc.fontSize(13)
+         .fillColor('#000000')
+         .font('Times-Roman')
+         .text(fechaHora + ' h', 50, yPos);
+
+      yPos += 35;
+
+      // 11. FOLIO DE OPERACIÓN
+      doc.fontSize(11)
+         .fillColor('#666666')
+         .font('Times-Roman')
+         .text('Folio de operación', 50, yPos);
+
+      yPos += 18;
+      const folio = transfer.tranId.toString().padStart(10, '0');
+      doc.fontSize(14)
+         .fillColor('#000000')
+         .font('Times-Bold')
+         .text(folio, 50, yPos);
+
+      yPos += 35;
+
+      // 13. COMISIÓN (si existe)
+      if (transfer.fee && transfer.fee > 0) {
+        doc.fontSize(11)
+           .fillColor('#666666')
+           .font('Times-Roman')
+           .text('Comisión', 50, yPos);
+
+        yPos += 18;
+        doc.fontSize(13)
+           .fillColor('#000000')
+           .font('Times-Bold')
+           .text(`$ ${Number(transfer.fee).toFixed(2)}`, 50, yPos);
+      }
+
+      // 14. FOOTER
+      doc.fontSize(9)
+         .fillColor('#999999')
+         .font('Times-Italic')
+         .text('Este comprobante es válido sin firma autógrafa', 50, 750, {
+           width: 495,
+           align: 'center'
+         });
+
+      doc.fontSize(8)
+         .font('Times-Roman')
+         .text('Banco Jety - Sistema de Banca en Línea', 50, 770, {
+           width: 495,
+           align: 'center'
+         });
+
+      // Finalizar el PDF
+      doc.end();
+
+        console.log(`✅ [RECEIPT] Comprobante PDF generado exitosamente para transferencia #${tranId}`);
+
+      } catch (pdfError) {
+        console.error('❌ [RECEIPT] Error al generar PDF:', pdfError);
+        // Si ya se envió el header, no podemos enviar JSON
+        if (!res.headersSent) {
+          return res.status(500).json({
+            success: false,
+            msg: 'Error al generar el PDF',
+            error: pdfError.message
+          });
+        } else {
+          // Si ya se enviaron headers, terminar el stream
+          res.end();
+        }
+      }
+    });
+  });
+};
+
 module.exports = { 
   getMain, 
   getCustomers, 
@@ -534,5 +904,6 @@ module.exports = {
   registerUser, 
   getAccountsByUser, 
   transferFunds,
-  createAccount
+  createAccount,
+  generateReceipt
 };

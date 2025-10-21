@@ -20,6 +20,7 @@ export class Transfers implements OnInit {
   successMsg = '';
   passwordVisible = false;
   confirmPasswordVisible = false;
+  lastTransferId: number | null = null; // 🆕 Guardar el ID de la última transferencia
 
   userName: string | null = null;
   userId: number | null = null;
@@ -131,6 +132,7 @@ export class Transfers implements OnInit {
         this.transferService.transfer(payload).subscribe({
           next: (res) => {
             const fee = Number(res?.fee ?? this.estimatedFee ?? 0);
+            this.lastTransferId = res?.tranId || null; // 🆕 Guardar tranId
             this.successMsg = '¡Transferencia enviada con éxito!' + (fee ? ` (Comisión: $${fee})` : '');
             this.errorMsg = '';
 
@@ -330,5 +332,16 @@ export class Transfers implements OnInit {
         // Ignorar errores de refresco
       }
     });
+  }
+
+  // 🆕 Método para abrir el comprobante en una nueva pestaña
+  openReceipt() {
+    if (!this.lastTransferId) {
+      this.errorMsg = 'No hay comprobante disponible';
+      return;
+    }
+    
+    const url = `http://localhost:3000/api/receipt/${this.lastTransferId}`;
+    window.open(url, '_blank');
   }
 }

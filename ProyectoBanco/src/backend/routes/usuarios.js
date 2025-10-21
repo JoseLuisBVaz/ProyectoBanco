@@ -9,7 +9,8 @@ const {
   registerUser, 
   getAccountsByUser, 
   transferFunds,
-  createAccount
+  createAccount,
+  generateReceipt
 } = require('../controller/usuariosCtrl');
 
 // === RUTAS DE CONSULTA ===
@@ -29,5 +30,8 @@ router.post('/transfer', transferFunds);
 
 // === CREACIÓN DE CUENTAS ===
 router.post('/create-account', createAccount);
+
+// === COMPROBANTES ===
+router.get('/receipt/:tranId', generateReceipt);
 
 module.exports = router;
