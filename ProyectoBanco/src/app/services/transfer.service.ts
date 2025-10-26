@@ -19,4 +19,8 @@ export class TransferService {
   transfer(params: { origin: string; destiny: string; amount: number; description?: string }): Observable<any> {
     return this.http.post(`${this.apiUrl}/transfer`, params);
   }
+
+  deposit(params: { mainId: number; amount: number; description?: string }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/deposit`, params);
+  }
 }

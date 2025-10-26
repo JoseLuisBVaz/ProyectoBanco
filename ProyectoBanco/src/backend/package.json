@@ -5,7 +5,8 @@
   "main": "db.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "test-email": "node test-email.js"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +17,7 @@
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "mysql2": "^3.15.2",
+    "nodemailer": "^7.0.10",
     "pdfkit": "^0.17.2"
   }
 }

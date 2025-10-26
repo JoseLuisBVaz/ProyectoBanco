@@ -9,8 +9,13 @@ const {
   registerUser, 
   getAccountsByUser, 
   transferFunds,
+  depositFunds,
   createAccount,
-  generateReceipt
+  generateReceipt,
+  generateTransferPDF,
+  generateDepositPDF,
+  requestPasswordReset,
+  resetPassword
 } = require('../controller/usuariosCtrl');
 
 // === RUTAS DE CONSULTA ===
@@ -25,13 +30,24 @@ router.get('/accounts/:mainId', getAccountsByUser);
 router.post('/login', login);
 router.post('/register', registerUser);
 
+// === RECUPERACIÓN DE CONTRASEÑA ===
+router.post('/password-reset/request', requestPasswordReset);
+router.post('/password-reset/reset', resetPassword);
+
 // === TRANSFERENCIAS ===
 router.post('/transfer', transferFunds);
+
+// === DEPÓSITOS ===
+router.post('/deposit', depositFunds);
 
 // === CREACIÓN DE CUENTAS ===
 router.post('/create-account', createAccount);
 
 // === COMPROBANTES ===
 router.get('/receipt/:tranId', generateReceipt);
+
+// === PDF DOWNLOADS ===
+router.get('/transfer-pdf/:tranId', generateTransferPDF);
+router.get('/deposit-pdf/:depId', generateDepositPDF);
 
 module.exports = router;

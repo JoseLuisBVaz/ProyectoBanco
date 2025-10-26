@@ -155,6 +155,7 @@ export class Transfers implements OnInit {
             const msg = err?.error?.msg || 'No se pudo realizar la transferencia';
             this.errorMsg = msg;
             this.successMsg = '';
+            this.lastTransferId = null;
           }
         });
       },
@@ -332,6 +333,17 @@ export class Transfers implements OnInit {
         // Ignorar errores de refresco
       }
     });
+  }
+
+  // 🆕 Método para descargar el PDF del comprobante
+  downloadPDF() {
+    if (!this.lastTransferId) {
+      this.errorMsg = 'No hay comprobante disponible';
+      return;
+    }
+    
+    const url = `http://localhost:3000/api/transfer-pdf/${this.lastTransferId}`;
+    window.open(url, '_blank');
   }
 
   // 🆕 Método para abrir el comprobante en una nueva pestaña

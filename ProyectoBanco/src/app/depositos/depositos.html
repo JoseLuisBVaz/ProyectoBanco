@@ -1,0 +1,104 @@
+<app-navbar class="top-navbar"></app-navbar>
+
+<div class="registro-container">
+	<main class="registro-main">
+		<section class="registro-card">
+			<h2>💰 DEPÓSITO</h2>
+
+			<form [formGroup]="depositForm" (ngSubmit)="enviarDeposito()" class="full-width-form">
+				<!-- CUENTA DESTINO -->
+				<div class="form-section">
+					<h3>Cuenta destino</h3>
+					<div class="form-group">
+						<label for="destino">Selecciona la cuenta</label>
+						<select id="destino" formControlName="destino" (change)="onDestinationChange()">
+							<option value="" disabled selected>Seleccionar</option>
+							<option *ngFor="let acc of accounts" [ngValue]="acc">
+								{{ maskAcc(acc?.accNum) }} - CLABE {{ acc?.clabe }}
+							</option>
+						</select>
+					</div>
+
+					<!-- Card mostrando cuenta seleccionada -->
+					<div class="account-card colorful" *ngIf="selectedDestination as acc" [ngStyle]="selectedCardStyle">
+						<div class="account-row">
+							<div class="account-left">
+								<div class="account-name">Cuenta seleccionada
+									<span class="badge" *ngIf="acc.accType">
+										<i [ngClass]="acc.accType === 'Credito' ? 'fa-solid fa-credit-card' : 'fa-solid fa-money-check'"></i>
+										{{ acc.accType }}
+									</span>
+								</div>
+								<div class="account-num">{{ maskAcc(acc.accNum) }}</div>
+								<div class="account-clabe">CLABE: {{ acc.clabe }}</div>
+							</div>
+							<div class="account-right">
+								<div class="account-balance" *ngIf="acc.balance != null">${{ acc.balance | number:'1.2-2' }}</div>
+								<div class="account-cardnum" *ngIf="acc.cardNum">{{ maskCard(acc.cardNum) }}</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- DATOS DEL DEPÓSITO -->
+				<div class="form-section">
+					<h3>Detalles del depósito</h3>
+					<div class="form-grid">
+						<div class="form-group">
+							<label for="monto">Monto a depositar</label>
+							<input type="number" id="monto" formControlName="monto" placeholder="0" />
+							<div class="fee-hint" *ngIf="depositForm.value.monto > 0">
+								<span class="highlight">Sin comisión</span>
+								<span class="sep">•</span>
+								Total a depositar: <b>${{ depositForm.value.monto | number:'1.2-2' }}</b>
+								<span class="sep" *ngIf="selectedDestination">•</span>
+								<ng-container *ngIf="selectedDestination">
+									Nuevo saldo: 
+									<b class="positive">
+										${{ (selectedDestination.balance + depositForm.value.monto) | number:'1.2-2' }}
+									</b>
+								</ng-container>
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="descripcion">Descripción</label>
+							<input type="text" id="descripcion" formControlName="descripcion" placeholder="Depósito en efectivo" />
+						</div>
+					</div>
+				</div>
+
+				<!-- CONFIRMACIÓN -->
+				<div class="form-section">
+					<h3>Confirmación</h3>
+					<div class="form-group">
+						<label for="contrasena">Contraseña</label>
+						<div class="password-container">
+							<input [type]="passwordVisible ? 'text' : 'password'" id="contrasena" formControlName="contrasena" placeholder="Ingresa tu contraseña" />
+							<button type="button" class="toggle-password" (click)="togglePassword()">
+								<i [class]="passwordVisible ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
+							</button>
+						</div>
+					</div>
+				</div>
+
+				<p class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</p>
+				<p class="success-msg" *ngIf="successMsg">{{ successMsg }}</p>
+
+				<!-- 🆕 Botón para descargar PDF -->
+				<button 
+					type="button" 
+					class="btn-pdf" 
+					*ngIf="lastDepositId"
+					(click)="downloadPDF()">
+					📄 Descargar Comprobante PDF
+				</button>
+
+				<div class="button-group">
+					<button type="submit" class="btn-registrar">💰 Realizar Depósito</button>
+					<button type="button" class="btn-cancelar" (click)="cancelarDeposito()">Cancelar</button>
+				</div>
+			</form>
+		</section>
+	</main>
+</div>
+

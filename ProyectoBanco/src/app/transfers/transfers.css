@@ -112,8 +112,44 @@
 .fee-hint .sep { margin: 0 8px; color: #999; }
 .fee-hint .negative { color: #b30000; }
 
+/* 🆕 Contenedor de botones de comprobante */
+.comprobante-buttons {
+	display: flex;
+	gap: 1rem;
+	margin: 1rem 0;
+	width: 100%;
+}
+
+/* 🆕 Botón de PDF */
+.btn-pdf {
+	flex: 1;
+	background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
+	color: #fff;
+	border: none;
+	border-radius: 12px;
+	padding: 0.8rem 1.5rem;
+	font-size: 1rem;
+	font-weight: 700;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
+	text-align: center;
+}
+
+.btn-pdf:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 16px rgba(211, 47, 47, 0.4);
+	background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%);
+}
+
+.btn-pdf:active {
+	transform: translateY(0);
+	box-shadow: 0 2px 8px rgba(211, 47, 47, 0.3);
+}
+
 /* 🆕 Botón de comprobante */
 .btn-comprobante {
+	flex: 1;
 	background: linear-gradient(135deg, #072146 0%, #004ba0 100%);
 	color: #fff;
 	border: none;
@@ -123,10 +159,7 @@
 	font-weight: 700;
 	cursor: pointer;
 	transition: all 0.3s ease;
-	margin-top: 10px;
-	margin-bottom: 10px;
 	box-shadow: 0 4px 12px rgba(7, 33, 70, 0.3);
-	width: 100%;
 	text-align: center;
 }
 
@@ -139,6 +172,13 @@
 .btn-comprobante:active {
 	transform: translateY(0);
 	box-shadow: 0 2px 8px rgba(7, 33, 70, 0.3);
+}
+
+/* Responsive para botones */
+@media (max-width: 700px) {
+	.comprobante-buttons {
+		flex-direction: column;
+	}
 }
 
 /* Responsive */
