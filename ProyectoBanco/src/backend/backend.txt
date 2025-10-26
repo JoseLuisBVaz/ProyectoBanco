@@ -11,17 +11,27 @@ ProyectoBanco/src/backend/
 ├── 📄 server.js                    // Servidor principal Express
 ├── 📄 db.js                        // Configuración de conexión a MySQL
 ├── 📄 package.json                 // Dependencias del proyecto
-├── 📄 setup-sp.js                  // Script para crear stored procedures
-├── 📄 test-register.js             // Script de prueba de registro
 │
-├── 📁 controller/
-│   └── 📄 usuariosCtrl.js          // Controladores de lógica de negocio
+├── � controller/
+│   └── �📄 usuariosCtrl.js          // Controladores de lógica de negocio
 │
 ├── 📁 routes/
 │   └── 📄 usuarios.js              // Definición de rutas/endpoints
 │
-└── 📁 sql/
-    └── 📄 sp_transfer_funds.sql    // Stored Procedure de transferencias
+├── 📁 services/                    // Servicios reutilizables
+│   ├── 📄 emailService.js          // Envío de correos con adjuntos PDF
+│   ├── 📄 emailTemplates.js        // Plantillas HTML de correos
+│   ├── 📄 pdfService.js            // Generación de PDFs (transferencias y depósitos)
+│   └── 📄 passwordResetService.js  // Tokens de recuperación de contraseña
+│
+├── 📁 config/
+│   └── 📄 email.config.js          // Configuración de SMTP (Nodemailer)
+│
+└── 📁 sql/                         // (Deprecado) - Consolidado en src/database.sql
+   └── 📄 (vacío)                  // Los SPs y tablas viven en el archivo central
+
+ProyectoBanco/src/
+└── 📄 database.sql                 // Esquema y SPs consolidados (transfer/deposit)
 
 
 ================================================================================
@@ -204,6 +214,27 @@ Archivo: routes/usuarios.js
    • Diseño: Estilo similar a comprobantes bancarios profesionales (BBVA)
    • Librería utilizada: pdfkit
    • Nota: El PDF se abre en una nueva pestaña del navegador
+
+   11. POST /api/deposit 🆕
+      • Descripción: Realiza un depósito a la cuenta principal del usuario (por mainId)
+      • Controlador: depositFunds
+      • Body: {
+          mainId: number,         // ID del usuario (desde localStorage)
+          amount: number,         // Monto a depositar (> 0)
+          description?: string    // Opcional
+        }
+      • Lógica: Llama al SP sp_deposit_funds(mainId, amount, description)
+      • Respuesta: { success, depId, newBalance, message }
+
+   12. GET /api/transfer-pdf/:tranId 🆕
+      • Descripción: Descarga directa del PDF de transferencia (adjuntable)
+      • Controlador: generateTransferPDF
+      • Respuesta: application/pdf (Content-Disposition: attachment)
+
+   13. GET /api/deposit-pdf/:depId 🆕
+      • Descripción: Descarga directa del PDF de depósito (adjuntable)
+      • Controlador: generateDepositPDF
+      • Respuesta: application/pdf (Content-Disposition: attachment)
 
 
 ================================================================================
