@@ -13,7 +13,8 @@ import { Register } from './register/register';
 import { Home } from './home/home';
 import { Transfers } from './transfers/transfers';
 import { Depositos } from './depositos/depositos';
-import { FormularioContrasena } from './formulario-contrasena/formulario-contrasena';   
+import { FormularioContrasena } from './formulario-contrasena/formulario-contrasena';
+import { Retiro } from './retiro/retiro';
 
 export const routes: Routes = [
     {path: '', component: Main},
@@ -27,5 +28,6 @@ export const routes: Routes = [
     {path: 'home', component: Home, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }},
     {path: 'transferencia', component: Transfers, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }},
     {path: 'deposito', component: Depositos, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }},
+    {path: 'retiro', component: Retiro, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }},
     {path: 'formulario-contrasena', component: FormularioContrasena},
 ];

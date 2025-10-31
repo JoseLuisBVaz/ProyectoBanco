@@ -33,7 +33,7 @@ export class Prestamo {
 
     if (!monto || !plazo || !destino || !ingresos || !domicilio || !contrasena) {
       this.modalClase = 'modal-rechazado';
-      this.modalIcono = '⚠';
+      this.modalIcono = '!';
       this.modalMensaje = '¡Atención!<br>Debes completar todos los campos.';
     } else if (contrasena === '1234') {
       this.modalClase = 'modal-aceptado';

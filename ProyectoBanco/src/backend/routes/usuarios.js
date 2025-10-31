@@ -15,7 +15,11 @@ const {
   generateTransferPDF,
   generateDepositPDF,
   requestPasswordReset,
-  resetPassword
+  resetPassword,
+  crearRetiroSinTarjeta,
+  getRetirosRecientes,
+  validarCodigoRetiro,
+  procesarRetiroConCodigo
 } = require('../controller/usuariosCtrl');
 
 // === RUTAS DE CONSULTA ===
@@ -39,6 +43,12 @@ router.post('/transfer', transferFunds);
 
 // === DEPÓSITOS ===
 router.post('/deposit', depositFunds);
+
+// === RETIROS SIN TARJETA ===
+router.post('/retiro-sin-tarjeta', crearRetiroSinTarjeta);
+router.get('/retiros-recientes/:mainId', getRetirosRecientes);
+router.post('/validar-codigo-retiro', validarCodigoRetiro);
+router.post('/procesar-retiro-codigo', procesarRetiroConCodigo);
 
 // === CREACIÓN DE CUENTAS ===
 router.post('/create-account', createAccount);

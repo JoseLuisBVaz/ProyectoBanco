@@ -286,6 +286,32 @@ const verifyConnection = async () => {
   }
 };
 
+// ==================== EMAIL DE RETIRO SIN TARJETA ====================
+/**
+ * Envía correo de confirmación de retiro sin tarjeta
+ * @param {string} recipientEmail - Email del destinatario
+ * @param {Object} data - Datos del retiro (codigo, amount, accNum, withdrawDate, etc.)
+ * @returns {Promise<Object>} - Resultado del envío
+ */
+const sendWithdrawalCodeEmail = async (recipientEmail, data) => {
+  try {
+    console.log('[EMAIL] Preparando correo de retiro sin tarjeta');
+    
+    const htmlContent = emailTemplates.withdrawalCodeTemplate(data);
+    
+    const mailOptions = {
+      to: recipientEmail,
+      subject: 'Código de Retiro Sin Tarjeta - Banco JETY',
+      html: htmlContent
+    };
+    
+    return await sendEmail(mailOptions);
+  } catch (error) {
+    console.error('[EMAIL] Error al enviar correo de retiro:', error);
+    throw error;
+  }
+};
+
 // ==================== EXPORTS ====================
 module.exports = {
   sendTransferSentEmail,
@@ -295,6 +321,7 @@ module.exports = {
   sendAccountCreatedEmail,
   sendWelcomeEmail,
   sendDepositReceivedEmail,
+  sendWithdrawalCodeEmail,
   verifyConnection,
   sendEmail // Export genérico para casos personalizados
 };

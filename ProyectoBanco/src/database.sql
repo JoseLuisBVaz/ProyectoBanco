@@ -99,6 +99,22 @@ CREATE TABLE IF NOT EXISTS deposito (
     INDEX idx_deposito_date (depositDate)
 );
 
+create table if not exists retiros (
+  withdrawid int auto_increment primary key,
+  mainid int not null,
+  accnum varchar(10) not null,
+  amount decimal(12,2) not null,
+  description varchar(300),
+  withdrawdate timestamp default current_timestamp,
+  constraint fk_retiros_main foreign key (mainid) references main(mainid)
+    on delete cascade on update cascade,
+  constraint fk_retiros_acc foreign key (accnum) references caccount(accnum)
+    on delete cascade on update cascade,
+  index idx_retiros_mainid (mainid),
+  index idx_retiros_accnum (accnum),
+  index idx_retiros_date (withdrawdate)
+);
+
 -- =============================================
 -- Procedimientos almacenados (SPs)
 -- =============================================

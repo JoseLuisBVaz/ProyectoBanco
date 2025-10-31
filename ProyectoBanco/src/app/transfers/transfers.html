@@ -108,23 +108,22 @@
 							{{ successMsg }}
 						</p>
 						
-						<!-- 🆕 Botones para comprobante -->
-						<div class="comprobante-buttons" *ngIf="lastTransferId">
-							<button 
-								type="button" 
-								class="btn-pdf" 
-								(click)="downloadPDF()">
-								📄 Descargar PDF
-							</button>
-							<button 
-								type="button" 
-								class="btn-comprobante" 
-								(click)="openReceipt()">
-								�️ Ver Comprobante
-							</button>
-						</div>
-
-						<button type="submit" class="btn-registrar" [disabled]="insufficientFunds">Enviar transferencia</button>
+					
+					<!-- 🆕 Botones para comprobante -->
+					<div class="comprobante-buttons" *ngIf="lastTransferId">
+						<button 
+							type="button" 
+							class="btn-pdf" 
+							(click)="downloadPDF()">
+							Descargar PDF
+						</button>
+						<button 
+							type="button" 
+							class="btn-comprobante" 
+							(click)="openReceipt()">
+							Ver Comprobante
+						</button>
+					</div>						<button type="submit" class="btn-registrar" [disabled]="insufficientFunds">Enviar transferencia</button>
 					</form>
 		</section>
 	</main>

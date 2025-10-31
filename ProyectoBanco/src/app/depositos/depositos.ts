@@ -296,26 +296,27 @@ export class Depositos implements OnInit {
 
   // ==================== ESTILOS DE TARJETA ====================
 
+  private palettes: string[] = [
+    'linear-gradient(135deg, #1a2aff 0%, #5b7dff 100%)',
+    'linear-gradient(135deg, #5a189a 0%, #9c1de7 100%)',
+    'linear-gradient(135deg, #0ea5e9 0%, #22c55e 100%)',
+    'linear-gradient(135deg, #ef4444 0%, #f59e0b 100%)',
+    'linear-gradient(135deg, #111827 0%, #374151 100%)'
+  ];
+
   getStyleFor(acc: any): { [k: string]: string } {
-    const colors = this.getCardColors(acc?.cardNum);
-    return {
-      'background': `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`,
-      'color': '#fff'
-    };
+    const key = String(acc?.accNum || acc?.clabe || acc?.cardNum || 'x');
+    const idx = this.hashString(key) % this.palettes.length;
+    return { background: this.palettes[idx], color: '#ffffff' };
   }
 
-  private getCardColors(cardNum?: string): { primary: string; secondary: string } {
-    if (!cardNum) return { primary: '#072146', secondary: '#0a3768' };
-    const last = cardNum.slice(-1);
-    const num = parseInt(last, 10);
-    const colors = [
-      { primary: '#072146', secondary: '#0a3768' },
-      { primary: '#1e3a5f', secondary: '#2a5298' },
-      { primary: '#2c5f8d', secondary: '#3a7bbf' },
-      { primary: '#1a4d7a', secondary: '#2869a6' },
-      { primary: '#0f3d5c', secondary: '#1b5685' },
-    ];
-    return colors[num % colors.length];
+  private hashString(s: string): number {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) {
+      h = (h << 5) - h + s.charCodeAt(i);
+      h |= 0;
+    }
+    return Math.abs(h);
   }
 
   // ==================== MÁSCARAS ====================

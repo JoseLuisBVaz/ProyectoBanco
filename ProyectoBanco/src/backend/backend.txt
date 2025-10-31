@@ -1046,6 +1046,226 @@ Owner: JoseLuisBVaz
 
 Para reportar problemas o sugerencias, contactar al equipo de desarrollo.
 
+
+================================================================================
+🎨 SISTEMA DE COLORES CONSISTENTE (FRONTEND)
+================================================================================
+
+DESCRIPCIÓN GENERAL
+-------------------
+El frontend implementa un sistema de colores consistente para las tarjetas de
+cuenta que garantiza que la misma cuenta siempre tenga el mismo color en todas
+las pantallas de la aplicación (Home, Transferencias, Depósitos, Retiros).
+
+UBICACIÓN
+---------
+Archivos implementados:
+• src/app/home/home.ts
+• src/app/transfers/transfers.ts
+• src/app/depositos/depositos.ts
+• src/app/retiro/retiro.ts
+
+PALETA DE COLORES (5 gradientes)
+---------------------------------
+La aplicación utiliza una paleta fija de 5 gradientes CSS:
+
+1. Azul:        linear-gradient(135deg, #1a2aff 0%, #5b7dff 100%)
+2. Morado:      linear-gradient(135deg, #5a189a 0%, #9c1de7 100%)
+3. Cyan-Verde:  linear-gradient(135deg, #0ea5e9 0%, #22c55e 100%)
+4. Rojo-Naranja: linear-gradient(135deg, #ef4444 0%, #f59e0b 100%)
+5. Gris oscuro: linear-gradient(135deg, #111827 0%, #374151 100%)
+
+Código TypeScript:
+------------------
+private palettes: string[] = [
+  'linear-gradient(135deg, #1a2aff 0%, #5b7dff 100%)',
+  'linear-gradient(135deg, #5a189a 0%, #9c1de7 100%)',
+  'linear-gradient(135deg, #0ea5e9 0%, #22c55e 100%)',
+  'linear-gradient(135deg, #ef4444 0%, #f59e0b 100%)',
+  'linear-gradient(135deg, #111827 0%, #374151 100%)'
+];
+
+ALGORITMO DE ASIGNACIÓN
+------------------------
+El sistema utiliza una función hash determinística para asignar colores:
+
+1. FUNCIÓN HASH (hashString)
+   -------------------------
+   • Entrada: String (número de cuenta, CLABE o número de tarjeta)
+   • Salida: Número entero positivo (hash)
+   • Algoritmo: Operaciones bit a bit para generar hash consistente
+   
+   Código:
+   -------
+   private hashString(s: string): number {
+     let h = 0;
+     for (let i = 0; i < s.length; i++) {
+       h = (h << 5) - h + s.charCodeAt(i);  // Desplazamiento de bits
+       h |= 0;                               // Convierte a int32
+     }
+     return Math.abs(h);                     // Valor positivo
+   }
+
+   Ejemplo:
+   --------
+   hashString("4152313770004217") → 847362891
+   hashString("5678123498765432") → 923847562
+
+2. SELECCIÓN DE COLOR (getStyleFor)
+   ---------------------------------
+   • Paso 1: Obtener identificador único de la cuenta
+   • Paso 2: Calcular hash del identificador
+   • Paso 3: Aplicar módulo 5 (número de colores disponibles)
+   • Paso 4: Seleccionar color en la posición calculada
+   
+   Código:
+   -------
+   private getStyleFor(acc: Account): { [k: string]: string } {
+     const key = String(acc.accNum || acc.clabe || acc.cardNum || 'x');
+     const idx = this.hashString(key) % this.palettes.length;
+     return { background: this.palettes[idx], color: '#ffffff' };
+   }
+
+   Ejemplo completo:
+   -----------------
+   Cuenta: 4152-3137-7000-4217
+   ↓
+   Hash: 847362891
+   ↓
+   Índice: 847362891 % 5 = 1
+   ↓
+   Color: palettes[1] = Morado (#5a189a → #9c1de7)
+
+CARACTERÍSTICAS DEL SISTEMA
+----------------------------
+✅ Consistencia Total
+   • La misma cuenta SIEMPRE tiene el mismo color
+   • Funciona en todas las pantallas de la aplicación
+   • No importa el orden de carga de las cuentas
+
+✅ Sin Almacenamiento
+   • No requiere base de datos para guardar colores
+   • Se calcula en tiempo real en el navegador
+   • Cero overhead en el backend
+
+✅ Distribución Uniforme
+   • El operador módulo (%) distribuye equitativamente
+   • ~20% de cuentas tendrá cada uno de los 5 colores
+   • Evita concentración en un solo color
+
+✅ Identificación Visual
+   • Los usuarios pueden identificar sus cuentas por color
+   • Mejora la experiencia de usuario (UX)
+   • Reduce errores al seleccionar cuentas
+
+FLUJO DE APLICACIÓN
+--------------------
+1. Usuario inicia sesión
+2. Backend devuelve lista de cuentas (con accNum, clabe, cardNum)
+3. Frontend recibe las cuentas
+4. Para cada cuenta:
+   a. Se extrae su identificador único (accNum)
+   b. Se calcula el hash del identificador
+   c. Se determina el índice del color (hash % 5)
+   d. Se aplica el gradiente correspondiente
+5. La tarjeta se muestra con su color asignado
+
+PANTALLAS QUE USAN EL SISTEMA
+------------------------------
+• 🏠 Home: Tarjeta principal de cuenta y cuentas adicionales
+• 💸 Transfers: Cuenta origen y cuenta destino
+• 💰 Depósitos: Cuenta destino seleccionada
+• 🏧 Retiro: Cuenta seleccionada para retiro sin tarjeta
+
+EJEMPLO DE USO EN COMPONENTE
+-----------------------------
+// En el archivo .ts del componente
+export class MiComponente {
+  selectedCardStyle: any = {};
+  
+  private palettes: string[] = [...]; // Los 5 gradientes
+  
+  onAccountChange(): void {
+    if (this.selectedAccount) {
+      this.selectedCardStyle = this.getStyleFor(this.selectedAccount);
+    }
+  }
+  
+  private getStyleFor(acc: Account) {
+    const key = String(acc.accNum || acc.clabe || acc.cardNum || 'x');
+    const idx = this.hashString(key) % this.palettes.length;
+    return { background: this.palettes[idx], color: '#ffffff' };
+  }
+  
+  private hashString(s: string): number { ... }
+}
+
+// En el HTML del componente
+<div class="account-card" [ngStyle]="selectedCardStyle">
+  <!-- Contenido de la tarjeta -->
+</div>
+
+MATEMÁTICAS DEL HASH
+--------------------
+La función hash utiliza operaciones bit a bit para eficiencia:
+
+• (h << 5): Desplaza bits 5 posiciones a la izquierda (multiplica por 32)
+• (h << 5) - h: Equivalente a h * 31 (número primo para mejor distribución)
+• + s.charCodeAt(i): Suma el código ASCII del carácter
+• h |= 0: Operación OR bit a bit para convertir a entero de 32 bits
+• Math.abs(): Asegura que el resultado sea positivo
+
+Esta técnica es similar a la función hashCode() de Java y garantiza:
+• Consistencia: Mismo input → Mismo output
+• Rapidez: Operaciones O(n) donde n = longitud del string
+• Distribución: Valores distribuidos uniformemente
+
+VENTAJAS SOBRE OTROS ENFOQUES
+------------------------------
+❌ Color Aleatorio (Random):
+   • Problema: La misma cuenta tendría diferentes colores cada vez
+   • Confunde al usuario
+
+❌ Color por Posición en Array:
+   • Problema: Si cambia el orden, cambia el color
+   • No es consistente entre pantallas
+
+❌ Color Almacenado en BD:
+   • Problema: Requiere campo extra en base de datos
+   • Mayor complejidad y mantenimiento
+   • Overhead en consultas
+
+✅ Color por Hash (Implementado):
+   • Determinístico: Siempre el mismo resultado
+   • Sin almacenamiento: Cálculo en tiempo real
+   • Consistente: Funciona en todas las pantallas
+   • Eficiente: Operaciones rápidas
+
+COMPATIBILIDAD
+--------------
+• Navegadores: Todos los modernos (Chrome, Firefox, Safari, Edge)
+• CSS: Gradientes lineales soportados desde 2012
+• TypeScript: Funciones puras sin dependencias externas
+• Angular: Directiva [ngStyle] para binding dinámico
+
+NOTAS TÉCNICAS
+--------------
+⚠️ El color NO se envía desde el backend
+   • Es una decisión de presentación (frontend)
+   • El backend solo envía los datos de la cuenta
+   • El cálculo es 100% en el navegador
+
+⚠️ No afecta la funcionalidad
+   • Si el hash falla, se usa color por defecto
+   • Los colores son solo visuales, no críticos
+   • La aplicación funciona sin el sistema de colores
+
+⚠️ Cambiar la paleta afecta todos los colores
+   • Si se modifica el array de palettes
+   • Las mismas cuentas tendrán diferentes colores
+   • Mantener la paleta estable para consistencia
+
+
 ================================================================================
                             FIN DE LA DOCUMENTACIÓN
 ================================================================================

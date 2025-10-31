@@ -454,6 +454,76 @@ const emailTemplates = {
     `;
     
     return emailTemplates.baseTemplate(content, 'Depósito Recibido - Banco JETY');
+  },
+
+  // ==================== PLANTILLA DE RETIRO SIN TARJETA ====================
+  withdrawalCodeTemplate: (data) => {
+    const {
+      customerName = 'Estimado cliente',
+      codigo,
+      amount,
+      accNum,
+      withdrawDate,
+      newBalance
+    } = data;
+
+    const date = withdrawDate ? new Date(withdrawDate).toLocaleString('es-MX', { 
+      dateStyle: 'long', 
+      timeStyle: 'short' 
+    }) : new Date().toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' });
+
+    const content = `
+      <div class="email-body">
+        <h2 style="color: #ff6b35; margin-bottom: 20px;">Código de Retiro Sin Tarjeta</h2>
+        <p>Hola <strong>${customerName}</strong>,</p>
+        <p>Has generado exitosamente un código para retiro sin tarjeta.</p>
+        
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 30px; margin: 30px 0; text-align: center; color: white;">
+          <p style="margin: 0 0 15px 0; font-size: 14px; opacity: 0.9;">TU CÓDIGO DE RETIRO</p>
+          <div style="background: rgba(255,255,255,0.95); color: #667eea; padding: 20px; border-radius: 8px; font-size: 32px; font-weight: 800; letter-spacing: 4px; font-family: 'Courier New', monospace;">
+            ${codigo}
+          </div>
+          <p style="margin: 15px 0 0 0; font-size: 13px; opacity: 0.9;">Válido por 24 horas</p>
+        </div>
+        
+        <div class="info-box">
+          <h3 style="color: #072146; margin-top: 0;">Detalles del retiro:</h3>
+          <div class="detail-row">
+            <span class="detail-label">Cuenta:</span>
+            <span class="detail-value">****${accNum.slice(-4)}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Monto:</span>
+            <span class="detail-value">$${Number(amount).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Fecha:</span>
+            <span class="detail-value">${date}</span>
+          </div>
+          <div class="detail-row" style="border-bottom: none;">
+            <span class="detail-label"><strong>Nuevo saldo:</strong></span>
+            <span class="detail-value"><strong>$${Number(newBalance).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+          </div>
+        </div>
+        
+        <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 25px 0; border-radius: 4px;">
+          <h4 style="margin: 0 0 10px 0; color: #856404;">Instrucciones importantes:</h4>
+          <ul style="margin: 0; padding-left: 20px; color: #856404;">
+            <li>Presenta este código en cualquier sucursal o cajero Banco JETY</li>
+            <li>El código es válido únicamente por 24 horas</li>
+            <li>Necesitarás presentar una identificación oficial</li>
+            <li>El código solo puede ser usado una vez</li>
+            <li>No compartas este código con nadie</li>
+          </ul>
+        </div>
+        
+        <p style="margin-top: 30px; text-align: center; color: #666;">
+          Si no solicitaste este retiro, contacta inmediatamente con nosotros.
+        </p>
+      </div>
+    `;
+    
+    return emailTemplates.baseTemplate(content, 'Código de Retiro - Banco JETY');
   }
 };
 

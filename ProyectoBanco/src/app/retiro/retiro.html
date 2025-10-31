@@ -1,0 +1,212 @@
+<app-navbar class="top-navbar"></app-navbar>
+
+<div class="registro-container">
+  <main class="registro-main">
+    <section class="registro-card">
+      <h2>RETIRO SIN TARJETA</h2>
+
+      <!-- CÓDIGO GENERADO (solo mostrar si existe) -->
+      <div class="codigo-section-wrapper" *ngIf="codigoGenerado">
+        <div class="form-section codigo-section">
+          <h3>Retiro Exitoso</h3>
+          <div class="codigo-display">
+            <p class="success-msg" style="margin-bottom: 1rem; background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5);">
+              <i class="fas fa-check-circle"></i> Tu código de retiro ha sido generado exitosamente
+            </p>
+            <div class="codigo-value">{{ codigoGenerado }}</div>
+            <p class="codigo-info">
+              <strong>¡Importante!</strong><br>
+              Presenta este código en cualquier sucursal o cajero para realizar tu retiro.
+              <br>
+              El código es válido por <strong>24 horas</strong>
+              <br>
+              También hemos enviado este código a tu correo electrónico
+            </p>
+            <button type="button" class="btn-copy" (click)="copiarCodigo()">
+              <i class="fas fa-copy"></i> Copiar código
+            </button>
+          </div>
+        </div>
+
+        <!-- MENSAJES -->
+        <p class="success-msg" *ngIf="successMessage">{{ successMessage }}</p>
+
+        <div class="button-group">
+          <button 
+            type="button" 
+            class="btn-registrar"
+            (click)="nuevoRetiro()">
+            Nuevo Retiro
+          </button>
+        </div>
+      </div>
+
+      <!-- FORMULARIO DE RETIRO (solo mostrar si NO hay código generado) -->
+      <form [formGroup]="retiroForm" (ngSubmit)="onSubmit()" class="full-width-form" *ngIf="!codigoGenerado">
+        
+        <!-- CUENTA ORIGEN -->
+        <div class="form-section">
+          <h3>Cuenta origen</h3>
+          <div class="form-group">
+            <label for="accountSelect">Selecciona tu cuenta</label>
+            <select 
+              id="accountSelect" 
+              formControlName="accountId"
+              (change)="onAccountChange()">
+              <option value="" disabled selected>Seleccionar</option>
+              <option *ngFor="let account of userAccounts" [ngValue]="account.accountId">
+                {{ maskAcc(account.accNum) }} - CLABE {{ account.clabe }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Card estilo Home mostrando cuenta seleccionada -->
+          <div class="account-card colorful" *ngIf="selectedAccount" [ngStyle]="selectedCardStyle">
+            <div class="account-row">
+              <div class="account-left">
+                <div class="account-name">Cuenta seleccionada
+                  <span class="badge" *ngIf="selectedAccount.accType">
+                    <i [ngClass]="selectedAccount.accType === 'Credito' ? 'fa-solid fa-credit-card' : 'fa-solid fa-money-check'"></i>
+                    {{ selectedAccount.accType }}
+                  </span>
+                </div>
+                <div class="account-num">{{ maskAcc(selectedAccount.accNum) }}</div>
+                <div class="account-clabe">CLABE: {{ selectedAccount.clabe }}</div>
+              </div>
+              <div class="account-right">
+                <div class="account-balance" *ngIf="selectedAccount.balance != null">
+                  ${{ selectedAccount.balance | number:'1.2-2' }}
+                </div>
+                <div class="account-cardnum" *ngIf="selectedAccount.cardNum">
+                  {{ maskCard(selectedAccount.cardNum) }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DATOS DEL RETIRO -->
+        <div class="form-section">
+          <h3>Detalles del retiro</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="amount">Monto a retirar</label>
+              <input 
+                type="number" 
+                id="amount" 
+                formControlName="amount"
+                placeholder="0"
+                step="0.01"
+                min="0">
+              <div class="fee-hint" *ngIf="retiroForm.value.amount > 0">
+                <span class="highlight">Sin comisión</span>
+                <span class="sep">•</span>
+                Total a retirar: <b>${{ retiroForm.value.amount | number:'1.2-2' }}</b>
+                <span class="sep" *ngIf="selectedAccount">•</span>
+                <ng-container *ngIf="selectedAccount && remainingBalance !== null">
+                  Saldo restante: 
+                  <b [class.negative]="remainingBalance < 0">
+                    ${{ remainingBalance | number:'1.2-2' }}
+                  </b>
+                </ng-container>
+              </div>
+              
+              <!-- Montos rápidos -->
+              <div class="quick-amounts" *ngIf="selectedAccount">
+                <button 
+                  type="button" 
+                  class="quick-amount-btn"
+                  (click)="setQuickAmount(500)">
+                  $500
+                </button>
+                <button 
+                  type="button" 
+                  class="quick-amount-btn"
+                  (click)="setQuickAmount(1000)">
+                  $1,000
+                </button>
+                <button 
+                  type="button" 
+                  class="quick-amount-btn"
+                  (click)="setQuickAmount(2000)">
+                  $2,000
+                </button>
+                <button 
+                  type="button" 
+                  class="quick-amount-btn"
+                  (click)="setQuickAmount(5000)">
+                  $5,000
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="password">Contraseña <span class="required">*</span></label>
+              <div class="password-input-wrapper">
+                <input 
+                  [type]="showPassword ? 'text' : 'password'" 
+                  id="password" 
+                  formControlName="password"
+                  placeholder="Ingresa tu contraseña"
+                  required>
+                <button 
+                  type="button" 
+                  class="toggle-password"
+                  (click)="togglePasswordVisibility()">
+                  <i [class]="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                </button>
+              </div>
+              <div class="error-msg" *ngIf="retiroForm.get('password')?.invalid && retiroForm.get('password')?.touched">
+                La contraseña es requerida
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="description">Descripción (opcional)</label>
+              <textarea 
+                id="description" 
+                formControlName="description"
+                placeholder="Retiro sin tarjeta"
+                rows="4"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- INFORMACIÓN IMPORTANTE -->
+        <div class="info-box">
+          <h4>Información importante:</h4>
+          <ul>
+            <li>El código estará disponible inmediatamente después de generar el retiro</li>
+            <li>El código es válido por 24 horas</li>
+            <li>Monto mínimo: $100.00</li>
+            <li>Monto máximo por transacción: $10,000.00</li>
+            <li>Sin comisión por retiro</li>
+          </ul>
+        </div>
+
+        <!-- MENSAJES -->
+        <p class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+        <!-- BOTONES -->
+        <div class="button-group">
+          <button 
+            type="submit" 
+            class="btn-registrar"
+            [disabled]="retiroForm.invalid || isProcessing">
+            <span *ngIf="!isProcessing">Generar Código de Retiro</span>
+            <span *ngIf="isProcessing">Procesando...</span>
+          </button>
+          <button 
+            type="button" 
+            class="btn-cancelar"
+            (click)="cancelar()"
+            [disabled]="isProcessing">
+            Cancelar
+          </button>
+        </div>
+
+      </form>
+
+    </section>
+  </main>
+</div>
