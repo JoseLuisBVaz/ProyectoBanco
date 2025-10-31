@@ -310,6 +310,25 @@ body, html {
   border: 1px solid #ff4d4f;
 }
 
+.forgot-password {
+  text-align: center;
+  margin-top: 1%;
+  width: 100%;
+}
+
+.forgot-password a {
+  color: #1a2aff;
+  text-decoration: none;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+.forgot-password a:hover {
+  color: #00b0ff;
+  text-decoration: underline;
+}
+
 @media (max-width: 900px) {
     .cliente-main {
         flex-direction: column;

@@ -14,7 +14,7 @@ app.use((req, res, next) => {
 });
 
 // === RUTAS ===
-app.use('/api', usuariosRoutes);
+app.use('/api/usuarios', usuariosRoutes);
 
 // === MANEJO DE ERRORES 404 ===
 app.use((req, res) => {

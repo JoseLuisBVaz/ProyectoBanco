@@ -342,7 +342,7 @@ export class Transfers implements OnInit {
       return;
     }
     
-    const url = `http://localhost:3000/api/transfer-pdf/${this.lastTransferId}`;
+    const url = `http://localhost:3000/api/usuarios/transfer-pdf/${this.lastTransferId}`;
     window.open(url, '_blank');
   }
 
@@ -353,7 +353,7 @@ export class Transfers implements OnInit {
       return;
     }
     
-    const url = `http://localhost:3000/api/receipt/${this.lastTransferId}`;
+    const url = `http://localhost:3000/api/usuarios/receipt/${this.lastTransferId}`;
     window.open(url, '_blank');
   }
 }

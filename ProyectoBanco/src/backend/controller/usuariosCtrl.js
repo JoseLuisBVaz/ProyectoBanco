@@ -1117,7 +1117,7 @@ const requestPasswordReset = async (req, res) => {
         WHERE m.mainId = ?
       `;
       
-      db.query(nameQuery, [user.mainId], async (nameErr, nameResults) => {
+      db.query(nameQuery, [user.mainId], (nameErr, nameResults) => {
         let customerName = 'Usuario';
         
         if (nameResults && nameResults[0]) {
@@ -1126,7 +1126,8 @@ const requestPasswordReset = async (req, res) => {
         }
         
         // Generar token
-        const { token, expiresAt } = passwordResetService.generateResetToken(mail);
+        const token = passwordResetService.generateResetToken(mail);
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
         
         // Crear enlace de recuperación
         const resetLink = `http://localhost:4200/reset-password?token=${token}&mail=${encodeURIComponent(mail)}`;
@@ -1141,26 +1142,32 @@ const requestPasswordReset = async (req, res) => {
         });
         
         // Enviar correo
-        const emailResult = await emailService.sendPasswordResetEmail(mail, {
+        emailService.sendPasswordResetEmail(mail, {
           customerName: customerName,
           resetToken: token,
           resetLink: resetLink,
           expirationTime: expirationTime
-        });
-        
-        if (emailResult.success) {
-          console.log(`✅ [PASSWORD-RESET] Correo de recuperación enviado a: ${mail}`);
-          res.json({ 
-            success: true,
-            msg: 'Correo de recuperación enviado exitosamente' 
-          });
-        } else {
-          console.error('❌ [PASSWORD-RESET] Error al enviar correo:', emailResult.error);
+        }).then(emailResult => {
+          if (emailResult.success) {
+            console.log(`✅ [PASSWORD-RESET] Correo de recuperación enviado a: ${mail}`);
+            res.json({ 
+              success: true,
+              msg: 'Correo de recuperación enviado exitosamente' 
+            });
+          } else {
+            console.error('❌ [PASSWORD-RESET] Error al enviar correo:', emailResult.error);
+            res.status(500).json({ 
+              success: false,
+              msg: 'Error al enviar el correo de recuperación' 
+            });
+          }
+        }).catch(error => {
+          console.error('❌ [PASSWORD-RESET] Error al enviar correo:', error);
           res.status(500).json({ 
             success: false,
             msg: 'Error al enviar el correo de recuperación' 
           });
-        }
+        });
       });
     });
     
@@ -1176,7 +1183,7 @@ const requestPasswordReset = async (req, res) => {
 /**
  * Restablece la contraseña con el token
  */
-const resetPassword = async (req, res) => {
+const resetPassword = (req, res) => {
   const { mail, token, newPassword } = req.body;
   
   if (!mail || !token || !newPassword) {

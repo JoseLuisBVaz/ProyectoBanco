@@ -340,7 +340,7 @@ export class Depositos implements OnInit {
       return;
     }
     
-    const url = `http://localhost:3000/api/deposit-pdf/${this.lastDepositId}`;
+    const url = `http://localhost:3000/api/usuarios/deposit-pdf/${this.lastDepositId}`;
     window.open(url, '_blank');
   }
 }

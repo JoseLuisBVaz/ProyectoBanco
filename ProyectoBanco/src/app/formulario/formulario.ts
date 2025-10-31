@@ -60,7 +60,7 @@ export class Formulario implements OnInit {
     this.loadingCustomers = true;
     this.cuentaForm.get('mainId')?.disable(); // Deshabilitar mientras carga
     
-    this.http.get<any[]>('http://localhost:3000/api/customers')
+    this.http.get<any[]>('http://localhost:3000/api/usuarios/customers')
       .subscribe({
         next: (customers) => {
           this.customers = customers;
@@ -134,7 +134,7 @@ export class Formulario implements OnInit {
       curp: this.cuentaForm.value.curp
     };
 
-    this.http.post('http://localhost:3000/api/create-account', accountData)
+    this.http.post('http://localhost:3000/api/usuarios/create-account', accountData)
       .subscribe({
         next: (response: any) => {
           this.loading = false;

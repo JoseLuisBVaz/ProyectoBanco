@@ -12,8 +12,8 @@ ProyectoBanco/src/backend/
 ├── 📄 db.js                        // Configuración de conexión a MySQL
 ├── 📄 package.json                 // Dependencias del proyecto
 │
-├── � controller/
-│   └── �📄 usuariosCtrl.js          // Controladores de lógica de negocio
+├── 📁 controller/
+│   └──�📄 usuariosCtrl.js          // Controladores de lógica de negocio
 │
 ├── 📁 routes/
 │   └── 📄 usuarios.js              // Definición de rutas/endpoints
