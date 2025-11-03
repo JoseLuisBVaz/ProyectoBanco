@@ -312,6 +312,92 @@ const sendWithdrawalCodeEmail = async (recipientEmail, data) => {
   }
 };
 
+// ==================== EMAIL DE DISPOSICIÓN DE CRÉDITO ====================
+/**
+ * Envía correo de confirmación de disposición de crédito
+ * @param {string} recipientEmail - Email del destinatario
+ * @param {Object} data - Datos de la disposición (amount, accNum, description, disposalId, etc.)
+ * @returns {Promise<Object>} - Resultado del envío
+ */
+const sendCreditDisposalEmail = async (recipientEmail, data) => {
+  try {
+    console.log('[EMAIL] Preparando correo de disposición de crédito');
+    
+    const htmlContent = emailTemplates.creditDisposalEmail(data);
+    
+    const mailOptions = {
+      to: recipientEmail,
+      subject: `Disposición de Crédito - $${data.amount.toLocaleString('es-MX')} - Banco JETY`,
+      html: htmlContent
+    };
+    
+    return await sendEmail(mailOptions);
+  } catch (error) {
+    console.error('[EMAIL] Error al enviar correo de disposición:', error);
+    throw error;
+  }
+};
+
+// ==================== EMAIL DE HISTORIAL DE CRÉDITO ====================
+/**
+ * Envía correo con el historial de disposiciones de crédito
+ * @param {string} recipientEmail - Email del destinatario
+ * @param {Object} data - Datos del historial (disposals, accNum, customerName, period, totalDisposed)
+ * @returns {Promise<Object>} - Resultado del envío
+ */
+const sendCreditHistoryEmail = async (recipientEmail, data) => {
+  try {
+    console.log('[EMAIL] Preparando correo de historial de crédito');
+    
+    const htmlContent = emailTemplates.creditHistoryEmail(data);
+    
+    const mailOptions = {
+      to: recipientEmail,
+      subject: 'Historial de Línea de Crédito - Banco JETY',
+      html: htmlContent
+    };
+    
+    return await sendEmail(mailOptions);
+  } catch (error) {
+    console.error('[EMAIL] Error al enviar correo de historial:', error);
+    throw error;
+  }
+};
+
+// ==================== EMAIL DE ESTADO DE CUENTA ====================
+/**
+ * Envía correo con el estado de cuenta en PDF
+ * @param {string} recipientEmail - Email del destinatario
+ * @param {Object} data - Datos del estado de cuenta
+ * @param {Buffer} pdfBuffer - Buffer del PDF generado
+ * @returns {Promise<Object>} - Resultado del envío
+ */
+const sendAccountStatementEmail = async (recipientEmail, data, pdfBuffer) => {
+  try {
+    console.log('[EMAIL] Preparando correo de estado de cuenta con PDF');
+    
+    const htmlContent = emailTemplates.accountStatementEmail(data);
+    
+    const mailOptions = {
+      to: recipientEmail,
+      subject: `Estado de Cuenta ${data.accNum.slice(-4)} - Banco JETY`,
+      html: htmlContent,
+      attachments: [
+        {
+          filename: `Estado_Cuenta_${data.accNum}_${new Date().toISOString().split('T')[0]}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf'
+        }
+      ]
+    };
+    
+    return await sendEmail(mailOptions);
+  } catch (error) {
+    console.error('[EMAIL] Error al enviar correo de estado de cuenta:', error);
+    throw error;
+  }
+};
+
 // ==================== EXPORTS ====================
 module.exports = {
   sendTransferSentEmail,
@@ -322,6 +408,9 @@ module.exports = {
   sendWelcomeEmail,
   sendDepositReceivedEmail,
   sendWithdrawalCodeEmail,
+  sendCreditDisposalEmail,
+  sendCreditHistoryEmail,
+  sendAccountStatementEmail,
   verifyConnection,
   sendEmail // Export genérico para casos personalizados
 };

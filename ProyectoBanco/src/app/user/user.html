@@ -1,96 +1,151 @@
 <app-navbar class="top-navbar"></app-navbar>
-<div class="container">
-  <div class="main-box">
-    <div class="info-section">
-      <div class="datos-personales">
-        <div class="dato">
-          <span class="dato-titulo">Nombre(s):</span>
-          <div class="dato-valor">Juan Alberto</div>
-        </div>
-        <div class="dato">
-          <span class="dato-titulo">Apellido Paterno:</span>
-          <div class="dato-valor">Sanchez</div>
-        </div>
-        <div class="dato">
-          <span class="dato-titulo">Apellido Materno:</span>
-          <div class="dato-valor">Sandoval</div>
-        </div>
-        <div class="dato">
-          <span class="dato-titulo">Fecha de nacimiento:</span>
-          <div class="dato-valor">06 /Marzo/1985</div>
-        </div>
-        <div class="dato">
-          <span class="dato-titulo">Domicilio:</span>
-          <div class="dato-valor">CD Margaritas NUM 8 colonia Centro</div>
-        </div>
-        <div class="dato">
-          <span class="dato-titulo">Gmail:</span>
-          <div class="dato-valor">juanss@gmail.com</div>
-        </div>
-      </div>
 
-      <div class="datos-cuenta">
-        <span class="cuenta-titulo">Información de la cuenta</span>
-        <div class="cuenta-dato">Número de cuenta: <b>23456789</b></div>
-        <div class="cuenta-dato">Tipo de cuenta: <b>Corriente</b></div>
-        <div class="cuenta-dato">Fecha de apertura: <b>01/15/2015</b></div>
-        <div class="cuenta-dato">Saldo: <b>$5,250.00</b></div>
-      </div>
+<div class="loading-overlay" *ngIf="loading">
+  <div class="spinner"></div>
+  <p>Cargando información...</p>
+</div>
 
-      <div class="card-panel">
-        <div class="card-header">
-          <span class="card-nombre">Juan Alberto Sanchez Sandoval</span>
-          <span class="card-id">
-            <span class="id-icon">&#128179;</span>
-            ID Cliente
+<div class="container" *ngIf="!loading && userData">
+  <div class="profile-header">
+    <div class="profile-avatar">
+      <i class="fas fa-user-circle"></i>
+    </div>
+    <div class="profile-info">
+      <h1 class="profile-name">{{ userData.firstName }} {{ userData.lastNameP }} {{ userData.lastNameM }}</h1>
+      <p class="profile-email">
+        <i class="fas fa-envelope"></i>
+        {{ userData.mail }}
+      </p>
+      <p class="profile-phone">
+        <i class="fas fa-phone"></i>
+        {{ userData.phoneNumber }}
+      </p>
+    </div>
+    <div class="profile-badge">
+      <span class="badge" [ngClass]="{'badge-customer': userData.rol === 'c', 'badge-employee': userData.rol === 'e'}">
+        {{ userData.rol === 'c' ? 'Cliente' : 'Empleado' }}
+      </span>
+    </div>
+  </div>
+
+  <div class="cards-grid">
+    <div class="card personal-info-card">
+      <div class="card-header-section">
+        <i class="fas fa-user card-icon"></i>
+        <h2>Datos Personales</h2>
+      </div>
+      <div class="card-body">
+        <div class="info-row">
+          <span class="info-label">
+            <i class="fas fa-calendar"></i>
+            Fecha de Nacimiento
           </span>
-          <img src="assets/icons/profile.png" alt="Usuario" class="card-photo">
+          <span class="info-value">{{ formatDate(userData.birthday) }}</span>
         </div>
-        <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png" alt="Visa" class="card-img"/>
-        <div class="card-num">
-          <span class="card-numero">1234 4568 1234 4568</span>
-          <div class="card-nombre2">KENNY BELL</div>
+        <div class="info-row">
+          <span class="info-label">
+            <i class="fas fa-map-marker-alt"></i>
+            Dirección
+          </span>
+          <span class="info-value">{{ userData.address }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">
+            <i class="fas fa-id-card"></i>
+            CURP
+          </span>
+          <span class="info-value">{{ userData.curp }}</span>
+        </div>
+        <div class="info-row" *ngIf="userData.rfc">
+          <span class="info-label">
+            <i class="fas fa-file-invoice"></i>
+            RFC
+          </span>
+          <span class="info-value">{{ userData.rfc }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">
+            <i class="fas fa-clock"></i>
+            Cliente Desde
+          </span>
+          <span class="info-value">{{ formatDate(userData.enterDate) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card accounts-card">
+      <div class="card-header-section">
+        <i class="fas fa-wallet card-icon"></i>
+        <h2>Mis Cuentas</h2>
+      </div>
+      <div class="card-body">
+        <div class="account-summary">
+          <div class="summary-item">
+            <span class="summary-label">Total de Cuentas</span>
+            <span class="summary-value">{{ accounts.length }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Balance Total</span>
+            <span class="summary-value balance-amount">${{ totalBalance | number:'1.2-2' }}</span>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="bottom-box">
-    <div class="historial-section">
-      <span class="historial-titulo">Historial de transacciones</span>
-      <table class="historial-table">
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Descripción</th>
-            <th>Importe</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>20/04/2024</td>
-            <td>Depósito</td>
-            <td>$1,000.00</td>
-          </tr>
-          <tr>
-            <td>18/04/2024</td>
-            <td>Retiro en cajero automático</td>
-            <td>$200.00</td>
-          </tr>
-          <tr>
-            <td>15/04/2024</td>
-            <td>Pago</td>
-            <td>$1,150.00</td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="adeudos-box">
-        <span class="adeudos-text">Sin<br>adeudos</span>
+  <div class="card transactions-card">
+    <div class="card-header-section">
+      <i class="fas fa-history card-icon"></i>
+      <h2>Últimos Movimientos</h2>
+    </div>
+    <div class="card-body">
+      <div class="transactions-table-container">
+        <table class="transactions-table" *ngIf="movements.length > 0">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Descripción</th>
+              <th>Tipo</th>
+              <th class="text-right">Monto</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let mov of movements">
+              <td>{{ formatDate(mov.date) }}</td>
+              <td>{{ mov.description }}</td>
+              <td>
+                <span class="movement-badge" [ngClass]="mov.type">
+                  <i class="fas" [ngClass]="{
+                    'fa-arrow-up': mov.type === 'deposit',
+                    'fa-arrow-down': mov.type === 'withdrawal',
+                    'fa-exchange-alt': mov.type === 'transfer'
+                  }"></i>
+                  {{ mov.type === 'deposit' ? 'Depósito' : mov.type === 'withdrawal' ? 'Retiro' : 'Transferencia' }}
+                </span>
+              </td>
+              <td class="text-right" [ngClass]="{'amount-positive': mov.amount > 0, 'amount-negative': mov.amount < 0}">
+                {{ mov.amount > 0 ? '+' : '' }}${{ mov.amount | number:'1.2-2' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="no-movements" *ngIf="movements.length === 0">
+          <i class="fas fa-inbox"></i>
+          <p>No hay movimientos recientes</p>
+        </div>
+      </div>
+      
+      <div class="debt-status">
+        <div class="debt-indicator" [ngClass]="{'has-debt': hasDebts, 'no-debt': !hasDebts}">
+          <i class="fas" [ngClass]="hasDebts ? 'fa-exclamation-triangle' : 'fa-check-circle'"></i>
+          <span>{{ hasDebts ? 'Hay adeudos pendientes' : 'Sin adeudos' }}</span>
+        </div>
       </div>
     </div>
   </div>
+</div>
 
-  <div class="bottom-actions">
-    <button class="btn-ver-novedades" routerLink="/novedades">Ver Novedades</button>
-  </div>
+<div class="error-message" *ngIf="!loading && errorMsg">
+  <i class="fas fa-exclamation-circle"></i>
+  <p>{{ errorMsg }}</p>
 </div>

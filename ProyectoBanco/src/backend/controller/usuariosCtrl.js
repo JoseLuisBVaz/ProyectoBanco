@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const PDFDocument = require('pdfkit');
 const emailService = require('../services/emailService');
 const passwordResetService = require('../services/passwordResetService');
+const pdfService = require('../services/pdfService');
 
 // ==================== UTILIDADES ====================
 
@@ -131,12 +132,11 @@ const getUsuario = (req, res) => {
 const getAccountsByUser = (req, res) => {
   const { mainId } = req.params;
   if (!mainId) {
-    return res.status(400).json({ msg: 'mainId requerido' });
+    return res.status(400).json({ success: false, message: 'mainId requerido' });
   }
   
   const sql = `
-    SELECT accountId, mainId, cardNum, balance, clabe, accNum, accPhone,
-           COALESCE(accType, 'Debito') AS accType
+    SELECT accountId, mainId, cardNum, balance, clabe, accNum, accPhone, accType
     FROM cAccount
     WHERE mainId = ?
     ORDER BY accountId ASC
@@ -145,9 +145,9 @@ const getAccountsByUser = (req, res) => {
   db.query(sql, [mainId], (err, results) => {
     if (err) {
       console.error('[ACCOUNTS] Error al obtener cuentas:', err);
-      return res.status(500).send(err);
+      return res.status(500).json({ success: false, message: 'Error al obtener cuentas' });
     }
-    res.json(results || []);
+    res.json({ success: true, data: results || [] });
   });
 };
 
@@ -2173,6 +2173,743 @@ const getAccountStatement = (req, res) => {
   });
 };
 
+// ========================================
+// LÍNEA DE CRÉDITO
+// ========================================
+
+/**
+ * Realiza una disposición de crédito (usar el crédito disponible)
+ */
+const disposeCreditFunds = (req, res) => {
+  const { accountId, amount, description } = req.body;
+
+  console.log('[CREDIT DISPOSAL] ========== NUEVA DISPOSICIÓN ==========');
+  console.log('[CREDIT DISPOSAL] Body recibido:', { accountId, amount, description });
+
+  // Validaciones
+  if (!accountId || !amount) {
+    console.log('[CREDIT DISPOSAL] ❌ Error: Faltan parámetros');
+    return res.status(400).json({
+      success: false,
+      msg: 'Se requiere accountId y amount'
+    });
+  }
+
+  if (isNaN(amount) || Number(amount) <= 0) {
+    console.log('[CREDIT DISPOSAL] ❌ Error: Monto inválido');
+    return res.status(400).json({
+      success: false,
+      msg: 'El monto debe ser un número mayor a 0'
+    });
+  }
+
+  const numericAmount = Number(amount);
+  const finalDescription = description || 'Disposición de crédito';
+
+  console.log('[CREDIT DISPOSAL] Llamando a sp_dispose_credit con:');
+  console.log(`  - accountId: ${accountId}`);
+  console.log(`  - amount: ${numericAmount}`);
+  console.log(`  - description: ${finalDescription}`);
+
+  const query = 'CALL sp_dispose_credit(?, ?, ?)';
+
+  db.query(query, [accountId, numericAmount, finalDescription], (err, results) => {
+    if (err) {
+      console.log('[CREDIT DISPOSAL] ❌ Error en el SP:', err.message);
+      return res.status(500).json({
+        success: false,
+        msg: err.sqlMessage || err.message || 'Error al realizar la disposición'
+      });
+    }
+
+    console.log('[CREDIT DISPOSAL] ✅ Disposición exitosa');
+    console.log('[CREDIT DISPOSAL] Resultado del SP:', results[0][0]);
+
+    const result = results[0][0];
+
+    // Enviar email de confirmación
+    const emailQuery = `
+      SELECT u.name, u.mail, c.accNum
+      FROM cAccount c
+      JOIN usuario u ON c.mainId = u.mainId
+      WHERE c.accountId = ?
+    `;
+    
+    db.query(emailQuery, [accountId], (emailErr, emailResults) => {
+      if (!emailErr && emailResults && emailResults.length > 0) {
+        const customer = emailResults[0];
+        console.log('[CREDIT DISPOSAL] Enviando email a:', customer.mail);
+        
+        const emailData = {
+          customerName: customer.name,
+          amount: numericAmount,
+          accNum: customer.accNum,
+          timestamp: new Date(),
+          description: finalDescription,
+          disposalId: result.disposalId,
+          creditLimit: result.creditLimit,
+          usedCredit: result.usedCredit,
+          availableAfter: result.availableAfter
+        };
+        
+        emailService.sendCreditDisposalEmail(customer.mail, emailData)
+          .then(() => {
+            console.log('[CREDIT DISPOSAL] ✅ Email enviado exitosamente');
+          })
+          .catch(err => {
+            console.log('[CREDIT DISPOSAL] ⚠️ Error al enviar email:', err.message);
+          });
+      } else {
+        console.log('[CREDIT DISPOSAL] ⚠️ No se pudo obtener información para enviar email');
+      }
+    });
+
+    res.json({
+      success: true,
+      disposalId: result.disposalId,
+      availableAfter: result.availableAfter,
+      creditLimit: result.creditLimit,
+      usedCredit: result.usedCredit,
+      msg: result.message || 'Disposición realizada exitosamente'
+    });
+  });
+};
+
+/**
+ * Obtiene la información del crédito (límite, usado, disponible)
+ */
+const getCreditInfo = (req, res) => {
+  const { accountId } = req.params;
+
+  console.log('[CREDIT INFO] Consultando información para cuenta:', accountId);
+
+  if (!accountId || isNaN(accountId)) {
+    console.log('[CREDIT INFO] ❌ Error: accountId inválido');
+    return res.status(400).json({
+      success: false,
+      msg: 'ID de cuenta inválido'
+    });
+  }
+
+  const query = `
+    SELECT 
+      ca.accountId,
+      ca.accNum,
+      ca.clabe,
+      ca.cardNum,
+      ca.balance,
+      ca.accType,
+      ca.mainId,
+      fn_calculate_credit_limit(ca.mainId) AS creditLimit,
+      -- balance = deuda, disponible = límite - deuda
+      CASE 
+        WHEN ca.accType = 'Credito' THEN (fn_calculate_credit_limit(ca.mainId) - ca.balance)
+        ELSE 0
+      END AS available,
+      -- usado = deuda actual
+      CASE 
+        WHEN ca.accType = 'Credito' THEN ca.balance
+        ELSE 0
+      END AS used,
+      -- porcentaje usado = (deuda / límite) * 100
+      CASE 
+        WHEN ca.accType = 'Credito' AND fn_calculate_credit_limit(ca.mainId) > 0 
+        THEN ROUND((ca.balance / fn_calculate_credit_limit(ca.mainId)) * 100, 2)
+        ELSE 0
+      END AS usedPercentage
+    FROM cAccount ca
+    WHERE ca.accountId = ?
+  `;
+
+  db.query(query, [accountId], (err, results) => {
+    if (err) {
+      console.log('[CREDIT INFO] ❌ Error en la consulta:', err.message);
+      return res.status(500).json({
+        success: false,
+        msg: 'Error al obtener información de crédito'
+      });
+    }
+
+    if (results.length === 0) {
+      console.log('[CREDIT INFO] ❌ Cuenta no encontrada');
+      return res.status(404).json({
+        success: false,
+        msg: 'Cuenta no encontrada'
+      });
+    }
+
+    const account = results[0];
+
+    if (account.accType !== 'Credito') {
+      console.log('[CREDIT INFO] ❌ No es una cuenta de crédito');
+      return res.status(400).json({
+        success: false,
+        msg: 'Esta no es una cuenta de crédito'
+      });
+    }
+
+    console.log('[CREDIT INFO] ✅ Información obtenida correctamente');
+    console.log('[CREDIT INFO] Límite:', account.creditLimit);
+    console.log('[CREDIT INFO] Usado:', account.used);
+    console.log('[CREDIT INFO] Disponible:', account.available);
+
+    res.json({
+      success: true,
+      creditInfo: {
+        accountId: account.accountId,
+        accNum: account.accNum,
+        clabe: account.clabe,
+        cardNum: account.cardNum,
+        creditLimit: parseFloat(account.creditLimit),
+        used: parseFloat(account.used),
+        available: parseFloat(account.available),
+        usedPercentage: parseFloat(account.usedPercentage),
+        balance: parseFloat(account.balance)
+      }
+    });
+  });
+};
+
+/**
+ * Obtiene el historial de disposiciones de crédito
+ */
+const getCreditHistory = (req, res) => {
+  const { accountId } = req.params;
+
+  console.log('[CREDIT HISTORY] Consultando historial para cuenta:', accountId);
+
+  if (!accountId || isNaN(accountId)) {
+    console.log('[CREDIT HISTORY] ❌ Error: accountId inválido');
+    return res.status(400).json({
+      success: false,
+      msg: 'ID de cuenta inválido'
+    });
+  }
+
+  const query = `
+    SELECT 
+      disposalId,
+      accountId,
+      amount,
+      description,
+      timestamp,
+      availableAfter
+    FROM creditDisposal
+    WHERE accountId = ?
+    ORDER BY timestamp DESC
+  `;
+
+  db.query(query, [accountId], (err, results) => {
+    if (err) {
+      console.log('[CREDIT HISTORY] ❌ Error en la consulta:', err.message);
+      return res.status(500).json({
+        success: false,
+        msg: 'Error al obtener el historial de disposiciones'
+      });
+    }
+
+    console.log('[CREDIT HISTORY] ✅ Historial obtenido:', results.length, 'disposiciones');
+
+    const disposals = results.map(d => ({
+      disposalId: d.disposalId,
+      accountId: d.accountId,
+      amount: parseFloat(d.amount),
+      description: d.description,
+      date: d.timestamp,
+      availableAfter: parseFloat(d.availableAfter)
+    }));
+
+    res.json({
+      success: true,
+      disposals,
+      total: disposals.length
+    });
+  });
+};
+
+/**
+ * Envía el historial de crédito por correo electrónico
+ */
+const sendCreditHistoryByEmail = (req, res) => {
+  const { accountId } = req.body;
+
+  console.log('[SEND CREDIT HISTORY] Preparando envío de historial para cuenta:', accountId);
+
+  if (!accountId || isNaN(accountId)) {
+    console.log('[SEND CREDIT HISTORY] ❌ Error: accountId inválido');
+    return res.status(400).json({
+      success: false,
+      msg: 'ID de cuenta inválido'
+    });
+  }
+
+  // Primero obtener la información de la cuenta y el usuario
+  const accountQuery = `
+    SELECT u.name, u.mail, c.accNum
+    FROM cAccount c
+    JOIN usuario u ON c.mainId = u.mainId
+    WHERE c.accountId = ? AND c.accType = 'Credito'
+  `;
+
+  db.query(accountQuery, [accountId], (err, accountResults) => {
+    if (err) {
+      console.log('[SEND CREDIT HISTORY] ❌ Error al obtener información de la cuenta:', err.message);
+      return res.status(500).json({
+        success: false,
+        msg: 'Error al obtener información de la cuenta'
+      });
+    }
+
+    if (!accountResults || accountResults.length === 0) {
+      console.log('[SEND CREDIT HISTORY] ❌ Error: Cuenta no encontrada');
+      return res.status(404).json({
+        success: false,
+        msg: 'Cuenta de crédito no encontrada'
+      });
+    }
+
+    const customer = accountResults[0];
+
+    // Luego obtener el historial de disposiciones
+    const historyQuery = `
+      SELECT 
+        disposalId,
+        amount,
+        description,
+        timestamp,
+        availableAfter
+      FROM creditDisposal
+      WHERE accountId = ?
+      ORDER BY timestamp DESC
+    `;
+
+    db.query(historyQuery, [accountId], (err, historyResults) => {
+      if (err) {
+        console.log('[SEND CREDIT HISTORY] ❌ Error al obtener historial:', err.message);
+        return res.status(500).json({
+          success: false,
+          msg: 'Error al obtener el historial de disposiciones'
+        });
+      }
+
+      if (!historyResults || historyResults.length === 0) {
+        console.log('[SEND CREDIT HISTORY] ⚠️ No hay disposiciones en el historial');
+        return res.status(404).json({
+          success: false,
+          msg: 'No hay disposiciones en el historial para enviar'
+        });
+      }
+
+      // Formatear las disposiciones
+      const disposals = historyResults.map(d => ({
+        disposalId: d.disposalId,
+        amount: parseFloat(d.amount),
+        description: d.description,
+        date: d.timestamp,
+        availableAfter: parseFloat(d.availableAfter)
+      }));
+
+      // Calcular el total dispuesto
+      const totalDisposed = disposals.reduce((sum, d) => sum + d.amount, 0);
+
+      // Calcular el período
+      const oldestDate = new Date(disposals[disposals.length - 1].date);
+      const newestDate = new Date(disposals[0].date);
+      const period = `${oldestDate.toLocaleDateString('es-MX')} - ${newestDate.toLocaleDateString('es-MX')}`;
+
+      // Preparar datos para el email
+      const emailData = {
+        customerName: customer.name,
+        accNum: customer.accNum,
+        disposals: disposals,
+        period: period,
+        totalDisposed: totalDisposed
+      };
+
+      console.log('[SEND CREDIT HISTORY] Enviando email a:', customer.mail);
+
+      // Enviar el email
+      emailService.sendCreditHistoryEmail(customer.mail, emailData)
+        .then(() => {
+          console.log('[SEND CREDIT HISTORY] ✅ Email enviado exitosamente');
+          res.json({
+            success: true,
+            msg: 'Historial enviado por correo electrónico exitosamente'
+          });
+        })
+        .catch(err => {
+          console.log('[SEND CREDIT HISTORY] ❌ Error al enviar email:', err.message);
+          res.status(500).json({
+            success: false,
+            msg: 'Error al enviar el historial por correo'
+          });
+        });
+    });
+  });
+};
+
+/**
+ * Envía el estado de cuenta con PDF por correo electrónico
+ */
+const sendAccountStatementByEmail = (req, res) => {
+  const { accountId } = req.body;
+
+  console.log('[SEND STATEMENT] Preparando envío de estado de cuenta para cuenta:', accountId);
+
+  if (!accountId || isNaN(accountId)) {
+    console.log('[SEND STATEMENT] ❌ Error: accountId inválido');
+    return res.status(400).json({
+      success: false,
+      msg: 'ID de cuenta inválido'
+    });
+  }
+
+  // Reutilizar la lógica de getAccountStatement
+  const accountInfoSql = `
+    SELECT 
+      ca.accountId,
+      ca.mainId,
+      ca.cardNum,
+      ca.balance,
+      ca.clabe,
+      ca.accNum,
+      ca.accPhone,
+      ca.accType,
+      COALESCE(c.firstName, e.firstName) AS firstName,
+      COALESCE(c.lastNameP, e.lastNameP) AS lastNameP,
+      COALESCE(c.lastNameM, e.lastNameM) AS lastNameM,
+      m.mail AS mail
+    FROM cAccount ca
+    LEFT JOIN customer c ON ca.mainId = c.mainId
+    LEFT JOIN employee e ON ca.mainId = e.mainId
+    JOIN main m ON ca.mainId = m.mainId
+    WHERE ca.accountId = ?
+  `;
+
+  db.query(accountInfoSql, [accountId], (err, accountResults) => {
+    if (err) {
+      console.error('[SEND STATEMENT] Error al obtener info de cuenta:', err);
+      return res.status(500).json({ 
+        success: false,
+        msg: 'Error al obtener información de la cuenta' 
+      });
+    }
+
+    if (accountResults.length === 0) {
+      return res.status(404).json({ 
+        success: false,
+        msg: 'Cuenta no encontrada' 
+      });
+    }
+
+    const accountInfo = accountResults[0];
+    const accNum = accountInfo.accNum;
+    const clabe = accountInfo.clabe;
+    const customerEmail = accountInfo.mail;
+
+    if (!customerEmail) {
+      return res.status(400).json({
+        success: false,
+        msg: 'No se encontró correo electrónico del titular'
+      });
+    }
+
+    const movementsSql = `
+      SELECT 
+        'transfer_out' as type,
+        t.tranId as id,
+        t.doDate as date,
+        t.ammount as amount,
+        t.fee,
+        t.description,
+        t.destiny,
+        t.origin
+      FROM transfer t
+      WHERE t.origin = ? OR t.origin = ?
+      
+      UNION ALL
+      
+      SELECT 
+        'transfer_in' as type,
+        t.tranId as id,
+        t.doDate as date,
+        t.ammount as amount,
+        0 as fee,
+        t.description,
+        t.destiny,
+        t.origin
+      FROM transfer t
+      WHERE t.destiny = ? OR t.destiny = ?
+      
+      UNION ALL
+      
+      SELECT 
+        'deposit' as type,
+        d.depId as id,
+        d.depositDate as date,
+        d.amount,
+        0 as fee,
+        d.description,
+        d.accNum as destiny,
+        NULL as origin
+      FROM deposito d
+      WHERE d.accNum = ?
+      
+      UNION ALL
+      
+      SELECT 
+        'withdrawal' as type,
+        r.withdrawid as id,
+        r.withdrawdate as date,
+        r.amount,
+        0 as fee,
+        r.description,
+        r.accNum as destiny,
+        NULL as origin
+      FROM retiros r
+      WHERE r.accNum = ?
+      
+      ORDER BY date DESC
+      LIMIT 100
+    `;
+
+    db.query(movementsSql, [accNum, clabe, accNum, clabe, accNum, accNum], (err, movements) => {
+      if (err) {
+        console.error('[SEND STATEMENT] Error al obtener movimientos:', err);
+        return res.status(500).json({ 
+          success: false,
+          msg: 'Error al obtener movimientos' 
+        });
+      }
+
+      // Formatear movimientos con saldo
+      let runningBalance = accountInfo.balance;
+      const formattedMovements = [];
+
+      for (let i = movements.length - 1; i >= 0; i--) {
+        const mov = movements[i];
+        formattedMovements.unshift({
+          type: mov.type,
+          id: mov.id,
+          date: mov.date,
+          amount: parseFloat(mov.amount || 0),
+          fee: parseFloat(mov.fee || 0),
+          description: mov.description,
+          destiny: mov.destiny,
+          origin: mov.origin,
+          balance: runningBalance
+        });
+
+        if (mov.type === 'transfer_out') {
+          runningBalance += (parseFloat(mov.amount) + parseFloat(mov.fee));
+        } else if (mov.type === 'transfer_in') {
+          runningBalance -= parseFloat(mov.amount);
+        } else if (mov.type === 'deposit') {
+          runningBalance -= parseFloat(mov.amount);
+        } else if (mov.type === 'withdrawal') {
+          runningBalance += parseFloat(mov.amount);
+        }
+      }
+
+      const statementData = {
+        accountInfo: {
+          accountId: accountInfo.accountId,
+          accNum: accountInfo.accNum,
+          clabe: accountInfo.clabe,
+          balance: parseFloat(accountInfo.balance),
+          cardNum: accountInfo.cardNum,
+          accType: accountInfo.accType,
+          accountHolder: `${accountInfo.firstName} ${accountInfo.lastNameP} ${accountInfo.lastNameM || ''}`.trim()
+        },
+        movements: formattedMovements
+      };
+
+      // Generar PDF
+      console.log('[SEND STATEMENT] Generando PDF...');
+      pdfService.generateAccountStatementPDF(statementData)
+        .then(pdfBuffer => {
+          console.log('[SEND STATEMENT] PDF generado, enviando email...');
+
+          const emailData = {
+            customerName: accountInfo.firstName,
+            accNum: accountInfo.accNum,
+            accType: accountInfo.accType,
+            balance: parseFloat(accountInfo.balance),
+            totalMovements: formattedMovements.length
+          };
+
+          return emailService.sendAccountStatementEmail(customerEmail, emailData, pdfBuffer);
+        })
+        .then(() => {
+          console.log('[SEND STATEMENT] ✅ Email enviado exitosamente');
+          res.json({
+            success: true,
+            msg: 'Estado de cuenta enviado por correo electrónico exitosamente'
+          });
+        })
+        .catch(err => {
+          console.error('[SEND STATEMENT] ❌ Error:', err);
+          res.status(500).json({
+            success: false,
+            msg: 'Error al generar o enviar el estado de cuenta'
+          });
+        });
+    });
+  });
+};
+
+const getUserInfo = (req, res) => {
+  const mainId = parseInt(req.params.mainId);
+
+  if (!mainId) {
+    return res.status(400).json({
+      success: false,
+      message: 'mainId es requerido'
+    });
+  }
+
+  const sql = `
+    SELECT 
+      m.mainId,
+      m.mail,
+      m.rol,
+      COALESCE(c.firstName, e.firstName) as firstName,
+      COALESCE(c.lastNameP, e.lastNameP) as lastNameP,
+      COALESCE(c.lastNameM, e.lastNameM) as lastNameM,
+      COALESCE(c.birthday, e.birthday) as birthday,
+      COALESCE(c.address, e.address) as address,
+      COALESCE(c.phoneNumber, e.phoneNumber) as phoneNumber,
+      COALESCE(c.curp, e.curp) as curp,
+      COALESCE(c.rfc, e.rfc) as rfc,
+      COALESCE(c.enterDate, e.enterDate) as enterDate,
+      e.nss
+    FROM main m
+    LEFT JOIN customer c ON m.mainId = c.mainId
+    LEFT JOIN employee e ON m.mainId = e.mainId
+    WHERE m.mainId = ?
+  `;
+
+  db.query(sql, [mainId], (err, results) => {
+    if (err) {
+      console.error('[GET USER INFO] Error:', err);
+      return res.status(500).json({
+        success: false,
+        message: 'Error al obtener información del usuario'
+      });
+    }
+
+    if (!results || results.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: results[0]
+    });
+  });
+};
+
+const getUserMovements = (req, res) => {
+  const mainId = parseInt(req.params.mainId);
+
+  if (!mainId) {
+    return res.status(400).json({
+      success: false,
+      message: 'mainId es requerido'
+    });
+  }
+
+  // Query para obtener todas las transacciones del usuario
+  const sql = `
+    SELECT 
+      'Transferencia Enviada' as tipo,
+      t.origin as cuenta,
+      t.destiny as destino,
+      -t.ammount as monto,
+      -t.fee as comision,
+      t.description as descripcion,
+      t.dodate as fecha
+    FROM transfer t
+    INNER JOIN caccount ca ON t.origin = ca.accnum
+    WHERE ca.mainid = ?
+    
+    UNION ALL
+    
+    SELECT 
+      'Transferencia Recibida' as tipo,
+      t.destiny as cuenta,
+      t.origin as destino,
+      t.ammount as monto,
+      0 as comision,
+      t.description as descripcion,
+      t.dodate as fecha
+    FROM transfer t
+    INNER JOIN caccount ca ON t.destiny = ca.accnum
+    WHERE ca.mainid = ?
+    
+    UNION ALL
+    
+    SELECT 
+      'Depósito' as tipo,
+      d.accnum as cuenta,
+      NULL as destino,
+      d.amount as monto,
+      0 as comision,
+      d.description as descripcion,
+      DATE(d.depositdate) as fecha
+    FROM deposito d
+    WHERE d.mainid = ?
+    
+    UNION ALL
+    
+    SELECT 
+      'Retiro' as tipo,
+      r.accnum as cuenta,
+      NULL as destino,
+      -r.amount as monto,
+      0 as comision,
+      r.description as descripcion,
+      DATE(r.withdrawdate) as fecha
+    FROM retiros r
+    WHERE r.mainid = ?
+    
+    UNION ALL
+    
+    SELECT 
+      'Disposición de Crédito' as tipo,
+      ca.accnum as cuenta,
+      NULL as destino,
+      cd.amount as monto,
+      0 as comision,
+      cd.description as descripcion,
+      DATE(cd.timestamp) as fecha
+    FROM creditdisposal cd
+    INNER JOIN caccount ca ON cd.accountid = ca.accountid
+    WHERE ca.mainid = ?
+    
+    ORDER BY fecha DESC
+    LIMIT 5
+  `;
+
+  db.query(sql, [mainId, mainId, mainId, mainId, mainId], (err, results) => {
+    if (err) {
+      console.error('[GET USER MOVEMENTS] Error:', err);
+      return res.status(500).json({
+        success: false,
+        message: 'Error al obtener movimientos del usuario'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: results || []
+    });
+  });
+};
+
 module.exports = { 
   getMain, 
   getCustomers, 
@@ -2193,5 +2930,12 @@ module.exports = {
   getRetirosRecientes,
   validarCodigoRetiro,
   procesarRetiroConCodigo,
-  getAccountStatement
+  getAccountStatement,
+  disposeCreditFunds,
+  getCreditInfo,
+  getCreditHistory,
+  sendCreditHistoryByEmail,
+  sendAccountStatementByEmail,
+  getUserInfo,
+  getUserMovements
 };

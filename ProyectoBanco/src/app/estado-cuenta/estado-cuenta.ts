@@ -1,6 +1,7 @@
 import { Component, OnInit, Inject, ChangeDetectorRef } from '@angular/core';
 import { PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser, CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { Navbar } from '../navbar/navbar';
 import { LoginService } from '../services/login.service';
 import { UsuariosService } from '../services/usuarios.service';
@@ -36,6 +37,7 @@ export class EstadoCuenta implements OnInit {
   filteredMovements: Movement[] = [];
   
   isLoading = false;
+  isSendingEmail = false;
   errorMsg = '';
   showAccountSelector = false;
   
@@ -54,6 +56,7 @@ export class EstadoCuenta implements OnInit {
     private loginService: LoginService,
     private usuariosService: UsuariosService,
     private transferService: TransferService,
+    private http: HttpClient,
     private cdr: ChangeDetectorRef,
     @Inject(PLATFORM_ID) platformId: Object
   ) {
@@ -91,8 +94,10 @@ export class EstadoCuenta implements OnInit {
 
   private loadAccounts(mainId: number) {
     this.usuariosService.getAccountsByUser(mainId).subscribe({
-      next: (list) => {
-        const arr = (Array.isArray(list) ? list : []).map((a: any) => ({
+      next: (response: any) => {
+        const list = response?.data || response?.accounts || (Array.isArray(response) ? response : []);
+        
+        const arr = list.map((a: any) => ({
           ...a,
           accountId: a.accountId,
           accNum: a.accNum ?? a.accountNumber,
@@ -112,7 +117,7 @@ export class EstadoCuenta implements OnInit {
       },
       error: (err) => {
         this.errorMsg = 'No se pudieron cargar las cuentas';
-        console.error('[ESTADO-CUENTA] Error al cargar cuentas:', err);
+        console.error('❌ [ESTADO-CUENTA] Error al cargar cuentas:', err);
       }
     });
   }
@@ -280,6 +285,39 @@ export class EstadoCuenta implements OnInit {
     const str = String(accNum);
     if (str.length < 4) return str;
     return '•••• ' + str.slice(-4);
+  }
+
+  sendStatementByEmail(): void {
+    if (!this.selectedAccount) {
+      this.errorMsg = 'No hay cuenta seleccionada';
+      setTimeout(() => this.errorMsg = '', 3000);
+      return;
+    }
+
+    if (this.movements.length === 0) {
+      this.errorMsg = 'No hay movimientos para enviar';
+      setTimeout(() => this.errorMsg = '', 3000);
+      return;
+    }
+
+    this.isSendingEmail = true;
+    this.errorMsg = '';
+
+    const url = `http://localhost:3000/api/usuarios/send-account-statement`;
+    const body = { accountId: this.selectedAccount.accountId };
+
+    this.http.post<any>(url, body).subscribe({
+      next: (response) => {
+        this.isSendingEmail = false;
+        alert('Estado de cuenta enviado por correo exitosamente. Revisa tu bandeja de entrada.');
+      },
+      error: (err) => {
+        console.error('Error al enviar estado de cuenta por email:', err);
+        this.isSendingEmail = false;
+        this.errorMsg = err.error?.msg || 'Error al enviar el estado de cuenta por correo';
+        setTimeout(() => this.errorMsg = '', 5000);
+      }
+    });
   }
 
   private getStyleFor(acc: any): { [k: string]: string } {

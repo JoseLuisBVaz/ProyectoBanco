@@ -104,10 +104,20 @@
     </div>
 
     <div class="movements-section" *ngIf="!isLoading && filteredMovements.length > 0">
-      <h3 class="section-title">
-        Movimientos 
-        <span class="count-badge">{{ filteredMovements.length }}</span>
-      </h3>
+      <div class="movements-header">
+        <h3 class="section-title">
+          Movimientos 
+          <span class="count-badge">{{ filteredMovements.length }}</span>
+        </h3>
+        <button 
+          class="email-statement-btn red"
+          (click)="sendStatementByEmail()"
+          [disabled]="isSendingEmail"
+          title="Solicitar estado de cuenta en PDF por correo">
+          <i class="fas fa-file-pdf"></i>
+          {{ isSendingEmail ? 'Enviando PDF...' : 'Solicitar PDF' }}
+        </button>
+      </div>
 
       <div class="movements-table-container">
         <table class="movements-table">

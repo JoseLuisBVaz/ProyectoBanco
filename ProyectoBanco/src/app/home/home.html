@@ -20,29 +20,19 @@
         <div class="action-label">Retiro sin Tarjeta</div>
       </a>
 
-      <a class="action-item" href="#" title="Recarga Celular">
-        <div class="action-icon"><i class="fa-solid fa-mobile-screen"></i></div>
-        <div class="action-label">Recarga Celular</div>
-      </a>
-
-      <a class="action-item" href="#" title="Pago de servicios">
+      <a class="action-item" href="/progreso" title="Pago de servicios">
         <div class="action-icon"><i class="fa-solid fa-lightbulb"></i></div>
         <div class="action-label">Pago de servicios</div>
       </a>
 
-      <a class="action-item" [routerLink]="'/prestamo'" title="Préstamos">
-        <div class="action-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
-        <div class="action-label">Prestamos</div>
+      <a class="action-item" [routerLink]="'/credito'" title="Línea de Crédito">
+        <div class="action-icon"><i class="fa-solid fa-credit-card"></i></div>
+        <div class="action-label">Línea de Crédito</div>
       </a>
 
       <a class="action-item" [routerLink]="'/cuenta'" title="Estado de cuenta">
         <div class="action-icon"><i class="fa-solid fa-table-list"></i></div>
         <div class="action-label">Estado de cuenta</div>
-      </a>
-
-      <a class="action-item" href="#" title="Más">
-        <div class="action-icon"><i class="fa-solid fa-bars"></i></div>
-        <div class="action-label">Más</div>
       </a>
     </div>
     
@@ -87,4 +77,55 @@
       </div>
     </div>
   </section>
+</div>
+
+<!-- Modal de oferta de Línea de Crédito -->
+<div class="credit-modal-overlay" *ngIf="showCreditModal" (click)="closeCreditModal()">
+  <div class="credit-modal" (click)="$event.stopPropagation()">
+    <button class="modal-close-btn" (click)="closeCreditModal()">
+      <i class="fas fa-times"></i>
+    </button>
+    
+    <div class="modal-header">
+      <div class="modal-icon">
+        <i class="fas fa-credit-card"></i>
+      </div>
+      <h2>¡Obtén tu Línea de Crédito!</h2>
+      <p class="modal-subtitle">Accede a dinero cuando lo necesites</p>
+    </div>
+    
+    <div class="modal-body">
+      <div class="benefits-list">
+        <div class="benefit-item">
+          <i class="fas fa-check-circle"></i>
+          <span>Límite calculado automáticamente según tu historial</span>
+        </div>
+        <div class="benefit-item">
+          <i class="fas fa-check-circle"></i>
+          <span>Disponible 24/7 desde tu cuenta</span>
+        </div>
+        <div class="benefit-item">
+          <i class="fas fa-check-circle"></i>
+          <span>Sin comisiones por apertura</span>
+        </div>
+        <div class="benefit-item">
+          <i class="fas fa-check-circle"></i>
+          <span>Disposiciones ilimitadas</span>
+        </div>
+      </div>
+      
+      <div class="modal-cta">
+        <p class="cta-text">Tu límite de crédito se calcula basándose en tus depósitos del último mes</p>
+      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeCreditModal()">
+        Ahora no
+      </button>
+      <button class="btn-primary" (click)="goToCreditLine()">
+        Ver mi línea de crédito
+      </button>
+    </div>
+  </div>
 </div>

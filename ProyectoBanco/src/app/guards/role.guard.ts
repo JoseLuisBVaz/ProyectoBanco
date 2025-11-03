@@ -8,7 +8,6 @@ export class RoleGuard implements CanActivate {
 
   canActivate(route: ActivatedRouteSnapshot): boolean | UrlTree {
     const allowed: string[] = route.data['roles'] || [];
-    // In SSR, skip checks to avoid redirect flicker; client will re-evaluate after hydration.
     if (!isPlatformBrowser(this.platformId)) {
       return true;
     }
@@ -25,7 +24,6 @@ export class RoleGuard implements CanActivate {
       if (allowed.includes(rol)) return true;
       return this.router.parseUrl('/login');
     } catch (e) {
-      console.warn('RoleGuard error:', e);
       return this.router.parseUrl('/login');
     }
   }

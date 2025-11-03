@@ -1,465 +1,575 @@
-/* Estilos para el formulario de retiros (siguiendo el diseño de transferencias y depósitos) */
-.registro-container {
-	position: relative;
-	z-index: 1;
-	min-height: 100vh;
-	width: 100%;
-	display: flex;
-	justify-content: center;
-	align-items: flex-start;
-	background: #f5f6fa;
-	padding-top: 3rem;
-	box-sizing: border-box;
-	overflow-x: hidden;
+/* Estilos base mejorados con espaciado de credito.css */
+.home-container {
+  width: 100%;
+  min-height: calc(100vh - 80px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2rem 1rem;
+  box-sizing: border-box;
+  background: #f5f6fa;
 }
 
-.registro-card {
-	background: #fff;
-	border-radius: 18px;
-	border: 3px solid #bdbdbd;
-	box-shadow: 3px 6px 6px rgba(60,60,60,0.18);
-	padding: 2.2rem 2.5rem 2rem;
-	width: 90%;
-	max-width: 800px;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	box-sizing: border-box;
+.home-panel {
+  width: 100%;
+  max-width: 95%; 
+  background: #fff;
+  border-radius: 16px;
+  border: 2px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  padding: 2rem 2rem 2.5rem;
 }
 
-.registro-card h2 {
-	color: #1a2aff;
-	font-size: 1.5rem;
-	font-weight: bold;
-	margin-bottom: 1.5rem;
-	letter-spacing: 1px;
-	text-align: center;
+.home-title {
+  color: #1a2aff;
+  font-size: 1.8rem;
+  font-weight: 800;
+  text-align: center;
+  margin: 0 0 2rem 0;
+  letter-spacing: 0.5px;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e0e0e0;
 }
 
-.form-section { width: 100%; margin-bottom: 1.5rem; }
-.form-section h3 {
-	font-weight: bold;
-	color: #222;
-	margin-bottom: 1rem;
-	font-size: 1.15rem;
-	border-bottom: 2px solid #00b0ff;
-	padding-bottom: 5px;
+/* Mensajes con mejor espaciado */
+.error-box {
+  background: #fee;
+  color: #c00;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  margin: 1.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
 }
 
-/* Wrapper para la sección de código generado */
-.codigo-section-wrapper {
-	width: 100%;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 1.5rem;
+.error-box i {
+  font-size: 1.2rem;
 }
 
-.form-grid {
-	display: grid;
-	grid-template-columns: repeat(2, 1fr);
-	gap: 1rem;
-	width: 100%;
+.success-box {
+  background: #d1fae5;
+  color: #065f46;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  margin: 1.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
 }
-.form-group { display: flex; flex-direction: column; width: 100%; }
-.form-group.full-width { grid-column: 1 / -1; }
-.form-group label { font-size: 0.95rem; margin-bottom: 0.4rem; color: #444; }
-.form-group input, .form-group select, .form-group textarea {
-	border: 2px solid #00b0ff;
-	border-radius: 10px;
-	padding: 0.5rem 1rem;
-	font-size: 1.1rem;
-	background: #ededed;
-	outline: none;
-	font-weight: bold;
-	color: #444;
-	transition: border 0.2s;
-	width: 100%;
-	box-sizing: border-box;
-	font-family: inherit;
-}
-.form-group textarea {
-	resize: vertical;
-	min-height: 80px;
-}
-.form-group input::placeholder, .form-group textarea::placeholder { color: #888; font-weight: bold; }
-.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #1a2aff; }
 
-/* Estilos para campo de contraseña */
-.password-input-wrapper { 
-	position: relative; 
-	display: flex; 
-	align-items: center; 
-	width: 100%; 
+.success-box i {
+  font-size: 1.2rem;
 }
-.password-input-wrapper input { 
-	padding-right: 3rem; 
-	width: 100%; 
+
+/* Input groups con espaciado consistente */
+.input-group {
+  margin-bottom: 1.5rem;
 }
+
+.input-group:last-of-type {
+  margin-bottom: 2rem;
+}
+
+.form-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.form-label i {
+  color: #1a2aff;
+  font-size: 1rem;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.2s;
+  box-sizing: border-box;
+  background: #fff;
+}
+
+.form-input:hover {
+  border-color: #1a2aff;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #1a2aff;
+  box-shadow: 0 0 0 3px rgba(26, 42, 255, 0.1);
+}
+
+/* Password wrapper para posicionar el ojito */
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.password-wrapper .form-input {
+  width: 100%;
+  padding-right: 3rem;
+}
+
 .toggle-password {
-	position: absolute; 
-	right: 0.8rem; 
-	background: none; 
-	border: none; 
-	cursor: pointer;
-	color: #666; 
-	font-size: 1.1rem; 
-	padding: 0.5rem; 
-	display: flex; 
-	align-items: center; 
-	justify-content: center;
-	transition: color 0.2s;
-}
-.toggle-password:hover { color: #1a2aff; }
-.toggle-password i { font-size: 1rem; }
-
-.required {
-	color: #ff0000;
-	font-weight: bold;
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+  z-index: 10;
 }
 
-.error-msg {
-	color: #ff0000;
-	font-size: 0.85rem;
-	margin-top: 0.3rem;
-	font-weight: 500;
+.toggle-password:hover {
+  color: #1a2aff;
 }
 
-/* Botones de montos rápidos */
-.quick-amounts {
-	display: grid;
-	grid-template-columns: repeat(4, 1fr);
-	gap: 0.5rem;
-	margin-top: 0.8rem;
-}
-.quick-amount-btn {
-	padding: 0.5rem;
-	background: #e8f5e9;
-	color: #2e7d32;
-	border: 2px solid #4caf50;
-	border-radius: 8px;
-	font-size: 0.9rem;
-	font-weight: bold;
-	cursor: pointer;
-	transition: all 0.2s;
-}
-.quick-amount-btn:hover {
-	background: #4caf50;
-	color: #fff;
-	transform: translateY(-2px);
-}
-.quick-amount-btn:disabled {
-	background: #f5f5f5;
-	color: #999;
-	border-color: #ddd;
-	cursor: not-allowed;
-	transform: none;
+.toggle-password i {
+  font-size: 1.1rem;
 }
 
-/* Botones principales */
-.btn-registrar {
-	width: 100%;
-	padding: 0.8rem 0;
-	background: #2300ff;
-	color: #fff;
-	border: none;
-	border-radius: 22px;
-	font-size: 1.15rem;
-	font-weight: bold;
-	cursor: pointer;
-	margin-top: 0.7rem;
-	transition: background 0.2s;
-	letter-spacing: 1px;
-	box-shadow: 0 2px 8px rgba(35, 0, 255, 0.3);
-}
-.btn-registrar:hover { background: #1a00cc; }
-.btn-registrar:disabled {
-	background: #ccc;
-	cursor: not-allowed;
+.input-hint {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
 }
 
-.btn-cancelar {
-	width: 100%;
-	padding: 0.8rem 0;
-	background: #6c757d;
-	color: #fff;
-	border: none;
-	border-radius: 22px;
-	font-size: 1.15rem;
-	font-weight: bold;
-	cursor: pointer;
-	margin-top: 0.5rem;
-	transition: background 0.2s;
-	letter-spacing: 1px;
-}
-.btn-cancelar:hover { background: #5a6268; }
-.btn-cancelar:disabled {
-	background: #ccc;
-	cursor: not-allowed;
+.input-hint b {
+  color: #374151;
 }
 
-.button-group {
-	width: 100%;
-	display: flex;
-	flex-direction: column;
-	gap: 0.5rem;
+.input-error {
+  font-size: 0.85rem;
+  color: #dc2626;
+  margin-top: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 500;
 }
 
-/* Mensajes */
-.error-msg {
-	color: #ff4d4f; text-align: center; font-weight: bold; margin-top: 10px; font-size: 0.95rem;
-	background-color: #ffe6e6; padding: 8px 12px; border-radius: 8px; border: 1px solid #ff4d4f;
-}
-.success-msg {
-	color: #2e7d32; text-align: center; font-weight: bold; margin-top: 10px; font-size: 0.95rem;
-	background-color: #e6f4ea; padding: 8px 12px; border-radius: 8px; border: 1px solid #2e7d32;
+.input-error i {
+  font-size: 0.9rem;
 }
 
-.fee-hint { 
-	margin-top: 6px; 
-	font-size: 0.9rem; 
-	color: #555; 
-	font-weight: 600; 
-}
-.fee-hint .sep { margin: 0 8px; color: #999; }
-.fee-hint .negative { color: #b30000; }
-.fee-hint .positive { color: #2e7d32; }
-.fee-hint .highlight { 
-	color: #2e7d32; 
-	font-weight: 700; 
-}
-
-/* Card de cuenta seleccionada */
+/* Tarjeta de cuenta */
 .account-card {
-	margin-top: 1rem;
-	background: #fff;
-	border: 2px solid #e0e0e0;
-	border-radius: 14px;
-	box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-	padding: 1rem 1.2rem;
-	box-sizing: border-box;
-	max-width: 100%;
-}
-.account-card.colorful { border: none; color: #fff; box-shadow: 0 8px 20px rgba(0,0,0,0.18); }
-.account-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
-.account-left { display: flex; flex-direction: column; gap: 0.25rem; }
-.account-right { display: flex; flex-direction: column; gap: 0.25rem; text-align: right; }
-.account-name { font-weight: 700; }
-.badge { margin-left: 0.4rem; padding: 0.1rem 0.4rem; font-size: 0.7rem; font-weight: 700; border-radius: 999px; background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.35); }
-.badge i { margin-right: 0.25rem; }
-.account-num { font-weight: 600; opacity: 0.95; }
-.account-clabe { font-size: 0.85rem; opacity: 0.9; }
-.account-balance { font-size: 1.1rem; font-weight: 800; }
-.account-cardnum { font-size: 0.9rem; opacity: 0.95; }
-
-/* Sección del código generado */
-.codigo-section {
-	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-	border-radius: 12px;
-	padding: 2rem;
-	color: #fff;
-	box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
-	animation: fadeInScale 0.4s ease-out;
+  margin: 1.5rem 0;
+  background: #fff;
+  border: 2px solid #e0e0e0;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  padding: 1rem 1.2rem;
+  box-sizing: border-box;
+  max-width: 100%;
+  transition: all 0.3s ease;
 }
 
-.codigo-section .success-msg {
-	color: #fff !important;
-	background: rgba(255,255,255,0.2) !important;
-	border-color: rgba(255,255,255,0.5) !important;
+.account-card.colorful {
+  border: none;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.18);
 }
 
-@keyframes fadeInScale {
-	from {
-		opacity: 0;
-		transform: scale(0.95);
-	}
-	to {
-		opacity: 1;
-		transform: scale(1);
-	}
+.account-card.clickable {
+  cursor: pointer;
 }
 
-.codigo-section h3 {
-	color: #fff;
-	border-bottom: 2px solid rgba(255,255,255,0.3);
-	margin-bottom: 1.5rem;
-	font-size: 1.3rem;
-	text-align: center;
+.account-card.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.25);
 }
+
+.change-account-hint {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  opacity: 0.9;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.account-row { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  gap: 1rem; 
+}
+
+.account-left { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 0.3rem; 
+}
+
+.account-right { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 0.3rem; 
+  text-align: right; 
+}
+
+.account-name { 
+  font-weight: 700; 
+  font-size: 1rem;
+}
+
+.badge { 
+  margin-left: 0.4rem; 
+  padding: 0.15rem 0.5rem; 
+  font-size: 0.7rem; 
+  font-weight: 700; 
+  border-radius: 999px; 
+  background: rgba(255,255,255,0.2); 
+  color: #fff; 
+  border: 1px solid rgba(255,255,255,0.35);
+}
+
+.badge i { 
+  margin-right: 0.25rem; 
+}
+
+.account-num { 
+  font-weight: 600; 
+  opacity: 0.95; 
+  font-size: 0.95rem;
+}
+
+.account-clabe { 
+  font-size: 0.85rem; 
+  opacity: 0.9; 
+}
+
+.account-balance { 
+  font-weight: 700; 
+  font-size: 1.1rem;
+}
+
+.account-cardnum { 
+  font-size: 0.9rem; 
+  opacity: 0.95; 
+}
+
+/* Botones de monto rápido */
+.quick-amounts {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.quick-amount-btn {
+  flex: 1;
+  min-width: calc(25% - 0.75rem);
+  padding: 0.65rem 1rem;
+  background: #fff;
+  color: #1a2aff;
+  border: 2px solid #1a2aff;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.quick-amount-btn:hover {
+  background: #1a2aff;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(26, 42, 255, 0.2);
+}
+
+/* Código de retiro */
 .codigo-display {
-	text-align: center;
-}
-.codigo-value {
-	font-size: 1.8rem;
-	font-weight: 900;
-	letter-spacing: 3px;
-	background: rgba(255,255,255,0.95);
-	color: #667eea;
-	padding: 1rem 1.5rem;
-	border-radius: 10px;
-	margin: 1rem 0;
-	word-break: break-all;
-	box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-	animation: pulse 2s ease-in-out infinite;
-	border: 3px solid rgba(255,255,255,0.5);
+  background: #f9fafb;
+  border: 2px dashed #1a2aff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  text-align: center;
 }
 
-@keyframes pulse {
-	0%, 100% {
-		transform: scale(1);
-	}
-	50% {
-		transform: scale(1.02);
-	}
+.codigo-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.codigo-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #1a2aff;
+  letter-spacing: 0.3rem;
+  font-family: 'Courier New', monospace;
+  margin: 0.5rem 0;
+}
+
+.btn-copy {
+  margin-top: 1rem;
+  padding: 0.6rem 1.2rem;
+  background: #fff;
+  color: #1a2aff;
+  border: 2px solid #1a2aff;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-copy:hover {
+  background: #1a2aff;
+  color: #fff;
 }
 
 .codigo-info {
-	font-size: 1rem;
-	margin: 1.5rem 0;
-	line-height: 1.8;
-	text-align: center;
-	background: rgba(255,255,255,0.1);
-	padding: 1rem;
-	border-radius: 8px;
-	border: 1px solid rgba(255,255,255,0.2);
-}
-.codigo-info strong {
-	font-size: 1.1rem;
-	display: block;
-	margin-bottom: 0.5rem;
-}
-.btn-copy {
-	background: rgba(255,255,255,0.2);
-	color: #fff;
-	border: 2px solid rgba(255,255,255,0.5);
-	border-radius: 10px;
-	padding: 0.9rem 2rem;
-	font-size: 1.1rem;
-	font-weight: 700;
-	cursor: pointer;
-	transition: all 0.3s;
-	display: inline-flex;
-	align-items: center;
-	gap: 0.5rem;
-}
-.btn-copy:hover {
-	background: rgba(255,255,255,0.35);
-	transform: translateY(-3px);
-	box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 8px;
 }
 
-/* Info box */
-.info-box {
-	background: #e3f2fd;
-	border: 2px solid #2196f3;
-	border-radius: 10px;
-	padding: 1rem 1.5rem;
-	margin-bottom: 1rem;
-}
-.info-box h4 {
-	color: #1976d2;
-	margin-bottom: 0.8rem;
-	font-size: 1rem;
-}
-.info-box ul {
-	list-style: none;
-	padding: 0;
-	margin: 0;
-}
-.info-box li {
-	color: #424242;
-	font-size: 0.9rem;
-	padding: 0.3rem 0;
-	padding-left: 1.5rem;
-	position: relative;
-}
-.info-box li:before {
-	content: "•";
-	position: absolute;
-	left: 0;
-	color: #2196f3;
-	font-weight: bold;
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #374151;
+  font-size: 0.9rem;
 }
 
-/* Historial de retiros */
-.historial-section {
-	width: 100%;
-	margin-top: 2rem;
-	padding-top: 1.5rem;
-	border-top: 2px solid #e0e0e0;
-}
-.historial-section h3 {
-	font-weight: bold;
-	color: #222;
-	margin-bottom: 1rem;
-	font-size: 1.15rem;
-}
-.historial-table {
-	width: 100%;
-}
-.historial-header {
-	display: grid;
-	grid-template-columns: 2fr 2fr 1.5fr;
-	gap: 1rem;
-	padding: 0.8rem 1rem;
-	background: #f5f6fa;
-	border-radius: 8px;
-	font-weight: 700;
-	color: #555;
-	font-size: 0.9rem;
-	margin-bottom: 0.5rem;
-}
-.historial-item {
-	display: grid;
-	grid-template-columns: 2fr 2fr 1.5fr;
-	gap: 1rem;
-	padding: 0.8rem 1rem;
-	background: #fff;
-	border: 1px solid #e0e0e0;
-	border-radius: 8px;
-	margin-bottom: 0.5rem;
-	transition: all 0.2s;
-}
-.historial-item:hover {
-	background: #f9f9f9;
-	transform: translateX(5px);
-}
-.historial-date {
-	font-size: 0.85rem;
-	color: #666;
-}
-.historial-account {
-	font-weight: 600;
-	color: #444;
-}
-.historial-amount {
-	font-weight: 700;
-	color: #ff6b35;
-	text-align: right;
+.info-item i {
+  color: #1a2aff;
+  font-size: 1.1rem;
+  min-width: 1.5rem;
+  text-align: center;
 }
 
-/* Responsive */
-@media (max-width: 1000px) {
-	.registro-card { width: 95%; }
-	.form-grid { grid-template-columns: 1fr; }
+.info-item strong {
+  color: #1a2aff;
+}
+
+/* Botón principal */
+.btn-dispose {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  background: #1a2aff;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+  margin-top: 1rem;
+}
+
+.btn-dispose:hover:not(:disabled) {
+  background: #1520cc;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(26, 42, 255, 0.3);
+}
+
+.btn-dispose:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-dispose i {
+  font-size: 1.1rem;
+}
+
+/* Estilos para selector de otras cuentas */
+.other-accounts { 
+  margin-top: 1rem;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.other-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0.5rem 0 0.5rem 0.25rem;
+  color: #111827;
+}
+
+.other-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.other-item {
+  width: 100%;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;            
+  box-shadow: none; 
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  text-align: left;
+  user-select: none;
+  box-sizing: border-box;
+  max-width: 100%;
+  transition: all 0.2s;
+}
+
+.other-item:hover { 
+  background: #f3f4f6; 
+  border-color: #1a2aff;
+  transform: translateX(5px);
+}
+
+.other-item.selected {
+  background: #eef2ff;
+  border: 2px solid #1a2aff;
+  box-shadow: 0 2px 8px rgba(26, 42, 255, 0.2);
+}
+
+.other-left, .other-right { 
+  min-width: 0; 
+}
+
+.other-left .other-name, .other-right .other-cardnum { 
+  overflow-wrap: anywhere; 
+}
+
+.other-left { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 0.15rem; 
+}
+
+.other-right { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 0.15rem; 
+  text-align: right; 
+}
+
+.other-name { 
+  font-weight: 700; 
+}
+
+.other-item .badge {
+  background: #eef2ff;
+  color: #1a2aff;
+  border-color: #c7d2fe;
+}
+
+.other-item.selected .badge {
+  background: #1a2aff;
+  color: #fff;
+  border-color: #1a2aff;
+}
+
+.other-clabe { 
+  font-size: 0.85rem; 
+  color: #555; 
+}
+
+.other-balance { 
+  font-weight: 800; 
+}
+
+.other-cardnum { 
+  font-size: 0.9rem; 
+  color: #333; 
 }
 
 @media (max-width: 700px) {
-	.account-row { flex-direction: column; align-items: flex-start; text-align: left; }
-	.account-right { text-align: left; }
-	.quick-amounts { grid-template-columns: repeat(2, 1fr); }
-	.historial-header, .historial-item {
-		grid-template-columns: 1fr;
-		gap: 0.3rem;
-	}
-	.historial-amount {
-		text-align: left;
-	}
+  .other-right { 
+    text-align: left; 
+  }
 }
 
-@media (max-width: 500px) {
-	.registro-card { padding: 1.5rem; }
-	.form-group input, .form-group select { font-size: 1rem; padding: 0.4rem 0.8rem; }
-	.btn-registrar { font-size: 1.05rem; padding: 0.7rem 0; }
-	.codigo-value { font-size: 1.5rem; letter-spacing: 2px; }
+/* Responsive */
+@media (max-width: 768px) {
+  .home-container {
+    padding: 1rem 0.5rem;
+  }
+
+  .home-panel {
+    padding: 1.5rem 1rem 2rem;
+    max-width: 100%;
+  }
+
+  .home-title {
+    font-size: 1.4rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .account-card {
+    padding: 1.25rem;
+  }
+
+  .input-group {
+    margin-bottom: 1.25rem;
+  }
+
+  .quick-amounts {
+    flex-direction: column;
+  }
+
+  .quick-amount-btn {
+    min-width: 100%;
+  }
+
+  .codigo-value {
+    font-size: 1.5rem;
+    letter-spacing: 0.2rem;
+  }
 }

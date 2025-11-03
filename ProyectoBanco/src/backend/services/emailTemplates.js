@@ -524,6 +524,210 @@ const emailTemplates = {
     `;
     
     return emailTemplates.baseTemplate(content, 'Código de Retiro - Banco JETY');
+  },
+
+  // ==================== DISPOSICIÓN DE CRÉDITO ====================
+  creditDisposalEmail: (data) => {
+    const content = `
+      <div>
+        <h2 style="color: #072146; margin-bottom: 20px; font-size: 24px;">
+          Disposición de Crédito Exitosa
+        </h2>
+        
+        <p style="font-size: 16px; color: #333;">
+          Hola <strong>${data.customerName}</strong>,
+        </p>
+        
+        <p style="font-size: 16px; color: #333;">
+          Tu disposición de crédito se ha procesado exitosamente.
+        </p>
+        
+        <div style="background-color: #e8f4fd; padding: 25px; border-radius: 8px; margin: 30px 0; border-left: 4px solid #0ea5e9;">
+          <h3 style="margin: 0 0 20px 0; color: #0369a1; font-size: 20px;">
+            <i>💳</i> Detalles de la Disposición
+          </h3>
+          
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #0369a1;">Monto dispuesto:</strong><br/>
+            <span style="font-size: 28px; color: #22c55e; font-weight: bold;">$${data.amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+          
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #0369a1;">Cuenta de crédito:</strong>
+            <span style="color: #333;">****${data.accNum.slice(-4)}</span>
+          </div>
+          
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #0369a1;">Fecha y hora:</strong>
+            <span style="color: #333;">${new Date(data.timestamp).toLocaleString('es-MX', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric', 
+              hour: '2-digit', 
+              minute: '2-digit'
+            })}</span>
+          </div>
+          
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #0369a1;">Descripción:</strong>
+            <span style="color: #333;">${data.description}</span>
+          </div>
+          
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #0369a1;">ID de disposición:</strong>
+            <span style="color: #333;">#${data.disposalId}</span>
+          </div>
+        </div>
+        
+        <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #22c55e;">
+          <h4 style="margin: 0 0 15px 0; color: #15803d;">Estado de tu Línea de Crédito</h4>
+          
+          <div style="margin-bottom: 10px;">
+            <strong style="color: #15803d;">Límite de crédito:</strong>
+            <span style="color: #333;">$${data.creditLimit.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+          
+          <div style="margin-bottom: 10px;">
+            <strong style="color: #15803d;">Crédito utilizado:</strong>
+            <span style="color: #333;">$${data.usedCredit.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+          
+          <div style="margin-bottom: 10px;">
+            <strong style="color: #15803d;">Crédito disponible:</strong>
+            <span style="font-size: 20px; color: #15803d; font-weight: bold;">$${data.availableAfter.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+        </div>
+        
+        <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+          <p style="margin: 0; color: #856404;">
+            <strong>💡 Recuerda:</strong> El monto dispuesto ha sido abonado a tu cuenta y debes realizar pagos para mantener tu línea de crédito disponible.
+          </p>
+        </div>
+        
+        <p style="margin-top: 30px; text-align: center; color: #666;">
+          Si no reconoces esta disposición, contacta inmediatamente con nosotros.
+        </p>
+      </div>
+    `;
+    
+    return emailTemplates.baseTemplate(content, 'Disposición de Crédito - Banco JETY');
+  },
+
+  // ==================== HISTORIAL DE CRÉDITO ====================
+  creditHistoryEmail: (data) => {
+    const disposalsRows = data.disposals.map(d => `
+      <tr style="border-bottom: 1px solid #e5e7eb;">
+        <td style="padding: 12px 8px; text-align: center; color: #333;">${new Date(d.date).toLocaleDateString('es-MX')}</td>
+        <td style="padding: 12px 8px; color: #333;">${d.description}</td>
+        <td style="padding: 12px 8px; text-align: right; color: #22c55e; font-weight: bold;">$${d.amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td style="padding: 12px 8px; text-align: right; color: #333;">$${d.availableAfter.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      </tr>
+    `).join('');
+
+    const content = `
+      <div>
+        <h2 style="color: #072146; margin-bottom: 20px; font-size: 24px;">
+          Historial de Línea de Crédito
+        </h2>
+        
+        <p style="font-size: 16px; color: #333;">
+          Hola <strong>${data.customerName}</strong>,
+        </p>
+        
+        <p style="font-size: 16px; color: #333;">
+          Aquí está el historial de disposiciones de tu línea de crédito.
+        </p>
+        
+        <div style="background-color: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0ea5e9;">
+          <h4 style="margin: 0 0 10px 0; color: #0369a1;">Cuenta:</h4>
+          <p style="margin: 0; color: #333;">****${data.accNum.slice(-4)}</p>
+          
+          <h4 style="margin: 20px 0 10px 0; color: #0369a1;">Período:</h4>
+          <p style="margin: 0; color: #333;">${data.period}</p>
+          
+          <h4 style="margin: 20px 0 10px 0; color: #0369a1;">Total de disposiciones:</h4>
+          <p style="margin: 0; color: #333; font-size: 18px; font-weight: bold;">${data.disposals.length}</p>
+        </div>
+        
+        <div style="margin: 30px 0;">
+          <h3 style="color: #072146; margin-bottom: 15px;">Historial de Disposiciones</h3>
+          <table style="width: 100%; border-collapse: collapse; background-color: #fff;">
+            <thead>
+              <tr style="background-color: #072146; color: #fff;">
+                <th style="padding: 12px 8px; text-align: center;">Fecha</th>
+                <th style="padding: 12px 8px; text-align: left;">Descripción</th>
+                <th style="padding: 12px 8px; text-align: right;">Monto</th>
+                <th style="padding: 12px 8px; text-align: right;">Disponible</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${disposalsRows}
+            </tbody>
+          </table>
+        </div>
+        
+        <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #22c55e;">
+          <h4 style="margin: 0 0 15px 0; color: #15803d;">Resumen</h4>
+          <div style="margin-bottom: 10px;">
+            <strong style="color: #15803d;">Total dispuesto:</strong>
+            <span style="font-size: 18px; color: #15803d; font-weight: bold;">$${data.totalDisposed.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+        </div>
+        
+        <p style="margin-top: 30px; text-align: center; color: #666;">
+          Este correo fue generado automáticamente. Para más información, visita nuestra sucursal.
+        </p>
+      </div>
+    `;
+    
+    return emailTemplates.baseTemplate(content, 'Historial de Crédito - Banco JETY');
+  },
+
+  // ==================== ESTADO DE CUENTA ====================
+  accountStatementEmail: (data) => {
+    const content = `
+      <div>
+        <h2 style="color: #072146; margin-bottom: 20px; font-size: 24px;">
+          Estado de Cuenta
+        </h2>
+        
+        <p style="font-size: 16px; color: #333;">
+          Hola <strong>${data.customerName}</strong>,
+        </p>
+        
+        <p style="font-size: 16px; color: #333;">
+          Adjunto encontrarás tu estado de cuenta en formato PDF.
+        </p>
+        
+        <div style="background-color: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0ea5e9;">
+          <h4 style="margin: 0 0 10px 0; color: #0369a1;">Información de la Cuenta:</h4>
+          <p style="margin: 5px 0; color: #333;">
+            <strong>Cuenta:</strong> ****${data.accNum.slice(-4)}
+          </p>
+          <p style="margin: 5px 0; color: #333;">
+            <strong>Tipo:</strong> ${data.accType}
+          </p>
+          <p style="margin: 5px 0; color: #333;">
+            <strong>Saldo actual:</strong> <span style="font-size: 18px; color: #22c55e; font-weight: bold;">$${data.balance.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </p>
+          <p style="margin: 5px 0; color: #333;">
+            <strong>Total de movimientos:</strong> ${data.totalMovements}
+          </p>
+        </div>
+        
+        <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+          <p style="margin: 0; color: #856404;">
+            <strong>📎 Archivo adjunto:</strong> Tu estado de cuenta se encuentra en el PDF adjunto a este correo.
+          </p>
+        </div>
+        
+        <p style="margin-top: 30px; text-align: center; color: #666;">
+          Si tienes alguna duda sobre tu estado de cuenta, contáctanos o visita tu sucursal más cercana.
+        </p>
+      </div>
+    `;
+    
+    return emailTemplates.baseTemplate(content, 'Estado de Cuenta - Banco JETY');
   }
 };
 

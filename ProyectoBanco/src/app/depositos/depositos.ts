@@ -20,13 +20,14 @@ export class Depositos implements OnInit {
   successMsg = '';
   passwordVisible = false;
   lastDepositId: number | null = null;
+  showAccountSelector = false; // Para mostrar/ocultar el selector de cuentas
 
   userName: string | null = null;
   userId: number | null = null;
   userMail: string | null = null;
   accounts: any[] = [];
   selectedDestination: any | null = null;
-  selectedCardStyle: { [k: string]: string } = {};
+  selectedCardStyle: { [k: string]: string} = {};
   private accountsRefreshed = false;
 
   constructor(
@@ -92,16 +93,12 @@ export class Depositos implements OnInit {
       return;
     }
 
-    // Preparar payload de depósito con mainId del usuario
     const payload = {
-      mainId: this.userId,  // Usar el ID del usuario del localStorage
+      mainId: this.userId,
       amount: Number(monto),
       description: descripcion || 'Depósito en efectivo'
     };
 
-    console.log('📤 [DEPOSIT] Enviando payload:', payload);
-
-    // Primero login (verificación de contraseña), luego depósito
     this.loginService.login(this.userMail, contrasena).subscribe({
       next: (loginRes) => {
         if (!loginRes || !loginRes.success) {
@@ -212,12 +209,12 @@ export class Depositos implements OnInit {
 
   private fetchAccountsFromServer(userId: number) {
     this.usuariosService.getAccountsByUser(userId).subscribe({
-      next: (data) => {
-        this.accounts = Array.isArray(data) ? data : [];
+      next: (response: any) => {
+        const data = response?.data || response?.accounts || (Array.isArray(response) ? response : []);
+        this.accounts = data;
         this.accountsRefreshed = true;
         this.cacheAccounts(userId, this.accounts);
         
-        // Si hay una cuenta seleccionada, actualizar su referencia
         if (this.selectedDestination) {
           const updated = this.accounts.find(
             acc => acc.accountId === this.selectedDestination.accountId
@@ -331,6 +328,19 @@ export class Depositos implements OnInit {
     if (!card) return '';
     const s = String(card);
     return s.length > 8 ? '**** **** **** ' + s.slice(-4) : s;
+  }
+
+  toggleAccountSelector() {
+    if (this.accounts.length > 1) {
+      this.showAccountSelector = !this.showAccountSelector;
+    }
+  }
+
+  selectDestinationAccount(acc: any) {
+    this.selectedDestination = acc;
+    this.depositForm.patchValue({ destino: acc });
+    this.selectedCardStyle = this.getStyleFor(acc);
+    this.showAccountSelector = false;
   }
 
   // ==================== DESCARGAR PDF ====================

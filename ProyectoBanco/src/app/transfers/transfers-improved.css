@@ -154,18 +154,31 @@
   gap: 0.3rem;
 }
 
-.input-hint b {
-  color: #374151;
+.input-hint i {
+  font-size: 0.9rem;
 }
 
-/* Tarjeta de cuenta */
+.input-error {
+  font-size: 0.85rem;
+  color: #dc2626;
+  margin-top: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.input-error i {
+  font-size: 0.9rem;
+}
+
+/* Tarjeta de cuenta con mejor espaciado */
 .account-card {
   margin: 1.5rem 0;
   background: #fff;
   border: 2px solid #e0e0e0;
   border-radius: 14px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  padding: 1rem 1.2rem;
+  padding: 1.5rem;
   box-sizing: border-box;
   max-width: 100%;
   transition: all 0.3s ease;
@@ -175,30 +188,6 @@
   border: none;
   color: #fff;
   box-shadow: 0 8px 20px rgba(0,0,0,0.18);
-}
-
-.account-card.clickable {
-  cursor: pointer;
-}
-
-.account-card.clickable:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(0,0,0,0.25);
-}
-
-.change-account-hint {
-  margin-top: 0.5rem;
-  font-size: 0.8rem;
-  opacity: 0.9;
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  animation: bounce 2s infinite;
-}
-
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
 }
 
 .account-row { 
@@ -295,125 +284,6 @@
 
 .btn-dispose i {
   font-size: 1.1rem;
-}
-
-/* Estilos para selector de otras cuentas */
-.other-accounts { 
-  margin-top: 1rem;
-  animation: slideDown 0.3s ease-out;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.other-title {
-  font-size: 1rem;
-  font-weight: 700;
-  margin: 0.5rem 0 0.5rem 0.25rem;
-  color: #111827;
-}
-
-.other-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.other-item {
-  width: 100%;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;            
-  box-shadow: none; 
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  cursor: pointer;
-  text-align: left;
-  user-select: none;
-  box-sizing: border-box;
-  max-width: 100%;
-  transition: all 0.2s;
-}
-
-.other-item:hover { 
-  background: #f3f4f6; 
-  border-color: #1a2aff;
-  transform: translateX(5px);
-}
-
-.other-item.selected {
-  background: #eef2ff;
-  border: 2px solid #1a2aff;
-  box-shadow: 0 2px 8px rgba(26, 42, 255, 0.2);
-}
-
-.other-left, .other-right { 
-  min-width: 0; 
-}
-
-.other-left .other-name, .other-right .other-cardnum { 
-  overflow-wrap: anywhere; 
-}
-
-.other-left { 
-  display: flex; 
-  flex-direction: column; 
-  gap: 0.15rem; 
-}
-
-.other-right { 
-  display: flex; 
-  flex-direction: column; 
-  gap: 0.15rem; 
-  text-align: right; 
-}
-
-.other-name { 
-  font-weight: 700; 
-}
-
-.other-item .badge {
-  background: #eef2ff;
-  color: #1a2aff;
-  border-color: #c7d2fe;
-}
-
-.other-item.selected .badge {
-  background: #1a2aff;
-  color: #fff;
-  border-color: #1a2aff;
-}
-
-.other-clabe { 
-  font-size: 0.85rem; 
-  color: #555; 
-}
-
-.other-balance { 
-  font-weight: 800; 
-}
-
-.other-cardnum { 
-  font-size: 0.9rem; 
-  color: #333; 
-}
-
-@media (max-width: 700px) {
-  .other-right { 
-    text-align: left; 
-  }
 }
 
 /* Responsive */

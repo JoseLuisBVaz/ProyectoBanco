@@ -21,6 +21,7 @@ export class Transfers implements OnInit {
   passwordVisible = false;
   confirmPasswordVisible = false;
   lastTransferId: number | null = null; // 🆕 Guardar el ID de la última transferencia
+  showAccountSelector = false; // Para mostrar/ocultar el selector de cuentas
 
   userName: string | null = null;
   userId: number | null = null;
@@ -255,6 +256,19 @@ export class Transfers implements OnInit {
     return `•••• ${last4}`;
   }
 
+  toggleAccountSelector() {
+    if (this.accounts.length > 1) {
+      this.showAccountSelector = !this.showAccountSelector;
+    }
+  }
+
+  selectOriginAccount(acc: any) {
+    this.selectedOrigin = acc;
+    this.transferForm.patchValue({ origen: acc });
+    this.selectedCardStyle = this.getStyleFor(acc);
+    this.showAccountSelector = false;
+  }
+
   // ====== Cache helpers para carga instantánea ======
   private cacheKeyForAccounts(userId: number) { return `acc_cache_${userId}`; }
   private cacheKeyForSelection(userId: number) { return `acc_sel_key_${userId}`; }
@@ -313,24 +327,26 @@ export class Transfers implements OnInit {
 
   private fetchAccountsFromServer(userId: number, reselectionKey?: string) {
     this.usuariosService.getAccountsByUser(userId).subscribe({
-      next: (accs: any[]) => {
+      next: (response: any) => {
+        const accs = response?.data || response?.accounts || (Array.isArray(response) ? response : []);
         const mapped = this.mapAccounts(accs);
         this.accounts = mapped;
         this.accountsRefreshed = true;
         this.saveAccountsCache(accs);
-        // Reseleccionar por key explícito o por cache previa
-        const selKey = reselectionKey || (this.userId != null ? localStorage.getItem(this.cacheKeyForSelection(this.userId)) || '' : '');
-        if (selKey) {
-          const found = this.accounts.find(x => String(x.accNum) === selKey || String(x.clabe) === selKey);
-          if (found) {
-            this.transferForm.patchValue({ origen: found });
-            this.selectedOrigin = found;
-            this.selectedCardStyle = this.getStyleFor(found);
+        
+        setTimeout(() => {
+          const selKey = reselectionKey || (this.userId != null ? localStorage.getItem(this.cacheKeyForSelection(this.userId)) || '' : '');
+          if (selKey) {
+            const found = this.accounts.find(x => String(x.accNum) === selKey || String(x.clabe) === selKey);
+            if (found) {
+              this.transferForm.patchValue({ origen: found });
+              this.selectedOrigin = found;
+              this.selectedCardStyle = this.getStyleFor(found);
+            }
           }
-        }
+        }, 0);
       },
       error: () => {
-        // Ignorar errores de refresco
       }
     });
   }

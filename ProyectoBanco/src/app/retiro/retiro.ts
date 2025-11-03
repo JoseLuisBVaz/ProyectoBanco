@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -38,6 +38,7 @@ export class Retiro implements OnInit {
   successMessage: string = '';
   errorMessage: string = '';
   codigoGenerado: string = '';
+  showAccountSelector = false;
   mainId: number | null = null;
   selectedAccount: Account | null = null;
   selectedCardStyle: any = {};
@@ -56,7 +57,8 @@ export class Retiro implements OnInit {
     private fb: FormBuilder,
     private loginService: LoginService,
     private usuariosService: UsuariosService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {
     this.retiroForm = this.fb.group({
       accountId: ['', Validators.required],
@@ -98,13 +100,22 @@ export class Retiro implements OnInit {
     if (!this.mainId) return;
 
     this.usuariosService.getAccountsByUser(this.mainId).subscribe({
-      next: (accounts: any) => {
-        // El backend retorna directamente un array
-        const accountsArray = Array.isArray(accounts) ? accounts : (accounts.accounts || []);
-        this.userAccounts = accountsArray.filter((acc: Account) => acc.balance > 0);
-        if (this.userAccounts.length === 0) {
-          this.errorMessage = 'No tienes cuentas con saldo disponible para realizar retiros.';
+      next: (response: any) => {
+        const accountsArray = response?.data || response?.accounts || (Array.isArray(response) ? response : []);
+        this.userAccounts = accountsArray;
+        
+        if (this.userAccounts.length > 0 && !this.selectedAccount) {
+          this.selectedAccount = this.userAccounts[0];
+          this.selectedCardStyle = this.getStyleFor(this.selectedAccount);
         }
+        
+        this.cdr.detectChanges();
+        
+        Promise.resolve().then(() => {
+          if (this.selectedAccount) {
+            this.retiroForm.patchValue({ accountId: this.selectedAccount.accountId });
+          }
+        });
       },
       error: (error: any) => {
         console.error('Error al cargar cuentas:', error);
@@ -113,9 +124,6 @@ export class Retiro implements OnInit {
     });
   }
 
-  /**
-   * Carga los retiros recientes del usuario
-   */
   private loadRetirosRecientes(): void {
     if (!this.mainId) return;
 
@@ -184,6 +192,13 @@ export class Retiro implements OnInit {
   }
 
   /**
+   * Getter para verificar si hay fondos insuficientes
+   */
+  get insufficientFunds(): boolean {
+    return this.retiroForm.get('amount')?.hasError('insufficientFunds') ?? false;
+  }
+
+  /**
    * Maneja el cambio de cuenta seleccionada
    */
   onAccountChange(): void {
@@ -243,6 +258,25 @@ export class Retiro implements OnInit {
   maskCard(cardNum: string): string {
     if (!cardNum || cardNum.length < 4) return cardNum;
     return '**** **** **** ' + cardNum.slice(-4);
+  }
+
+  /**
+   * Alterna la visibilidad del selector de cuentas
+   */
+  toggleAccountSelector(): void {
+    if (this.userAccounts.length > 1) {
+      this.showAccountSelector = !this.showAccountSelector;
+    }
+  }
+
+  /**
+   * Selecciona una cuenta origen
+   */
+  selectOriginAccount(account: Account): void {
+    this.selectedAccount = account;
+    this.retiroForm.patchValue({ accountId: account.accountId });
+    this.selectedCardStyle = this.getStyleFor(account);
+    this.showAccountSelector = false;
   }
 
   /**

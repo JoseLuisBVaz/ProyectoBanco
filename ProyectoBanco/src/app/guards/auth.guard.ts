@@ -7,22 +7,28 @@ export class AuthGuard implements CanActivate {
   constructor(private router: Router, @Inject(PLATFORM_ID) private platformId: Object) {}
 
   canActivate(): boolean | UrlTree {
-    // In SSR, avoid touching localStorage and do not redirect; let client decide.
     if (!isPlatformBrowser(this.platformId)) {
       return true;
     }
     try {
       const raw = localStorage.getItem('currentUser');
+      console.log('[AuthGuard] Verificando sesión, raw:', raw);
+      
       if (!raw) {
+        console.log('[AuthGuard] No hay currentUser en localStorage, redirigiendo a login');
         return this.router.parseUrl('/login');
       }
       const user = JSON.parse(raw);
+      console.log('[AuthGuard] Usuario encontrado:', user);
+      
       if (!user || (!user.mail && !user.mainId)) {
+        console.log('[AuthGuard] Usuario inválido, redirigiendo a login');
         return this.router.parseUrl('/login');
       }
+      console.log('[AuthGuard] Sesión válida, permitiendo acceso');
       return true;
     } catch (e) {
-      console.warn('AuthGuard parse error:', e);
+      console.error('[AuthGuard] Error al validar sesión:', e);
       return this.router.parseUrl('/login');
     }
   }

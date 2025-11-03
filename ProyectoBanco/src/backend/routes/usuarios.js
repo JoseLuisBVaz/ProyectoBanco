@@ -20,7 +20,14 @@ const {
   getRetirosRecientes,
   validarCodigoRetiro,
   procesarRetiroConCodigo,
-  getAccountStatement
+  getAccountStatement,
+  disposeCreditFunds,
+  getCreditInfo,
+  getCreditHistory,
+  sendCreditHistoryByEmail,
+  sendAccountStatementByEmail,
+  getUserInfo,
+  getUserMovements
 } = require('../controller/usuariosCtrl');
 
 // === RUTAS DE CONSULTA ===
@@ -30,6 +37,8 @@ router.get('/customers', getCustomers);
 router.get('/employees', getEmployees);
 router.get('/usuario/:id', getUsuario);
 router.get('/accounts/:mainId', getAccountsByUser);
+router.get('/user-info/:mainId', getUserInfo);
+router.get('/movements/:mainId', getUserMovements);
 
 // === AUTENTICACIÓN ===
 router.post('/login', login);
@@ -63,5 +72,12 @@ router.get('/deposit-pdf/:depId', generateDepositPDF);
 
 // === ESTADO DE CUENTA ===
 router.get('/account-statement/:accountId', getAccountStatement);
+router.post('/send-account-statement', sendAccountStatementByEmail);
+
+// === LÍNEA DE CRÉDITO ===
+router.post('/dispose-credit', disposeCreditFunds);
+router.get('/credit-info/:accountId', getCreditInfo);
+router.get('/credit-history/:accountId', getCreditHistory);
+router.post('/send-credit-history', sendCreditHistoryByEmail);
 
 module.exports = router;

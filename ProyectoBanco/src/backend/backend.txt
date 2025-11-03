@@ -1973,6 +1973,521 @@ O en caso de error:
 
 
 ================================================================================
+  21. SISTEMA DE LÍNEA DE CRÉDITO CON LÍMITE DINÁMICO
+================================================================================
+
+DESCRIPCIÓN GENERAL
+-------------------
+Sistema completo de línea de crédito que calcula el límite automáticamente
+basándose en el historial de depósitos del cliente. El límite se ajusta
+dinámicamente según los ingresos promedio mensuales de los últimos 6 meses.
+
+FÓRMULA DE CÁLCULO
+------------------
+Límite de Crédito = (Promedio mensual de depósitos últimos 6 meses) × 6
+
+Ejemplo:
+- Cliente deposita $1,000 mensuales en promedio
+- Límite calculado: $1,000 × 6 = $6,000
+
+Condiciones:
+1. Requiere al menos 3 meses de historial de depósitos
+2. Si no hay historial suficiente: límite mínimo de $5,000
+3. Los límites se redondean a múltiplos de $1,000
+4. El cálculo se actualiza en cada disposición
+
+
+--------------------------------------------------------------------------------
+FUNCIÓN: fn_calculate_credit_limit
+--------------------------------------------------------------------------------
+
+PROPÓSITO
+---------
+Calcula el límite de crédito de un cliente basándose en su historial de depósitos.
+
+SINTAXIS SQL
+------------
+SELECT fn_calculate_credit_limit(mainId) AS creditLimit;
+
+PARÁMETROS DE ENTRADA
+---------------------
+• p_mainId (INT): ID del usuario (main) para calcular el límite
+
+RETORNO
+-------
+DECIMAL(12,2): Límite de crédito calculado en pesos
+
+LÓGICA INTERNA
+--------------
+1. Consulta depósitos de los últimos 6 meses
+2. Agrupa por mes y suma totales mensuales
+3. Calcula promedio mensual
+4. Multiplica promedio × 6
+5. Valida mínimo de $5,000
+6. Redondea a múltiplos de $1,000
+
+EJEMPLO DE USO
+--------------
+-- Ver límite de crédito del usuario con mainId = 5
+SELECT fn_calculate_credit_limit(5) AS limiteCredito;
+
+-- Resultado esperado:
+-- +----------------+
+-- | limiteCredito  |
+-- +----------------+
+-- |      15000.00  |
+-- +----------------+
+
+
+QUERY INTERNA
+-------------
+SELECT 
+    COALESCE(AVG(monthly_total), 0),
+    COUNT(DISTINCT deposit_month)
+FROM (
+    SELECT 
+        DATE_FORMAT(depositDate, '%Y-%m') AS deposit_month,
+        SUM(amount) AS monthly_total
+    FROM deposito
+    WHERE mainId = p_mainId
+      AND depositDate >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+    GROUP BY DATE_FORMAT(depositDate, '%Y-%m')
+) AS monthly_deposits;
+
+
+--------------------------------------------------------------------------------
+ENDPOINT 1: POST /api/dispose-credit
+--------------------------------------------------------------------------------
+
+DESCRIPCIÓN
+-----------
+Realiza una disposición de crédito validando el límite dinámico calculado
+basándose en los depósitos del cliente.
+
+MÉTODO HTTP
+-----------
+POST
+
+URL COMPLETA
+------------
+http://localhost:3000/api/dispose-credit
+
+HEADERS
+-------
+Content-Type: application/json
+
+BODY (JSON)
+-----------
+{
+  "accountId": 1,
+  "amount": 5000.00,
+  "description": "Compra de equipo"
+}
+
+PARÁMETROS DEL BODY
+-------------------
+• accountId (Number, requerido): ID de la cuenta de crédito
+• amount (Number, requerido): Monto a disponer (debe ser > 0)
+• description (String, opcional): Descripción de la disposición
+
+VALIDACIONES
+------------
+1. accountId debe ser válido y existir
+2. La cuenta debe ser de tipo 'Credito'
+3. amount debe ser mayor a 0
+4. El monto no puede exceder el crédito disponible
+5. Límite se calcula dinámicamente en cada disposición
+
+RESPUESTA EXITOSA (200)
+------------------------
+{
+  "success": true,
+  "msg": "Disposición de crédito realizada exitosamente",
+  "data": {
+    "disposalId": 23,
+    "availableAfter": 38000.00,
+    "creditLimit": 45000.00,
+    "usedCredit": 7000.00,
+    "message": "Disposición realizada exitosamente"
+  }
+}
+
+CAMPOS DE LA RESPUESTA
+----------------------
+• disposalId: ID de la disposición registrada
+• availableAfter: Crédito disponible después de la disposición
+• creditLimit: Límite total calculado dinámicamente
+• usedCredit: Crédito ya utilizado
+• message: Mensaje de confirmación
+
+RESPUESTAS DE ERROR
+-------------------
+400 - Parámetros inválidos:
+{
+  "success": false,
+  "msg": "Parámetros incompletos o inválidos"
+}
+
+404 - Cuenta no encontrada:
+{
+  "success": false,
+  "msg": "Cuenta no encontrada"
+}
+
+400 - Crédito insuficiente:
+{
+  "success": false,
+  "msg": "Crédito insuficiente. Disponible: $35000. Límite: $45000"
+}
+
+500 - Error del servidor:
+{
+  "success": false,
+  "msg": "Error al procesar disposición de crédito"
+}
+
+STORED PROCEDURE ASOCIADO
+--------------------------
+sp_dispose_credit(accountId, amount, description)
+
+FLUJO DE EJECUCIÓN
+------------------
+1. Validar parámetros de entrada
+2. Iniciar transacción
+3. Bloquear cuenta (FOR UPDATE)
+4. Validar que sea cuenta de crédito
+5. Calcular límite dinámicamente: fn_calculate_credit_limit(mainId)
+6. Calcular disponible: límite + balance (balance negativo = deuda)
+7. Validar que amount <= disponible
+8. Actualizar balance: balance - amount (aumenta deuda)
+9. Registrar en tabla creditDisposal
+10. Commit y retornar resultado
+
+EJEMPLO DE PRUEBA - POSTMAN
+----------------------------
+URL: http://localhost:3000/api/dispose-credit
+Método: POST
+Body (raw JSON):
+{
+  "accountId": 1,
+  "amount": 3000,
+  "description": "Disposición para compras"
+}
+
+Tests (Postman):
+pm.test("Status 200", () => pm.response.to.have.status(200));
+pm.test("Success true", () => pm.expect(pm.response.json().success).to.be.true);
+pm.test("Has disposalId", () => pm.expect(pm.response.json().data.disposalId).to.exist);
+
+
+--------------------------------------------------------------------------------
+ENDPOINT 2: GET /api/credit-info/:accountId
+--------------------------------------------------------------------------------
+
+DESCRIPCIÓN
+-----------
+Obtiene información completa del crédito de una cuenta, incluyendo el límite
+calculado dinámicamente, saldo usado, disponible y porcentaje de utilización.
+
+MÉTODO HTTP
+-----------
+GET
+
+URL COMPLETA
+------------
+http://localhost:3000/api/credit-info/1
+
+PARÁMETROS DE URL
+-----------------
+• accountId (Number, requerido): ID de la cuenta de crédito
+
+QUERY SQL
+---------
+SELECT 
+  ca.accountId,
+  ca.accNum,
+  ca.clabe,
+  ca.cardNum,
+  ca.balance,
+  ca.accType,
+  ca.mainId,
+  fn_calculate_credit_limit(ca.mainId) AS creditLimit,
+  CASE 
+    WHEN ca.accType = 'Credito' 
+    THEN (fn_calculate_credit_limit(ca.mainId) + ca.balance)
+    ELSE 0
+  END AS available,
+  CASE 
+    WHEN ca.accType = 'Credito' 
+    THEN (fn_calculate_credit_limit(ca.mainId) - (fn_calculate_credit_limit(ca.mainId) + ca.balance))
+    ELSE 0
+  END AS used,
+  CASE 
+    WHEN ca.accType = 'Credito' AND fn_calculate_credit_limit(ca.mainId) > 0 
+    THEN ROUND(((fn_calculate_credit_limit(ca.mainId) - (fn_calculate_credit_limit(ca.mainId) + ca.balance)) / fn_calculate_credit_limit(ca.mainId)) * 100, 2)
+    ELSE 0
+  END AS usedPercentage
+FROM cAccount ca
+WHERE ca.accountId = ?
+
+RESPUESTA EXITOSA (200)
+------------------------
+{
+  "success": true,
+  "msg": "Información de crédito obtenida",
+  "data": {
+    "accountId": 1,
+    "accNum": "1234567890",
+    "clabe": "012345678901234567",
+    "cardNum": "4152313812345678",
+    "balance": -7000.00,
+    "accType": "Credito",
+    "mainId": 5,
+    "creditLimit": 45000.00,
+    "available": 38000.00,
+    "used": 7000.00,
+    "usedPercentage": 15.56
+  }
+}
+
+CAMPOS DE LA RESPUESTA
+----------------------
+• accountId: ID de la cuenta
+• accNum: Número de cuenta (10 dígitos)
+• clabe: CLABE interbancaria (18 dígitos)
+• cardNum: Número de tarjeta (16 dígitos)
+• balance: Balance actual (negativo = deuda)
+• accType: Tipo de cuenta (debe ser 'Credito')
+• mainId: ID del usuario propietario
+• creditLimit: Límite calculado dinámicamente
+• available: Crédito disponible para usar
+• used: Crédito ya utilizado
+• usedPercentage: Porcentaje de crédito usado (0-100)
+
+RESPUESTAS DE ERROR
+-------------------
+400 - ID inválido:
+{
+  "success": false,
+  "msg": "ID de cuenta inválido"
+}
+
+404 - Cuenta no encontrada:
+{
+  "success": false,
+  "msg": "Cuenta no encontrada"
+}
+
+500 - Error del servidor:
+{
+  "success": false,
+  "msg": "Error al obtener información de crédito"
+}
+
+EJEMPLO DE PRUEBA - POSTMAN
+----------------------------
+URL: http://localhost:3000/api/credit-info/1
+Método: GET
+
+Tests:
+pm.test("Status 200", () => pm.response.to.have.status(200));
+pm.test("Has creditLimit", () => pm.expect(pm.response.json().data.creditLimit).to.be.above(0));
+pm.test("Available calculated", () => {
+  const data = pm.response.json().data;
+  const expectedAvailable = data.creditLimit + data.balance;
+  pm.expect(data.available).to.equal(expectedAvailable);
+});
+
+
+--------------------------------------------------------------------------------
+ENDPOINT 3: GET /api/credit-history/:accountId
+--------------------------------------------------------------------------------
+
+DESCRIPCIÓN
+-----------
+Obtiene el historial completo de disposiciones de crédito de una cuenta,
+ordenado por fecha descendente (más recientes primero).
+
+MÉTODO HTTP
+-----------
+GET
+
+URL COMPLETA
+------------
+http://localhost:3000/api/credit-history/1
+
+PARÁMETROS DE URL
+-----------------
+• accountId (Number, requerido): ID de la cuenta de crédito
+
+QUERY SQL
+---------
+SELECT 
+  disposalId,
+  accountId,
+  amount,
+  description,
+  timestamp,
+  availableAfter,
+  DATE_FORMAT(timestamp, '%Y-%m-%d %H:%i:%s') AS formattedDate
+FROM creditDisposal
+WHERE accountId = ?
+ORDER BY timestamp DESC
+
+RESPUESTA EXITOSA (200)
+------------------------
+{
+  "success": true,
+  "msg": "Historial de crédito obtenido",
+  "data": [
+    {
+      "disposalId": 45,
+      "accountId": 1,
+      "amount": 5000.00,
+      "description": "Compra de equipo",
+      "timestamp": "2025-11-03T14:30:00.000Z",
+      "availableAfter": 38000.00,
+      "formattedDate": "2025-11-03 14:30:00"
+    },
+    {
+      "disposalId": 44,
+      "accountId": 1,
+      "amount": 2000.00,
+      "description": "Disposición urgente",
+      "timestamp": "2025-11-02T10:15:00.000Z",
+      "availableAfter": 43000.00,
+      "formattedDate": "2025-11-02 10:15:00"
+    }
+  ]
+}
+
+CAMPOS DE CADA REGISTRO
+------------------------
+• disposalId: ID único de la disposición
+• accountId: ID de la cuenta
+• amount: Monto dispuesto
+• description: Descripción de la disposición
+• timestamp: Fecha/hora de la disposición (ISO format)
+• availableAfter: Crédito disponible después de esta disposición
+• formattedDate: Fecha formateada legible
+
+RESPUESTAS DE ERROR
+-------------------
+400 - ID inválido:
+{
+  "success": false,
+  "msg": "ID de cuenta inválido"
+}
+
+404 - Sin historial:
+{
+  "success": true,
+  "msg": "No hay historial de disposiciones",
+  "data": []
+}
+
+500 - Error del servidor:
+{
+  "success": false,
+  "msg": "Error al obtener historial de crédito"
+}
+
+EJEMPLO DE PRUEBA - POSTMAN
+----------------------------
+URL: http://localhost:3000/api/credit-history/1
+Método: GET
+
+Tests:
+pm.test("Status 200", () => pm.response.to.have.status(200));
+pm.test("Has data array", () => pm.expect(pm.response.json().data).to.be.an('array'));
+pm.test("Ordered by date DESC", () => {
+  const data = pm.response.json().data;
+  if (data.length > 1) {
+    pm.expect(new Date(data[0].timestamp) >= new Date(data[1].timestamp)).to.be.true;
+  }
+});
+
+
+================================================================================
+  INTEGRACIÓN FRONTEND - COMPONENTE DE CRÉDITO
+================================================================================
+
+UBICACIÓN
+---------
+/src/app/credito/
+
+ARCHIVOS
+--------
+• credito.ts: Lógica del componente
+• credito.html: Template HTML
+• credito.css: Estilos
+• credito.spec.ts: Tests unitarios
+
+RUTA
+----
+/credito (requiere autenticación role 'c')
+
+FUNCIONALIDADES
+---------------
+1. ✅ Selector de cuentas de crédito
+2. ✅ Visualización de información del crédito:
+   - Límite calculado dinámicamente
+   - Crédito usado
+   - Crédito disponible
+   - Barra de progreso visual
+3. ✅ Formulario de disposición
+4. ✅ Historial de disposiciones con paginación
+5. ✅ Colores consistentes por cuenta (hash-based)
+6. ✅ Diseño responsive
+
+SERVICIOS HTTP UTILIZADOS
+--------------------------
+• GET /api/credit-info/:accountId
+• POST /api/dispose-credit
+• GET /api/credit-history/:accountId
+
+
+================================================================================
+  FLUJO COMPLETO DE USO
+================================================================================
+
+1. CREAR CUENTA DE CRÉDITO
+---------------------------
+-- Insertar cuenta de tipo Credito
+INSERT INTO cAccount (mainId, accNum, clabe, cardNum, balance, accType)
+VALUES (5, '9876543210', '012345678901234567', '4152313812345678', 0, 'Credito');
+
+2. GENERAR HISTORIAL DE DEPÓSITOS
+----------------------------------
+-- Simular depósitos mensuales para calcular límite
+INSERT INTO deposito (mainId, accNum, amount, description, depositDate)
+VALUES 
+  (5, '1234567890', 1200, 'Nómina Octubre', '2025-10-15'),
+  (5, '1234567890', 1000, 'Nómina Septiembre', '2025-09-15'),
+  (5, '1234567890', 1100, 'Nómina Agosto', '2025-08-15'),
+  (5, '1234567890', 950, 'Nómina Julio', '2025-07-15');
+
+3. VERIFICAR LÍMITE CALCULADO
+------------------------------
+SELECT fn_calculate_credit_limit(5) AS limiteCredito;
+-- Resultado: $6,000 (promedio ~$1,063 × 6 ≈ $6,000 redondeado)
+
+4. REALIZAR DISPOSICIÓN
+-----------------------
+CALL sp_dispose_credit(1, 3000, 'Compra de laptop');
+
+5. VERIFICAR CRÉDITO DISPONIBLE
+--------------------------------
+SELECT 
+  fn_calculate_credit_limit(mainId) AS limite,
+  balance AS deuda,
+  (fn_calculate_credit_limit(mainId) + balance) AS disponible
+FROM cAccount
+WHERE accountId = 1;
+
+
+================================================================================
                             FIN DE LA DOCUMENTACIÓN
 ================================================================================
+
 

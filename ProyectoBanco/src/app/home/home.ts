@@ -4,7 +4,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { Navbar } from '../navbar/navbar';
 import { LoginService } from '../services/login.service';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { UsuariosService } from '../services/usuarios.service';
 import { HttpClientModule } from '@angular/common/http';
 
@@ -23,11 +23,13 @@ export class Home implements OnInit {
   allAccounts: any[] = [];
   otherAccounts: any[] = [];
   hasTriedProfile = false;
+  showCreditModal: boolean = false;
   private isBrowser: boolean;
 
   constructor(
     private loginService: LoginService,
     private usuariosService: UsuariosService,
+    private router: Router,
     private cdr: ChangeDetectorRef,
     @Inject(PLATFORM_ID) platformId: Object
   ) {
@@ -53,7 +55,6 @@ export class Home implements OnInit {
     }
 
     this.loginService.getCurrentUserProfile().subscribe((u: any) => {
-      console.debug('[Home] Perfil recibido:', u);
       const display = u?.firstName
         ? `${u.firstName} ${u.lastNameP ?? ''}`.trim()
         : null;
@@ -68,7 +69,9 @@ export class Home implements OnInit {
 
   private loadAccount(mainId: number) {
     this.usuariosService.getAccountsByUser(mainId).subscribe({
-      next: (list) => {
+      next: (response: any) => {
+        const list = response?.data || response;
+        
         const arr = (Array.isArray(list) ? list : []).map((a: any) => ({
           ...a,
           accNum: a.accNum ?? a.accountNumber ?? a.number ?? a.accnum,
@@ -77,18 +80,28 @@ export class Home implements OnInit {
           balance: (a.balance != null ? Number(a.balance) : null),
           accType: a.accType ?? a.type
         }));
+        
         this.allAccounts = arr;
         this.account = arr[0] ?? null;
         this.otherAccounts = this.account ? arr.slice(1) : [];
         this.noAccount = !this.account;
+        
         if (this.account) {
           this.cardStyle = this.getStyleFor(this.account);
         }
+        
+        if (this.shouldShowCreditModal()) {
+          setTimeout(() => {
+            this.showCreditModal = true;
+            this.cdr.markForCheck();
+          }, 2000);
+        }
+        
         this.cdr.markForCheck();
       },
       error: (err) => {
         this.noAccount = true;
-        console.warn('[Home] No se pudo obtener cAccount:', err?.status || err);
+        console.error('Error al obtener cuentas:', err);
         this.cdr.markForCheck();
       }
     });
@@ -117,8 +130,6 @@ export class Home implements OnInit {
     return Math.abs(h);
   }
 
-  // Selección de cuenta deshabilitada (se mantiene cuenta principal fija)
-
   maskCard(num?: string): string {
     if (!num) return '';
     const last4 = num.slice(-4);
@@ -129,5 +140,34 @@ export class Home implements OnInit {
     if (!num) return '';
     const last4 = num.slice(-4);
     return `•••• ${last4}`;
+  }
+
+  closeCreditModal() {
+    this.showCreditModal = false;
+    const now = new Date();
+    localStorage.setItem('creditModalLastShown', now.toISOString());
+    this.cdr.markForCheck();
+  }
+
+  goToCreditLine() {
+    this.showCreditModal = false;
+    const now = new Date();
+    localStorage.setItem('creditModalLastShown', now.toISOString());
+    this.router.navigate(['/credito']);
+  }
+
+  private shouldShowCreditModal(): boolean {
+    const lastShown = localStorage.getItem('creditModalLastShown');
+    
+    if (!lastShown) {
+      return true;
+    }
+
+    const lastDate = new Date(lastShown);
+    const now = new Date();
+    const timeDiff = now.getTime() - lastDate.getTime();
+    const oneMinuteFifteenSeconds = 75000;
+    
+    return timeDiff >= oneMinuteFifteenSeconds;
   }
 }

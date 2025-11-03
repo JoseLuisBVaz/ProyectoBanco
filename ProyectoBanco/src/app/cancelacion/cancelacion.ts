@@ -1,12 +1,13 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { Navbar } from '../navbar/navbar';
 
 @Component({
   selector: 'app-cancelacion',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, Navbar],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, Navbar],
   templateUrl: './cancelacion.html',
   styleUrls: ['./cancelacion.css']
 })
