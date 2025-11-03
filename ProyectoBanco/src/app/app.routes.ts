@@ -15,6 +15,7 @@ import { Transfers } from './transfers/transfers';
 import { Depositos } from './depositos/depositos';
 import { FormularioContrasena } from './formulario-contrasena/formulario-contrasena';
 import { Retiro } from './retiro/retiro';
+import { EstadoCuenta } from './estado-cuenta/estado-cuenta';
 
 export const routes: Routes = [
     {path: '', component: Main},
@@ -24,7 +25,8 @@ export const routes: Routes = [
     {path: 'prestamo', component: Prestamo},
     {path: 'novedades', component: Novedades, canActivate: [AuthGuard, RoleGuard], data: { roles: ['e','m'] }},
     {path: 'cancelacion', component: Cancelacion, canActivate: [AuthGuard, RoleGuard], data: { roles: ['e','m'] }},
-    {path: 'cuenta', component: DetallesCuenta, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }},
+    {path: 'usuario', component: DetallesCuenta, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }},
+    {path: 'cuenta', component: EstadoCuenta, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }},
     {path: 'home', component: Home, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }},
     {path: 'transferencia', component: Transfers, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }},
     {path: 'deposito', component: Depositos, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }},

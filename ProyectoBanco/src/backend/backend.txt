@@ -236,6 +236,41 @@ Archivo: routes/usuarios.js
       • Controlador: generateDepositPDF
       • Respuesta: application/pdf (Content-Disposition: attachment)
 
+   14. GET /api/account-statement/:accountId 🆕
+      • Descripción: Obtiene el estado de cuenta completo de una cuenta específica
+      • Controlador: getAccountStatement
+      • Parámetros URL:
+          accountId: number           // ID de la cuenta (cAccount.accountId)
+      • Respuesta: {
+          success: boolean,
+          movements: Array<Movement>  // Lista de todos los movimientos
+        }
+      • Estructura de Movement:
+        {
+          type: string,               // 'transfer_in', 'transfer_out', 'deposit', 'withdrawal'
+          date: datetime,             // Fecha y hora del movimiento
+          description: string,        // Descripción del movimiento
+          amount: decimal,            // Monto del movimiento
+          fee: decimal,               // Comisión cobrada (0 si no aplica)
+          balance: decimal,           // Saldo después del movimiento
+          origin: string,             // Cuenta origen (solo en transfers)
+          destiny: string             // Cuenta destino (solo en transfers)
+        }
+      • Lógica:
+        - Consulta transferencias donde la cuenta es origen (transfer_out)
+        - Consulta transferencias donde la cuenta es destino (transfer_in)
+        - Consulta depósitos a la cuenta
+        - Consulta retiros de la cuenta
+        - Combina todos los movimientos con UNION ALL
+        - Ordena por fecha descendente (más recientes primero)
+        - Calcula el saldo después de cada movimiento
+      • Query SQL: Ver sección "CONSULTA: Estado de Cuenta Completo"
+      • Manejo de errores:
+        - 400: accountId no proporcionado o inválido
+        - 500: Error al consultar la base de datos
+      • Uso desde frontend:
+        this.http.get(`http://localhost:3000/api/account-statement/${accountId}`)
+
 
 ================================================================================
 🎮 CONTROLADORES
@@ -479,6 +514,212 @@ FUNCIÓN: generateReceipt 🆕 GENERACIÓN DE COMPROBANTES PDF
   ⚠️ Cada comprobante es único y no expira
   ⚠️ Solo se requiere el tranId para regenerar el comprobante en cualquier momento
   ⚠️ El folio de operación incluye dígitos aleatorios para mayor autenticidad
+
+
+FUNCIÓN: getAccountStatement 🆕 ESTADO DE CUENTA
+-------------------------------------------------
+• Descripción: Obtiene el historial completo de movimientos de una cuenta bancaria,
+  incluyendo transferencias (enviadas y recibidas), depósitos y retiros, ordenados
+  cronológicamente con el saldo después de cada operación.
+
+• Parámetro de entrada:
+  - accountId: ID de la cuenta (número, desde URL)
+
+• Flujo de consulta:
+  1️⃣ Validar que accountId esté presente y sea un número
+  2️⃣ Ejecutar consulta SQL con UNION ALL de 4 tipos de movimientos:
+     a. Transferencias enviadas (type = 'transfer_out')
+     b. Transferencias recibidas (type = 'transfer_in')
+     c. Depósitos (type = 'deposit')
+     d. Retiros (type = 'withdrawal')
+  3️⃣ Ordenar resultados por fecha descendente (más recientes primero)
+  4️⃣ Retornar JSON con el array de movimientos
+
+• Estructura del Query SQL:
+  ------------------------
+  La consulta utiliza UNION ALL para combinar 4 sub-consultas:
+  
+  A) TRANSFERENCIAS ENVIADAS (dinero que sale de la cuenta):
+     SELECT 
+       'transfer_out' AS type,
+       t.timestamp AS date,
+       t.description,
+       t.ammount AS amount,
+       t.fee,
+       origin_acc.balance AS balance,
+       origin_acc.accNum AS origin,
+       dest_acc.accNum AS destiny
+     FROM transfer t
+     INNER JOIN cAccount origin_acc ON t.origin = origin_acc.accountId
+     INNER JOIN cAccount dest_acc ON t.destiny = dest_acc.accountId
+     WHERE origin_acc.accountId = ?
+  
+  B) TRANSFERENCIAS RECIBIDAS (dinero que entra a la cuenta):
+     SELECT 
+       'transfer_in' AS type,
+       t.timestamp AS date,
+       t.description,
+       t.ammount AS amount,
+       0 AS fee,
+       dest_acc.balance AS balance,
+       origin_acc.accNum AS origin,
+       dest_acc.accNum AS destiny
+     FROM transfer t
+     INNER JOIN cAccount origin_acc ON t.origin = origin_acc.accountId
+     INNER JOIN cAccount dest_acc ON t.destiny = dest_acc.accountId
+     WHERE dest_acc.accountId = ?
+  
+  C) DEPÓSITOS (dinero depositado a la cuenta):
+     SELECT 
+       'deposit' AS type,
+       d.timestamp AS date,
+       d.description,
+       d.ammount AS amount,
+       0 AS fee,
+       acc.balance AS balance,
+       NULL AS origin,
+       acc.accNum AS destiny
+     FROM deposito d
+     INNER JOIN cAccount acc ON d.accountId = acc.accountId
+     WHERE acc.accountId = ?
+  
+  D) RETIROS (dinero retirado de la cuenta):
+     SELECT 
+       'withdrawal' AS type,
+       r.timestamp AS date,
+       r.description,
+       r.ammount AS amount,
+       0 AS fee,
+       acc.balance AS balance,
+       acc.accNum AS origin,
+       NULL AS destiny
+     FROM retiros r
+     INNER JOIN cAccount acc ON r.accountId = acc.accountId
+     WHERE acc.accountId = ?
+
+  Ordenamiento final:
+  ORDER BY date DESC
+
+• Estructura de la respuesta:
+  ---------------------------
+  {
+    success: true,
+    movements: [
+      {
+        type: 'transfer_out',           // Tipo de movimiento
+        date: '2025-11-03T10:30:00',    // Fecha y hora
+        description: 'Pago de servicios', // Descripción
+        amount: 1500.00,                 // Monto del movimiento
+        fee: 17.50,                      // Comisión (si aplica)
+        balance: 8482.50,                // Saldo después del movimiento
+        origin: '0000026492',            // Cuenta origen (si aplica)
+        destiny: '646756986252423592'    // Cuenta destino (si aplica)
+      },
+      // ... más movimientos
+    ]
+  }
+
+• Tipos de movimientos:
+  ---------------------
+  - transfer_out: Transferencia enviada desde la cuenta
+    • amount: Monto transferido (valor positivo)
+    • fee: Comisión cobrada
+    • origin: Número de cuenta actual
+    • destiny: Cuenta que recibió el dinero
+    • balance: Saldo después de descontar (amount + fee)
+  
+  - transfer_in: Transferencia recibida en la cuenta
+    • amount: Monto recibido (valor positivo)
+    • fee: Siempre 0 (no se cobra comisión al recibir)
+    • origin: Cuenta que envió el dinero
+    • destiny: Número de cuenta actual
+    • balance: Saldo después de sumar amount
+  
+  - deposit: Depósito realizado a la cuenta
+    • amount: Monto depositado (valor positivo)
+    • fee: Siempre 0
+    • origin: null (no aplica)
+    • destiny: Número de cuenta actual
+    • balance: Saldo después de sumar amount
+  
+  - withdrawal: Retiro realizado desde la cuenta
+    • amount: Monto retirado (valor positivo)
+    • fee: Siempre 0
+    • origin: Número de cuenta actual
+    • destiny: null (no aplica)
+    • balance: Saldo después de restar amount
+
+• Validaciones:
+  -------------
+  ✓ accountId debe estar presente
+  ✓ accountId debe ser un número válido
+  ✓ La cuenta debe existir en la base de datos
+
+• Manejo de errores:
+  ------------------
+  - 400: "Se requiere el ID de la cuenta" o "ID de cuenta inválido"
+  - 404: La cuenta no existe (sin movimientos)
+  - 500: "Error al obtener el estado de cuenta"
+
+• Logs del sistema:
+  -----------------
+  [ACCOUNT STATEMENT] Consultando movimientos para cuenta: {accountId}
+  [ACCOUNT STATEMENT] ✅ {count} movimientos encontrados
+  ❌ Error al consultar estado de cuenta: {error}
+
+• Uso desde el frontend:
+  ----------------------
+  Angular HttpClient:
+  this.http.get<any>(`http://localhost:3000/api/account-statement/${accountId}`)
+    .subscribe(
+      response => {
+        if (response.success) {
+          this.movements = response.movements;
+        }
+      },
+      error => console.error('Error:', error)
+    );
+
+• Características especiales:
+  ---------------------------
+  ✓ Incluye el saldo DESPUÉS de cada movimiento (no antes)
+  ✓ Ordena cronológicamente descendente (más reciente primero)
+  ✓ Combina todos los tipos de operaciones en una sola lista
+  ✓ Calcula automáticamente el impacto en el saldo
+  ✓ Incluye información de cuentas origen/destino cuando aplica
+  ✓ No requiere paginación en el backend (se maneja en frontend)
+
+• Rendimiento:
+  ------------
+  • La consulta usa INNER JOIN para eficiencia
+  • Utiliza índices en accountId para búsqueda rápida
+  • UNION ALL es más rápido que UNION (no elimina duplicados)
+  • ORDER BY date DESC usa índice temporal en memoria
+
+• Integración con otras funcionalidades:
+  --------------------------------------
+  • Los movimientos se generan automáticamente por:
+    - Stored Procedure: sp_transfer_funds (transferencias)
+    - Stored Procedure: sp_deposit_funds (depósitos)
+    - Stored Procedure: sp_withdraw_funds (retiros)
+  • El saldo (balance) se actualiza en tiempo real en la tabla cAccount
+  • Cada movimiento refleja el saldo ACTUAL al momento de la operación
+
+• Casos de uso:
+  -------------
+  1. Ver historial completo de movimientos en una cuenta
+  2. Generar reportes de actividad bancaria
+  3. Auditoría de transacciones
+  4. Verificar saldos históricos
+  5. Filtrar movimientos por tipo, fecha o monto (en frontend)
+
+• Notas técnicas:
+  ---------------
+  ⚠️ El balance mostrado es el saldo DESPUÉS del movimiento
+  ⚠️ Los movimientos negativos (transfer_out, withdrawal) ya están descontados
+  ⚠️ Los movimientos positivos (transfer_in, deposit) ya están sumados
+  ⚠️ Las comisiones solo aparecen en transfer_out
+  ⚠️ La consulta no filtra por fecha (se hace en frontend)
 
 
 ================================================================================
@@ -1267,5 +1508,471 @@ NOTAS TÉCNICAS
 
 
 ================================================================================
+📊 CONSULTA SQL: Estado de Cuenta Completo
+================================================================================
+
+DESCRIPCIÓN
+-----------
+Esta consulta SQL combina todos los tipos de movimientos de una cuenta bancaria
+(transferencias enviadas/recibidas, depósitos y retiros) en una sola lista 
+ordenada cronológicamente, mostrando el saldo después de cada operación.
+
+QUERY COMPLETO
+--------------
+SELECT 
+  'transfer_out' AS type,
+  t.timestamp AS date,
+  t.description,
+  t.ammount AS amount,
+  t.fee,
+  origin_acc.balance AS balance,
+  origin_acc.accNum AS origin,
+  dest_acc.accNum AS destiny
+FROM transfer t
+INNER JOIN cAccount origin_acc ON t.origin = origin_acc.accountId
+INNER JOIN cAccount dest_acc ON t.destiny = dest_acc.accountId
+WHERE origin_acc.accountId = ?
+
+UNION ALL
+
+SELECT 
+  'transfer_in' AS type,
+  t.timestamp AS date,
+  t.description,
+  t.ammount AS amount,
+  0 AS fee,
+  dest_acc.balance AS balance,
+  origin_acc.accNum AS origin,
+  dest_acc.accNum AS destiny
+FROM transfer t
+INNER JOIN cAccount origin_acc ON t.origin = origin_acc.accountId
+INNER JOIN cAccount dest_acc ON t.destiny = dest_acc.accountId
+WHERE dest_acc.accountId = ?
+
+UNION ALL
+
+SELECT 
+  'deposit' AS type,
+  d.timestamp AS date,
+  d.description,
+  d.ammount AS amount,
+  0 AS fee,
+  acc.balance AS balance,
+  NULL AS origin,
+  acc.accNum AS destiny
+FROM deposito d
+INNER JOIN cAccount acc ON d.accountId = acc.accountId
+WHERE acc.accountId = ?
+
+UNION ALL
+
+SELECT 
+  'withdrawal' AS type,
+  r.timestamp AS date,
+  r.description,
+  r.ammount AS amount,
+  0 AS fee,
+  acc.balance AS balance,
+  acc.accNum AS origin,
+  NULL AS destiny
+FROM retiros r
+INNER JOIN cAccount acc ON r.accountId = acc.accountId
+WHERE acc.accountId = ?
+
+ORDER BY date DESC;
+
+EXPLICACIÓN POR PARTES
+----------------------
+
+1️⃣ TRANSFERENCIAS ENVIADAS (transfer_out):
+   ---------------------------------------
+   • Busca en la tabla 'transfer' donde origin = accountId
+   • Hace JOIN con cuentas origen y destino para obtener accNum
+   • El saldo (balance) es de la cuenta origen (actual después del envío)
+   • Incluye la comisión (fee) que se cobró
+   • Muestra ambas cuentas: origin (actual) y destiny (recibió el dinero)
+
+2️⃣ TRANSFERENCIAS RECIBIDAS (transfer_in):
+   ----------------------------------------
+   • Busca en la tabla 'transfer' donde destiny = accountId
+   • Hace JOIN con cuentas origen y destino para obtener accNum
+   • El saldo (balance) es de la cuenta destino (actual después de recibir)
+   • Fee es 0 (no se cobra comisión al recibir dinero)
+   • Muestra ambas cuentas: origin (envió) y destiny (cuenta actual)
+
+3️⃣ DEPÓSITOS (deposit):
+   ---------------------
+   • Busca en la tabla 'deposito' donde accountId = cuenta actual
+   • Hace JOIN con cAccount para obtener accNum y balance
+   • origin es NULL (no aplica en depósitos)
+   • destiny es el accNum de la cuenta actual
+   • Fee siempre es 0
+
+4️⃣ RETIROS (withdrawal):
+   ----------------------
+   • Busca en la tabla 'retiros' donde accountId = cuenta actual
+   • Hace JOIN con cAccount para obtener accNum y balance
+   • origin es el accNum de la cuenta actual
+   • destiny es NULL (no aplica en retiros)
+   • Fee siempre es 0
+
+UNION ALL
+---------
+• Combina los 4 resultados en una sola tabla
+• NO elimina duplicados (más rápido que UNION)
+• Cada sub-consulta debe tener el mismo número y tipo de columnas
+
+ORDER BY date DESC
+------------------
+• Ordena todos los movimientos por fecha y hora
+• DESC = Descendente (más recientes primero)
+• Permite ver el historial cronológico completo
+
+COLUMNAS DEL RESULTADO
+----------------------
+• type: Identifica el tipo de movimiento (transfer_out, transfer_in, deposit, withdrawal)
+• date: Fecha y hora exacta del movimiento (DATETIME)
+• description: Texto descriptivo de la operación
+• amount: Monto de la operación (DECIMAL 12,2)
+• fee: Comisión cobrada (DECIMAL 12,2), 0 si no aplica
+• balance: Saldo en la cuenta DESPUÉS de la operación
+• origin: Número de cuenta origen (NULL si no aplica)
+• destiny: Número de cuenta destino (NULL si no aplica)
+
+EJEMPLO DE RESULTADO
+--------------------
+| type         | date                | description    | amount  | fee  | balance  | origin      | destiny     |
+|--------------|---------------------|----------------|---------|------|----------|-------------|-------------|
+| deposit      | 2025-11-03 14:30:00 | Depósito ATM   | 5000.00 | 0.00 | 15000.00 | NULL        | 0000026492  |
+| transfer_out | 2025-11-03 10:15:00 | Pago servicios | 1500.00 | 17.50| 10000.00 | 0000026492  | 6467569865  |
+| transfer_in  | 2025-11-02 18:45:00 | Reembolso      | 2000.00 | 0.00 | 11517.50 | 6467890123  | 0000026492  |
+| withdrawal   | 2025-11-01 09:00:00 | Retiro cajero  | 500.00  | 0.00 | 9517.50  | 0000026492  | NULL        |
+
+ÍNDICES RECOMENDADOS
+--------------------
+Para optimizar el rendimiento de esta consulta:
+
+1. Índice en transfer.origin:
+   CREATE INDEX idx_transfer_origin ON transfer(origin);
+
+2. Índice en transfer.destiny:
+   CREATE INDEX idx_transfer_destiny ON transfer(destiny);
+
+3. Índice en deposito.accountId:
+   CREATE INDEX idx_deposito_account ON deposito(accountId);
+
+4. Índice en retiros.accountId:
+   CREATE INDEX idx_retiros_account ON retiros(accountId);
+
+5. Índice compuesto en timestamp para ORDER BY:
+   CREATE INDEX idx_transfer_timestamp ON transfer(timestamp);
+   CREATE INDEX idx_deposito_timestamp ON deposito(timestamp);
+   CREATE INDEX idx_retiros_timestamp ON retiros(timestamp);
+
+RENDIMIENTO
+-----------
+• Con índices: O(log n) para cada sub-consulta
+• UNION ALL: O(n) combina resultados sin eliminar duplicados
+• ORDER BY: O(n log n) ordena el resultado final
+• Total: Eficiente incluso con miles de movimientos
+
+LIMITACIONES
+------------
+⚠️ No filtra por fecha (se debe hacer en el frontend o agregando WHERE)
+⚠️ No pagina resultados (retorna todos los movimientos)
+⚠️ El saldo es el ACTUAL, no el histórico al momento del movimiento
+⚠️ Asume que las tablas tienen columnas 'timestamp' y 'description'
+
+
+================================================================================
+🔄 FLUJO COMPLETO: Estado de Cuenta
+================================================================================
+
+1. FRONTEND (Angular - EstadoCuenta Component)
+   │
+   ├─→ Usuario navega a /estado-cuenta desde Home
+   │
+   ├─→ Componente obtiene accountId de la cuenta seleccionada
+   │   (puede ser la principal o seleccionada de un dropdown)
+   │
+   └─→ HTTP GET a: http://localhost:3000/api/account-statement/:accountId
+
+2. BACKEND (Node.js/Express)
+   │
+   ├─→ server.js recibe la petición en router /api/usuarios
+   │
+   ├─→ Router (usuarios.js) extrae accountId del parámetro URL
+   │
+   └─→ Controller (usuariosCtrl.js - getAccountStatement)
+       │
+       ├─→ Valida que accountId sea un número válido
+       ├─→ Ejecuta query SQL con UNION ALL (4 sub-consultas)
+       └─→ Retorna JSON con array de movimientos
+
+3. BASE DE DATOS (MySQL)
+   │
+   ├─→ Ejecuta 4 sub-consultas:
+   │   1. SELECT transferencias donde origin = accountId
+   │   2. SELECT transferencias donde destiny = accountId
+   │   3. SELECT depósitos donde accountId = accountId
+   │   4. SELECT retiros donde accountId = accountId
+   │
+   ├─→ UNION ALL combina los 4 resultados
+   │
+   └─→ ORDER BY date DESC ordena por fecha descendente
+
+4. PROCESAMIENTO EN FRONTEND
+   │
+   ├─→ Recibe JSON con array de movimientos
+   │
+   ├─→ Aplica filtros locales (si el usuario selecciona):
+   │   • Por tipo de movimiento (transfer, deposit, withdrawal)
+   │   • Por rango de fechas (desde/hasta)
+   │   • Por búsqueda de texto (descripción, cuenta)
+   │
+   ├─→ Implementa paginación local:
+   │   • Muestra 20 movimientos por página
+   │   • Botones siguiente/anterior
+   │   • Indicador de página actual
+   │
+   └─→ Renderiza tabla HTML con:
+       • Fecha formateada (DD/MM/YYYY HH:MM)
+       • Tipo con badge colorido e icono
+       • Descripción truncada con tooltip
+       • Monto con signo (+ entrada, - salida)
+       • Comisión (si aplica)
+       • Saldo formateado con separadores de miles
+
+5. INTERACCIÓN DEL USUARIO
+   │
+   ├─→ Cambiar de cuenta:
+   │   • Click en tarjeta de cuenta principal
+   │   • Aparece lista de otras cuentas
+   │   • Selecciona otra cuenta
+   │   • Se recarga el estado de cuenta
+   │
+   ├─→ Filtrar movimientos:
+   │   • Selecciona tipo de movimiento en dropdown
+   │   • Ingresa fechas en date inputs
+   │   • Escribe texto en campo de búsqueda
+   │   • Los filtros se aplican en tiempo real
+   │
+   ├─→ Limpiar filtros:
+   │   • Click en botón "Limpiar filtros"
+   │   • Resetea todos los filtros a valores por defecto
+   │
+   └─→ Navegar entre páginas:
+       • Click en botones "Anterior" / "Siguiente"
+       • Actualiza la página mostrada
+
+COMPONENTES DEL FRONTEND
+-------------------------
+• estado-cuenta.ts: Lógica del componente
+  - loadAccountStatement(): Carga movimientos desde API
+  - applyFilters(): Filtra movimientos localmente
+  - paginateMovements(): Implementa paginación
+  - selectAccount(): Cambia de cuenta
+  - formatDate(): Formatea fechas para mostrar
+  - getMovementIcon(): Retorna icono según tipo
+  - getMovementLabel(): Retorna texto según tipo
+  - getMovementClass(): Retorna clase CSS según tipo
+
+• estado-cuenta.html: Estructura HTML
+  - Navbar superior
+  - Tarjeta de cuenta con colores dinámicos
+  - Selector de otras cuentas (dropdown)
+  - Sección de filtros (tipo, fechas, búsqueda)
+  - Tabla de movimientos con diseño responsive
+  - Paginación con botones e indicador
+  - Estados vacíos (sin movimientos / sin resultados)
+
+• estado-cuenta.css: Estilos visuales
+  - Diseño similar a componente Home
+  - Tarjetas con gradientes de colores
+  - Tabla responsive con hover effects
+  - Badges coloridos para tipos de movimiento
+  - Animaciones suaves (transitions)
+  - Media queries para móviles
+
+CARACTERÍSTICAS DEL FRONTEND
+-----------------------------
+✅ Diseño consistente con Home
+✅ Tarjetas de cuenta con colores por hash
+✅ Selector de cuentas con animación
+✅ Filtros múltiples (tipo, fecha, texto)
+✅ Paginación local (20 items por página)
+✅ Tabla responsive para móviles
+✅ Truncamiento de texto largo con tooltips
+✅ Iconos Font Awesome para cada tipo
+✅ Estados de carga y error
+✅ Formateo de números y fechas
+✅ Badges coloridos (verde entrada, rojo salida)
+
+FLUJO DE DATOS COMPLETO
+------------------------
+[Usuario] → [EstadoCuenta Component] → [HTTP GET] → [Backend API]
+    ↓                                                      ↓
+[Selecciona cuenta]                               [Query SQL]
+    ↓                                                      ↓
+[Muestra loading]                              [MySQL ejecuta UNION]
+    ↓                                                      ↓
+[Recibe JSON]  ←  [HTTP Response]  ←  [Retorna movements array]
+    ↓
+[Procesa localmente]
+    ↓
+[Aplica filtros]
+    ↓
+[Pagina resultados]
+    ↓
+[Renderiza tabla]
+    ↓
+[Usuario ve movimientos]
+
+
+================================================================================
+🧪 PRUEBAS DEL ENDPOINT: Estado de Cuenta
+================================================================================
+
+ENDPOINT: GET /api/account-statement/:accountId
+-----------------------------------------------
+
+CASO 1: Consulta exitosa con movimientos
+-----------------------------------------
+curl -X GET http://localhost:3000/api/account-statement/1
+
+Respuesta esperada (200 OK):
+{
+  "success": true,
+  "movements": [
+    {
+      "type": "deposit",
+      "date": "2025-11-03T14:30:00.000Z",
+      "description": "Depósito desde ATM",
+      "amount": 5000.00,
+      "fee": 0.00,
+      "balance": 15000.00,
+      "origin": null,
+      "destiny": "0000026492"
+    },
+    {
+      "type": "transfer_out",
+      "date": "2025-11-03T10:15:00.000Z",
+      "description": "Pago de servicios",
+      "amount": 1500.00,
+      "fee": 17.50,
+      "balance": 10000.00,
+      "origin": "0000026492",
+      "destiny": "646756986252423592"
+    },
+    {
+      "type": "transfer_in",
+      "date": "2025-11-02T18:45:00.000Z",
+      "description": "Reembolso",
+      "amount": 2000.00,
+      "fee": 0.00,
+      "balance": 11517.50,
+      "origin": "646789012345678901",
+      "destiny": "0000026492"
+    }
+  ]
+}
+
+CASO 2: Cuenta sin movimientos
+-------------------------------
+curl -X GET http://localhost:3000/api/account-statement/999
+
+Respuesta esperada (200 OK):
+{
+  "success": true,
+  "movements": []
+}
+
+CASO 3: accountId inválido (no numérico)
+-----------------------------------------
+curl -X GET http://localhost:3000/api/account-statement/abc
+
+Respuesta esperada (400 Bad Request):
+{
+  "success": false,
+  "msg": "ID de cuenta inválido"
+}
+
+CASO 4: accountId faltante
+---------------------------
+curl -X GET http://localhost:3000/api/account-statement/
+
+Respuesta esperada (400 Bad Request):
+{
+  "success": false,
+  "msg": "Se requiere el ID de la cuenta"
+}
+
+CASO 5: Error de base de datos
+-------------------------------
+(Simular deteniendo MySQL)
+
+Respuesta esperada (500 Internal Server Error):
+{
+  "success": false,
+  "msg": "Error al obtener el estado de cuenta"
+}
+
+PRUEBAS CON POSTMAN
+-------------------
+1. Crear colección "Estado de Cuenta"
+
+2. Request 1: Consulta exitosa
+   • Método: GET
+   • URL: http://localhost:3000/api/account-statement/1
+   • Headers: ninguno
+   • Tests:
+     pm.test("Status 200", () => pm.response.to.have.status(200));
+     pm.test("Success true", () => pm.expect(pm.response.json().success).to.be.true);
+     pm.test("Has movements", () => pm.expect(pm.response.json().movements).to.be.an('array'));
+
+3. Request 2: Validar estructura
+   • URL: http://localhost:3000/api/account-statement/1
+   • Tests:
+     const mov = pm.response.json().movements[0];
+     pm.test("Has type", () => pm.expect(mov).to.have.property('type'));
+     pm.test("Has date", () => pm.expect(mov).to.have.property('date'));
+     pm.test("Has amount", () => pm.expect(mov).to.have.property('amount'));
+
+PRUEBAS DESDE ANGULAR
+----------------------
+// En el componente de prueba
+ngOnInit() {
+  const accountId = 1;
+  this.http.get<any>(`http://localhost:3000/api/account-statement/${accountId}`)
+    .subscribe(
+      response => {
+        console.log('✅ Movimientos:', response.movements);
+        console.log('📊 Total:', response.movements.length);
+        
+        // Verificar estructura
+        response.movements.forEach(mov => {
+          console.assert(mov.type, 'Falta type');
+          console.assert(mov.date, 'Falta date');
+          console.assert(mov.amount !== undefined, 'Falta amount');
+          console.assert(mov.balance !== undefined, 'Falta balance');
+        });
+      },
+      error => {
+        console.error('❌ Error:', error);
+      }
+    );
+}
+
+LOGS ESPERADOS EN CONSOLA DEL BACKEND
+--------------------------------------
+[ACCOUNT STATEMENT] Consultando movimientos para cuenta: 1
+[ACCOUNT STATEMENT] ✅ 15 movimientos encontrados
+
+O en caso de error:
+❌ Error al consultar estado de cuenta: Error: connect ECONNREFUSED
+
+
+================================================================================
                             FIN DE LA DOCUMENTACIÓN
 ================================================================================
+

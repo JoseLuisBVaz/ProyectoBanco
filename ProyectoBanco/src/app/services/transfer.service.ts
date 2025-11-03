@@ -23,4 +23,9 @@ export class TransferService {
   deposit(params: { mainId: number; amount: number; description?: string }): Observable<any> {
     return this.http.post(`${this.apiUrl}/deposit`, params);
   }
+
+  // Obtener estado de cuenta
+  getAccountStatement(accountId: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/account-statement/${accountId}`);
+  }
 }

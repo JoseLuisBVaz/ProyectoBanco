@@ -151,7 +151,7 @@ const getAccountsByUser = (req, res) => {
   });
 };
 
-// ==================== AUTENTICACIÓN ====================
+// ==================== AUTENTICACIï¿½N ====================
 
 const login = async (req, res) => {
   const mail = req.body.mail;
@@ -168,7 +168,7 @@ const login = async (req, res) => {
     }
     
     if (!results || results.length === 0) {
-      return res.status(401).json({ success: false, msg: 'Usuario o contraseña incorrectos' });
+      return res.status(401).json({ success: false, msg: 'Usuario o contraseï¿½a incorrectos' });
     }
 
     try {
@@ -176,7 +176,7 @@ const login = async (req, res) => {
       const isPasswordValid = await bcrypt.compare(pass, user.pass);
       
       if (!isPasswordValid) {
-        return res.status(401).json({ success: false, msg: 'Usuario o contraseña incorrectos' });
+        return res.status(401).json({ success: false, msg: 'Usuario o contraseï¿½a incorrectos' });
       }
 
       const userResponse = {
@@ -188,7 +188,7 @@ const login = async (req, res) => {
       res.json({ success: true, rol: user.rol, user: userResponse });
       
     } catch (error) {
-      return res.status(500).json({ msg: 'Error en el servidor durante verificación' });
+      return res.status(500).json({ msg: 'Error en el servidor durante verificaciï¿½n' });
     }
   });
 };
@@ -233,7 +233,7 @@ const registerUser = async (req, res) => {
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(pass, saltRounds);
     
-    console.log('?? [REGISTER] Contraseña hasheada exitosamente');
+    console.log('?? [REGISTER] Contraseï¿½a hasheada exitosamente');
 
     const checkUserQuery = 'SELECT * FROM main WHERE mail = ?';
     db.query(checkUserQuery, [mail], (err, results) => {
@@ -244,7 +244,7 @@ const registerUser = async (req, res) => {
 
       if (results.length > 0) {
         console.log('?? [REGISTER] El correo ya existe en la BD');
-        return res.status(400).json({ msg: 'El correo ya está registrado' });
+        return res.status(400).json({ msg: 'El correo ya estï¿½ registrado' });
       }
       
       console.log('?? [REGISTER] Correo disponible, insertando en tabla main...');
@@ -281,23 +281,23 @@ const registerUser = async (req, res) => {
               if (accErr) {
                 console.error('? [REGISTER] Error al crear cuenta:', accErr);
                 return res.status(201).json({
-                  msg: 'Cliente registrado, pero falló la creación de la cuenta',
+                  msg: 'Cliente registrado, pero fallï¿½ la creaciï¿½n de la cuenta',
                   mainId: mainId
                 });
               }
               
               console.log(`? [REGISTER] Cuenta creada correctamente`);
               
-              // Enviar correos de forma asíncrona en segundo plano (sin bloquear la respuesta)
+              // Enviar correos de forma asï¿½ncrona en segundo plano (sin bloquear la respuesta)
               const fullName = `${firstName} ${lastNameP} ${lastNameM || ''}`.trim();
               
-              console.log(`?? [REGISTER] Programando envío de correos a: ${mail}`);
+              console.log(`?? [REGISTER] Programando envï¿½o de correos a: ${mail}`);
               console.log(`?? [REGISTER] Nombre completo: ${fullName}`);
               console.log(`?? [REGISTER] Datos de cuenta:`, accountInfo);
               
-              // Ejecutar envío de correos en segundo plano con setImmediate
+              // Ejecutar envï¿½o de correos en segundo plano con setImmediate
               setImmediate(async () => {
-                console.log(`?? [REGISTER] Iniciando envío de correos a: ${mail}`);
+                console.log(`?? [REGISTER] Iniciando envï¿½o de correos a: ${mail}`);
                 
                 // Enviar correo de bienvenida
                 try {
@@ -312,7 +312,7 @@ const registerUser = async (req, res) => {
                     console.error(`? [REGISTER] Error al enviar correo de bienvenida: ${welcomeResult.error}`);
                   }
                 } catch (emailErr) {
-                  console.error('? [REGISTER] Excepción al enviar correo de bienvenida:', emailErr);
+                  console.error('? [REGISTER] Excepciï¿½n al enviar correo de bienvenida:', emailErr);
                 }
                 
                 // Enviar correo de cuenta creada
@@ -332,7 +332,7 @@ const registerUser = async (req, res) => {
                     console.error(`? [REGISTER] Error al enviar correo de cuenta creada: ${accountResult.error}`);
                   }
                 } catch (emailErr) {
-                  console.error('? [REGISTER] Excepción al enviar correo de cuenta creada:', emailErr);
+                  console.error('? [REGISTER] Excepciï¿½n al enviar correo de cuenta creada:', emailErr);
                 }
               });
               
@@ -363,12 +363,12 @@ const registerUser = async (req, res) => {
             // Enviar correo de bienvenida a empleado en segundo plano
             const fullName = `${firstName} ${lastNameP} ${lastNameM || ''}`.trim();
             
-            console.log(`?? [REGISTER] Programando envío de correo de bienvenida a empleado: ${mail}`);
+            console.log(`?? [REGISTER] Programando envï¿½o de correo de bienvenida a empleado: ${mail}`);
             console.log(`?? [REGISTER] Nombre completo: ${fullName}`);
             
-            // Ejecutar envío de correo en segundo plano con setImmediate
+            // Ejecutar envï¿½o de correo en segundo plano con setImmediate
             setImmediate(async () => {
-              console.log(`?? [REGISTER] Iniciando envío de correo a empleado: ${mail}`);
+              console.log(`?? [REGISTER] Iniciando envï¿½o de correo a empleado: ${mail}`);
               
               try {
                 const welcomeResult = await emailService.sendWelcomeEmail(mail, {
@@ -382,7 +382,7 @@ const registerUser = async (req, res) => {
                   console.error(`? [REGISTER] Error al enviar correo de bienvenida: ${welcomeResult.error}`);
                 }
               } catch (emailErr) {
-                console.error('? [REGISTER] Excepción al enviar correo de bienvenida:', emailErr);
+                console.error('? [REGISTER] Excepciï¿½n al enviar correo de bienvenida:', emailErr);
               }
             });
             
@@ -391,7 +391,7 @@ const registerUser = async (req, res) => {
           });
 
         } else {
-          return res.status(400).json({ msg: 'Rol no válido' });
+          return res.status(400).json({ msg: 'Rol no vï¿½lido' });
         }
       });
     });
@@ -416,7 +416,7 @@ const transferFunds = (req, res) => {
   if (isNaN(numericAmount) || numericAmount <= 0) {
     return res.status(400).json({ 
       success: false,
-      msg: 'El monto debe ser un número mayor a 0' 
+      msg: 'El monto debe ser un nï¿½mero mayor a 0' 
     });
   }
 
@@ -438,8 +438,8 @@ const transferFunds = (req, res) => {
       const tranId = row.tranId || null;
       const fee = row.fee || 0;
       
-      // ==================== ENVIAR CORREOS DESPUÉS DE LA TRANSFERENCIA ====================
-      // Enviar correos de forma asíncrona sin bloquear la respuesta
+      // ==================== ENVIAR CORREOS DESPUï¿½S DE LA TRANSFERENCIA ====================
+      // Enviar correos de forma asï¿½ncrona sin bloquear la respuesta
       sendTransferEmails(origin, destiny, numericAmount, description, tranId, fee)
         .catch(emailErr => {
           console.error('? [TRANSFER] Error al enviar correos:', emailErr);
@@ -462,7 +462,7 @@ const transferFunds = (req, res) => {
   });
 };
 
-// ==================== FUNCIÓN AUXILIAR PARA ENVIAR CORREOS DE TRANSFERENCIA ====================
+// ==================== FUNCIï¿½N AUXILIAR PARA ENVIAR CORREOS DE TRANSFERENCIA ====================
 async function sendTransferEmails(origin, destiny, amount, description, tranId, fee) {
   try {
     const date = new Date().toLocaleString('es-MX', {
@@ -475,7 +475,7 @@ async function sendTransferEmails(origin, destiny, amount, description, tranId, 
       hour12: false
     });
     
-    // Obtener información del origen y destino
+    // Obtener informaciï¿½n del origen y destino
     const infoQuery = `
       SELECT 
         ca.mainId, ca.accNum, ca.clabe, ca.balance,
@@ -551,7 +551,7 @@ async function sendTransferEmails(origin, destiny, amount, description, tranId, 
   }
 }
 
-// ==================== CREACIÓN DE CUENTAS ====================
+// ==================== CREACIï¿½N DE CUENTAS ====================
 
 const createAccount = async (req, res) => {
   const { customerId, createdBy, accType, accPhone, password, curp } = req.body || {};
@@ -564,23 +564,23 @@ const createAccount = async (req, res) => {
     });
   }
 
-  // Validar que los IDs sean números
+  // Validar que los IDs sean nï¿½meros
   const numericCustomerId = parseInt(customerId);
   const numericCreatedBy = parseInt(createdBy);
   
   if (isNaN(numericCustomerId) || isNaN(numericCreatedBy)) {
     return res.status(400).json({ 
       success: false,
-      msg: 'customerId y createdBy deben ser números válidos' 
+      msg: 'customerId y createdBy deben ser nï¿½meros vï¿½lidos' 
     });
   }
 
-  // Validar formato de teléfono (10 dígitos)
+  // Validar formato de telï¿½fono (10 dï¿½gitos)
   const sanitizedPhone = String(accPhone).replace(/\D/g, '');
   if (sanitizedPhone.length !== 10) {
     return res.status(400).json({ 
       success: false,
-      msg: 'El teléfono debe tener exactamente 10 dígitos' 
+      msg: 'El telï¿½fono debe tener exactamente 10 dï¿½gitos' 
     });
   }
 
@@ -663,12 +663,12 @@ const createAccount = async (req, res) => {
           });
         }
 
-        // 3?? Verificar contraseña del cliente
+        // 3?? Verificar contraseï¿½a del cliente
         const isPasswordValid = await bcrypt.compare(password, customer.pass);
         if (!isPasswordValid) {
           return res.status(401).json({ 
             success: false,
-            msg: 'Contraseña del cliente incorrecta' 
+            msg: 'Contraseï¿½a del cliente incorrecta' 
           });
         }
 
@@ -680,7 +680,7 @@ const createAccount = async (req, res) => {
           });
         }
 
-        // 5?? Generar números únicos para la cuenta
+        // 5?? Generar nï¿½meros ï¿½nicos para la cuenta
         const cardNum = generateCardNumber(numericCustomerId);
         const clabe = generateClabe();
         const accNum = generateAccNum(numericCustomerId);
@@ -696,7 +696,7 @@ const createAccount = async (req, res) => {
             if (err.code === 'ER_DUP_ENTRY') {
               return res.status(400).json({ 
                 success: false,
-                msg: 'Error: número de cuenta duplicado. Intenta nuevamente' 
+                msg: 'Error: nï¿½mero de cuenta duplicado. Intenta nuevamente' 
               });
             }
             return res.status(500).json({ 
@@ -726,7 +726,7 @@ const createAccount = async (req, res) => {
   }
 };
 
-// ==================== GENERACIÓN DE COMPROBANTES ====================
+// ==================== GENERACIï¿½N DE COMPROBANTES ====================
 
 const generateReceipt = (req, res) => {
   const { tranId } = req.params;
@@ -741,7 +741,7 @@ const generateReceipt = (req, res) => {
     });
   }
 
-  // Primero: obtener datos básicos de la transferencia
+  // Primero: obtener datos bï¿½sicos de la transferencia
   const sql = `
     SELECT 
       tranId,
@@ -762,7 +762,7 @@ const generateReceipt = (req, res) => {
       console.error('? [RECEIPT] Error al consultar transferencia:', err);
       return res.status(500).json({ 
         success: false,
-        msg: 'Error al obtener información de la transferencia',
+        msg: 'Error al obtener informaciï¿½n de la transferencia',
         error: err.message
       });
     }
@@ -780,7 +780,7 @@ const generateReceipt = (req, res) => {
     const transfer = results[0];
     console.log('?? [RECEIPT] Datos obtenidos:', transfer);
 
-    // Segundo: obtener nombres de los dueños de las cuentas
+    // Segundo: obtener nombres de los dueï¿½os de las cuentas
     const sqlNames = `
       SELECT 
         ca.accNum,
@@ -844,19 +844,19 @@ const generateReceipt = (req, res) => {
         // Pipe del PDF a la respuesta
         doc.pipe(res);
 
-      // ========== DISEÑO DEL COMPROBANTE (estilo BBVA) ==========
+      // ========== DISEï¿½O DEL COMPROBANTE (estilo BBVA) ==========
 
       // 1. HEADER - Logo y nombre del banco
       doc.fontSize(36)
          .fillColor('#072146')
          .text('BANCO JETY', 50, 50);
 
-      // 2. TÍTULO
+      // 2. Tï¿½TULO
       doc.fontSize(20)
          .fillColor('#000000')
-         .text('Comprobante de la operación', 50, 105);
+         .text('Comprobante de la operaciï¿½n', 50, 105);
 
-      // Línea separadora
+      // Lï¿½nea separadora
       doc.moveTo(50, 145)
          .lineTo(545, 145)
          .strokeColor('#072146')
@@ -865,10 +865,10 @@ const generateReceipt = (req, res) => {
 
       let yPos = 165;
 
-      // 3. TIPO DE OPERACIÓN
+      // 3. TIPO DE OPERACIï¿½N
       doc.fontSize(11)
          .fillColor('#666666')
-         .text('Tipo de operación', 50, yPos);
+         .text('Tipo de operaciï¿½n', 50, yPos);
       
       yPos += 18;
       doc.fontSize(14)
@@ -905,7 +905,7 @@ const generateReceipt = (req, res) => {
 
       yPos += 65;
 
-      // 6. NOMBRE DEL ORDENANTE (dueño de cuenta origen)
+      // 6. NOMBRE DEL ORDENANTE (dueï¿½o de cuenta origen)
       if (transfer.origin_name) {
         doc.fontSize(11)
            .fillColor('#666666')
@@ -932,7 +932,7 @@ const generateReceipt = (req, res) => {
 
       yPos += 35;
 
-      // 8. NOMBRE DEL BENEFICIARIO (dueño de cuenta destino)
+      // 8. NOMBRE DEL BENEFICIARIO (dueï¿½o de cuenta destino)
       if (transfer.dest_name) {
         doc.fontSize(11)
            .fillColor('#666666')
@@ -985,10 +985,10 @@ const generateReceipt = (req, res) => {
         yPos += 35;
       }
 
-      // 12. FECHA DE OPERACIÓN (hora actual real del servidor)
+      // 12. FECHA DE OPERACIï¿½N (hora actual real del servidor)
       doc.fontSize(11)
          .fillColor('#666666')
-         .text('Fecha de operación', 50, yPos);
+         .text('Fecha de operaciï¿½n', 50, yPos);
 
       yPos += 18;
       const fechaHora = fechaActual.toLocaleString('es-MX', {
@@ -1006,10 +1006,10 @@ const generateReceipt = (req, res) => {
 
       yPos += 35;
 
-      // 11. FOLIO DE OPERACIÓN
+      // 11. FOLIO DE OPERACIï¿½N
       doc.fontSize(11)
          .fillColor('#666666')
-         .text('Folio de operación', 50, yPos);
+         .text('Folio de operaciï¿½n', 50, yPos);
 
       yPos += 18;
       const folio = transfer.tranId.toString().padStart(10, '0');
@@ -1019,11 +1019,11 @@ const generateReceipt = (req, res) => {
 
       yPos += 35;
 
-      // 13. COMISIÓN (si existe)
+      // 13. COMISIï¿½N (si existe)
       if (transfer.fee && transfer.fee > 0) {
         doc.fontSize(11)
            .fillColor('#666666')
-           .text('Comisión', 50, yPos);
+           .text('Comisiï¿½n', 50, yPos);
 
         yPos += 18;
         doc.fontSize(13)
@@ -1034,13 +1034,13 @@ const generateReceipt = (req, res) => {
       // 14. FOOTER
       doc.fontSize(9)
          .fillColor('#999999')
-         .text('Este comprobante es válido sin firma autógrafa', 50, 750, {
+         .text('Este comprobante es vï¿½lido sin firma autï¿½grafa', 50, 750, {
            width: 495,
            align: 'center'
          });
 
       doc.fontSize(8)
-         .text('Banco Jety - Sistema de Banca en Línea', 50, 770, {
+         .text('Banco Jety - Sistema de Banca en Lï¿½nea', 50, 770, {
            width: 495,
            align: 'center'
          });
@@ -1052,7 +1052,7 @@ const generateReceipt = (req, res) => {
 
       } catch (pdfError) {
         console.error('? [RECEIPT] Error al generar PDF:', pdfError);
-        // Si ya se envió el header, no podemos enviar JSON
+        // Si ya se enviï¿½ el header, no podemos enviar JSON
         if (!res.headersSent) {
           return res.status(500).json({
             success: false,
@@ -1068,10 +1068,10 @@ const generateReceipt = (req, res) => {
   });
 };
 
-// ==================== RECUPERACIÓN DE CONTRASEÑA ====================
+// ==================== RECUPERACIï¿½N DE CONTRASEï¿½A ====================
 
 /**
- * Solicita recuperación de contraseña - Genera token y envía correo
+ * Solicita recuperaciï¿½n de contraseï¿½a - Genera token y envï¿½a correo
  */
 const requestPasswordReset = async (req, res) => {
   const { mail } = req.body;
@@ -1079,7 +1079,7 @@ const requestPasswordReset = async (req, res) => {
   if (!mail) {
     return res.status(400).json({ 
       success: false,
-      msg: 'El correo electrónico es requerido' 
+      msg: 'El correo electrï¿½nico es requerido' 
     });
   }
   
@@ -1102,7 +1102,7 @@ const requestPasswordReset = async (req, res) => {
         // Responder como si fuera exitoso para no dar pistas
         return res.json({ 
           success: true,
-          msg: 'Si el correo existe, recibirás un enlace de recuperación' 
+          msg: 'Si el correo existe, recibirï¿½s un enlace de recuperaciï¿½n' 
         });
       }
       
@@ -1132,7 +1132,7 @@ const requestPasswordReset = async (req, res) => {
         const token = passwordResetService.generateResetToken(mail);
         const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
         
-        // Crear enlace de recuperación
+        // Crear enlace de recuperaciï¿½n
         const resetLink = `http://localhost:4200/reset-password?token=${token}&mail=${encodeURIComponent(mail)}`;
         
         const expirationTime = expiresAt.toLocaleString('es-MX', {
@@ -1152,23 +1152,23 @@ const requestPasswordReset = async (req, res) => {
           expirationTime: expirationTime
         }).then(emailResult => {
           if (emailResult.success) {
-            console.log(`? [PASSWORD-RESET] Correo de recuperación enviado a: ${mail}`);
+            console.log(`? [PASSWORD-RESET] Correo de recuperaciï¿½n enviado a: ${mail}`);
             res.json({ 
               success: true,
-              msg: 'Correo de recuperación enviado exitosamente' 
+              msg: 'Correo de recuperaciï¿½n enviado exitosamente' 
             });
           } else {
             console.error('? [PASSWORD-RESET] Error al enviar correo:', emailResult.error);
             res.status(500).json({ 
               success: false,
-              msg: 'Error al enviar el correo de recuperación' 
+              msg: 'Error al enviar el correo de recuperaciï¿½n' 
             });
           }
         }).catch(error => {
           console.error('? [PASSWORD-RESET] Error al enviar correo:', error);
           res.status(500).json({ 
             success: false,
-            msg: 'Error al enviar el correo de recuperación' 
+            msg: 'Error al enviar el correo de recuperaciï¿½n' 
           });
         });
       });
@@ -1184,7 +1184,7 @@ const requestPasswordReset = async (req, res) => {
 };
 
 /**
- * Restablece la contraseña con el token
+ * Restablece la contraseï¿½a con el token
  */
 const resetPassword = (req, res) => {
   const { mail, token, newPassword } = req.body;
@@ -1201,7 +1201,7 @@ const resetPassword = (req, res) => {
     const verification = passwordResetService.verifyResetToken(token, mail);
     
     if (!verification.valid) {
-      console.log(`?? [PASSWORD-RESET] Token inválido: ${verification.reason}`);
+      console.log(`?? [PASSWORD-RESET] Token invï¿½lido: ${verification.reason}`);
       return res.status(400).json({ 
         success: false,
         msg: verification.reason 
@@ -1229,19 +1229,19 @@ const resetPassword = (req, res) => {
       
       const user = results[0];
       
-      // Hash de la nueva contraseña
+      // Hash de la nueva contraseï¿½a
       const saltRounds = 10;
       const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
       
-      // Actualizar contraseña
+      // Actualizar contraseï¿½a
       const updateQuery = 'UPDATE main SET pass = ? WHERE mail = ?';
       
       db.query(updateQuery, [hashedPassword, mail], async (updateErr, updateResult) => {
         if (updateErr) {
-          console.error('? [PASSWORD-RESET] Error al actualizar contraseña:', updateErr);
+          console.error('? [PASSWORD-RESET] Error al actualizar contraseï¿½a:', updateErr);
           return res.status(500).json({ 
             success: false,
-            msg: 'Error al actualizar la contraseña' 
+            msg: 'Error al actualizar la contraseï¿½a' 
           });
         }
         
@@ -1268,21 +1268,21 @@ const resetPassword = (req, res) => {
             customerName = `${name.firstName} ${name.lastNameP} ${name.lastNameM || ''}`.trim();
           }
           
-          // Enviar correo de confirmación
+          // Enviar correo de confirmaciï¿½n
           emailService.sendPasswordChangedEmail(mail, {
             customerName: customerName,
             date: new Date().toLocaleString('es-MX'),
             ipAddress: req.ip || 'No disponible'
           }).then(() => {
-            console.log(`? [PASSWORD-RESET] Correo de confirmación enviado a: ${mail}`);
+            console.log(`? [PASSWORD-RESET] Correo de confirmaciï¿½n enviado a: ${mail}`);
           }).catch(emailErr => {
-            console.error('? [PASSWORD-RESET] Error al enviar correo de confirmación:', emailErr);
+            console.error('? [PASSWORD-RESET] Error al enviar correo de confirmaciï¿½n:', emailErr);
           });
           
-          console.log(`? [PASSWORD-RESET] Contraseña actualizada para: ${mail}`);
+          console.log(`? [PASSWORD-RESET] Contraseï¿½a actualizada para: ${mail}`);
           res.json({ 
             success: true,
-            msg: 'Contraseña actualizada exitosamente' 
+            msg: 'Contraseï¿½a actualizada exitosamente' 
           });
         });
       });
@@ -1297,10 +1297,10 @@ const resetPassword = (req, res) => {
   }
 };
 
-// ==================== DEPÓSITOS ====================
+// ==================== DEPï¿½SITOS ====================
 
 const depositFunds = (req, res) => {
-  console.log('?? [DEPOSIT] Solicitud de depósito recibida');
+  console.log('?? [DEPOSIT] Solicitud de depï¿½sito recibida');
   console.log('?? [DEPOSIT] Body:', JSON.stringify(req.body, null, 2));
   
   const { mainId, amount, description } = req.body || {};
@@ -1317,23 +1317,23 @@ const depositFunds = (req, res) => {
   const numericAmount = parseFloat(amount);
   
   if (isNaN(numericMainId) || numericMainId <= 0) {
-    console.log('? [DEPOSIT] mainId inválido:', mainId);
+    console.log('? [DEPOSIT] mainId invï¿½lido:', mainId);
     return res.status(400).json({ 
       success: false,
-      msg: 'El mainId debe ser un número válido' 
+      msg: 'El mainId debe ser un nï¿½mero vï¿½lido' 
     });
   }
   
   if (isNaN(numericAmount) || numericAmount <= 0) {
-    console.log('? [DEPOSIT] Monto inválido:', amount);
+    console.log('? [DEPOSIT] Monto invï¿½lido:', amount);
     return res.status(400).json({ 
       success: false,
-      msg: 'El monto debe ser un número mayor a 0' 
+      msg: 'El monto debe ser un nï¿½mero mayor a 0' 
     });
   }
 
   const sql = `CALL sp_deposit_funds(?, ?, ?)`;
-  const params = [numericMainId, numericAmount, description || 'Depósito en efectivo'];
+  const params = [numericMainId, numericAmount, description || 'Depï¿½sito en efectivo'];
   
   console.log('?? [DEPOSIT] Ejecutando SP con params:', params);
   
@@ -1342,7 +1342,7 @@ const depositFunds = (req, res) => {
       console.error('? [DEPOSIT] Error en SP:', err);
       console.error('? [DEPOSIT] SQL State:', err.sqlState);
       console.error('? [DEPOSIT] SQL Message:', err.sqlMessage);
-      const msg = err?.sqlMessage || err?.message || 'Error en depósito';
+      const msg = err?.sqlMessage || err?.message || 'Error en depï¿½sito';
       return res.status(400).json({ 
         success: false,
         msg: msg 
@@ -1358,33 +1358,33 @@ const depositFunds = (req, res) => {
       const newBalance = row.newBalance || 0;
       const accountNumber = row.accountNumber || '';
       
-      console.log('? [DEPOSIT] Datos extraídos:', { depId, newBalance, accountNumber });
+      console.log('? [DEPOSIT] Datos extraï¿½dos:', { depId, newBalance, accountNumber });
       
-      // ==================== ENVIAR CORREO DESPUÉS DEL DEPÓSITO ====================
-      // Enviar correo de forma asíncrona sin bloquear la respuesta
+      // ==================== ENVIAR CORREO DESPUï¿½S DEL DEPï¿½SITO ====================
+      // Enviar correo de forma asï¿½ncrona sin bloquear la respuesta
       sendDepositEmail(accountNumber, numericAmount, description, depId, newBalance)
         .catch(emailErr => {
           console.error('? [DEPOSIT] Error al enviar correo:', emailErr);
-          // No afectar la respuesta del depósito si falla el correo
+          // No afectar la respuesta del depï¿½sito si falla el correo
         });
       
       return res.json({ 
         success: true, 
         depId: depId, 
         newBalance: newBalance,
-        msg: 'Depósito realizado exitosamente'
+        msg: 'Depï¿½sito realizado exitosamente'
       });
       
     } catch (e) {
       return res.status(500).json({ 
         success: false,
-        msg: 'Error procesando la respuesta del depósito' 
+        msg: 'Error procesando la respuesta del depï¿½sito' 
       });
     }
   });
 };
 
-// ==================== FUNCIÓN AUXILIAR PARA ENVIAR CORREO DE DEPÓSITO ====================
+// ==================== FUNCIï¿½N AUXILIAR PARA ENVIAR CORREO DE DEPï¿½SITO ====================
 async function sendDepositEmail(destination, amount, description, depId, newBalance) {
   try {
     const date = new Date().toLocaleString('es-MX', {
@@ -1397,7 +1397,7 @@ async function sendDepositEmail(destination, amount, description, depId, newBala
       hour12: false
     });
     
-    // Obtener información de la cuenta destino
+    // Obtener informaciï¿½n de la cuenta destino
     const infoQuery = `
       SELECT 
         ca.mainId, ca.accNum, ca.clabe,
@@ -1434,7 +1434,7 @@ async function sendDepositEmail(destination, amount, description, depId, newBala
         newBalance: newBalance
       });
       
-      console.log(`? [DEPOSIT] Correo de depósito enviado a: ${destData.mail}`);
+      console.log(`? [DEPOSIT] Correo de depï¿½sito enviado a: ${destData.mail}`);
     }
     
   } catch (error) {
@@ -1523,7 +1523,7 @@ const generateTransferPDF = async (req, res) => {
   }
 };
 
-// ==================== GENERAR PDF DE DEPÓSITO ====================
+// ==================== GENERAR PDF DE DEPï¿½SITO ====================
 const generateDepositPDF = async (req, res) => {
   try {
     const { depId } = req.params;
@@ -1534,7 +1534,7 @@ const generateDepositPDF = async (req, res) => {
       return res.status(400).json({ success: false, msg: 'depId requerido' });
     }
     
-    // Obtener datos del depósito
+    // Obtener datos del depï¿½sito
     const query = `
       SELECT 
         depId, mainId, accNum, amount, description, depositDate
@@ -1549,12 +1549,12 @@ const generateDepositPDF = async (req, res) => {
       }
       
       if (!results || results.length === 0) {
-        console.error('? [PDF] Depósito no encontrado');
-        return res.status(404).json({ success: false, msg: 'Depósito no encontrado' });
+        console.error('? [PDF] Depï¿½sito no encontrado');
+        return res.status(404).json({ success: false, msg: 'Depï¿½sito no encontrado' });
       }
       
       const deposit = results[0];
-      console.log('?? [PDF] Datos de depósito:', deposit);
+      console.log('?? [PDF] Datos de depï¿½sito:', deposit);
       
       // Obtener saldo actual
       const accountQuery = `SELECT balance FROM cAccount WHERE accNum = ?`;
@@ -1582,7 +1582,7 @@ const generateDepositPDF = async (req, res) => {
           date: date,
           amount: deposit.amount,
           accountNumber: deposit.accNum,
-          description: deposit.description || 'Depósito en efectivo',
+          description: deposit.description || 'Depï¿½sito en efectivo',
           newBalance: balance
         };
         
@@ -1616,7 +1616,7 @@ const generateDepositPDF = async (req, res) => {
 
 /**
  * Crear un retiro sin tarjeta
- * Genera un código único y registra el retiro en la base de datos
+ * Genera un cï¿½digo ï¿½nico y registra el retiro en la base de datos
  */
 const crearRetiroSinTarjeta = async (req, res) => {
   const { mainId, accNum, amount, password, description } = req.body;
@@ -1634,27 +1634,27 @@ const crearRetiroSinTarjeta = async (req, res) => {
   if (amount < 100) {
     return res.status(400).json({ 
       success: false, 
-      message: 'El monto mínimo de retiro es $100.00' 
+      message: 'El monto mï¿½nimo de retiro es $100.00' 
     });
   }
 
   if (amount > 10000) {
     return res.status(400).json({ 
       success: false, 
-      message: 'El monto máximo de retiro es $10,000.00' 
+      message: 'El monto mï¿½ximo de retiro es $10,000.00' 
     });
   }
 
   try {
-    // 1. Verificar la contraseña del usuario
+    // 1. Verificar la contraseï¿½a del usuario
     const verifyPasswordSql = 'SELECT pass FROM main WHERE mainId = ?';
     
     db.query(verifyPasswordSql, [mainId], async (passErr, users) => {
       if (passErr) {
-        console.error('[RETIRO] Error al verificar contraseña:', passErr);
+        console.error('[RETIRO] Error al verificar contraseï¿½a:', passErr);
         return res.status(500).json({ 
           success: false, 
-          message: 'Error al verificar la contraseña' 
+          message: 'Error al verificar la contraseï¿½a' 
         });
       }
 
@@ -1668,17 +1668,17 @@ const crearRetiroSinTarjeta = async (req, res) => {
       const storedPassword = users[0].pass;
       
       try {
-        // Comparar contraseña con bcrypt
+        // Comparar contraseï¿½a con bcrypt
         const isPasswordValid = await bcrypt.compare(password, storedPassword);
         
         if (!isPasswordValid) {
           return res.status(401).json({ 
             success: false, 
-            message: 'Contraseña incorrecta' 
+            message: 'Contraseï¿½a incorrecta' 
           });
         }
 
-        // 2. Obtener información del usuario y cuenta
+        // 2. Obtener informaciï¿½n del usuario y cuenta
         const getUserInfoSql = `
       SELECT m.mail, c.firstName, c.lastNameP, c.lastNameM
       FROM main m
@@ -1691,7 +1691,7 @@ const crearRetiroSinTarjeta = async (req, res) => {
         console.error('[RETIRO] Error al obtener info del usuario:', userErr);
         return res.status(500).json({ 
           success: false, 
-          message: 'Error al obtener información del usuario' 
+          message: 'Error al obtener informaciï¿½n del usuario' 
         });
       }
 
@@ -1727,15 +1727,15 @@ const crearRetiroSinTarjeta = async (req, res) => {
           });
         }
 
-        // 3. Generar código único de retiro
+        // 3. Generar cï¿½digo ï¿½nico de retiro
         const timestamp = Date.now().toString().slice(-8);
         const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
         const codigo = `RET${timestamp}${random}`;
 
-        // 4. Iniciar transacción
+        // 4. Iniciar transacciï¿½n
         db.beginTransaction((transErr) => {
           if (transErr) {
-            console.error('[RETIRO] Error al iniciar transacción:', transErr);
+            console.error('[RETIRO] Error al iniciar transacciï¿½n:', transErr);
             return res.status(500).json({ 
               success: false, 
               message: 'Error al procesar el retiro' 
@@ -1775,11 +1775,11 @@ const crearRetiroSinTarjeta = async (req, res) => {
 
               const newBalance = account.balance - amount;
 
-              // 7. Confirmar transacción
+              // 7. Confirmar transacciï¿½n
               db.commit((commitErr) => {
                 if (commitErr) {
                   return db.rollback(() => {
-                    console.error('[RETIRO] Error al confirmar transacción:', commitErr);
+                    console.error('[RETIRO] Error al confirmar transacciï¿½n:', commitErr);
                     res.status(500).json({ 
                       success: false, 
                       message: 'Error al confirmar el retiro' 
@@ -1793,7 +1793,7 @@ const crearRetiroSinTarjeta = async (req, res) => {
                   amount 
                 });
 
-                // 8. Enviar correo electrónico
+                // 8. Enviar correo electrï¿½nico
                 emailService.sendWithdrawalCodeEmail(userEmail, {
                   customerName,
                   codigo,
@@ -1803,7 +1803,7 @@ const crearRetiroSinTarjeta = async (req, res) => {
                   newBalance
                 }).catch(emailErr => {
                   console.error('[RETIRO] Error al enviar email:', emailErr);
-                  // No fallar la operación si el email falla
+                  // No fallar la operaciï¿½n si el email falla
                 });
 
                 // 9. Responder al frontend
@@ -1823,13 +1823,13 @@ const crearRetiroSinTarjeta = async (req, res) => {
     });
 
       } catch (bcryptError) {
-        console.error('[RETIRO] Error al comparar contraseña:', bcryptError);
+        console.error('[RETIRO] Error al comparar contraseï¿½a:', bcryptError);
         return res.status(500).json({ 
           success: false, 
-          message: 'Error al verificar la contraseña' 
+          message: 'Error al verificar la contraseï¿½a' 
         });
       }
-    }); // Cierre del callback de verificación de contraseña
+    }); // Cierre del callback de verificaciï¿½n de contraseï¿½a
 
   } catch (error) {
     console.error('[RETIRO] Error general:', error);
@@ -1878,7 +1878,7 @@ const getRetirosRecientes = (req, res) => {
 };
 
 /**
- * Validar código de retiro
+ * Validar cï¿½digo de retiro
  * (Para uso futuro por empleados/cajeros)
  */
 const validarCodigoRetiro = (req, res) => {
@@ -1887,7 +1887,7 @@ const validarCodigoRetiro = (req, res) => {
   if (!codigo) {
     return res.status(400).json({ 
       success: false, 
-      message: 'Código es requerido' 
+      message: 'Cï¿½digo es requerido' 
     });
   }
 
@@ -1902,22 +1902,22 @@ const validarCodigoRetiro = (req, res) => {
     AND DATE(r.withdrawdate) >= DATE(NOW() - INTERVAL 1 DAY)
   `;
 
-  // Extraer el ID del código (los últimos dígitos después de RET)
+  // Extraer el ID del cï¿½digo (los ï¿½ltimos dï¿½gitos despuï¿½s de RET)
   const withdrawId = codigo.replace('RET', '').slice(0, -4);
 
   db.query(sql, [withdrawId], (err, results) => {
     if (err) {
-      console.error('[RETIRO] Error al validar código:', err);
+      console.error('[RETIRO] Error al validar cï¿½digo:', err);
       return res.status(500).json({ 
         success: false, 
-        message: 'Error al validar código' 
+        message: 'Error al validar cï¿½digo' 
       });
     }
 
     if (!results || results.length === 0) {
       return res.status(404).json({ 
         success: false, 
-        message: 'Código inválido o expirado' 
+        message: 'Cï¿½digo invï¿½lido o expirado' 
       });
     }
 
@@ -1937,7 +1937,7 @@ const validarCodigoRetiro = (req, res) => {
 };
 
 /**
- * Procesar retiro con código
+ * Procesar retiro con cï¿½digo
  * (Para uso futuro por empleados/cajeros)
  */
 const procesarRetiroConCodigo = (req, res) => {
@@ -1946,11 +1946,11 @@ const procesarRetiroConCodigo = (req, res) => {
   if (!codigo) {
     return res.status(400).json({ 
       success: false, 
-      message: 'Código es requerido' 
+      message: 'Cï¿½digo es requerido' 
     });
   }
 
-  // Extraer el ID del código
+  // Extraer el ID del cï¿½digo
   const withdrawId = codigo.replace('RET', '').slice(0, -4);
 
   const sql = `
@@ -1972,16 +1972,16 @@ const procesarRetiroConCodigo = (req, res) => {
     if (!results || results.length === 0) {
       return res.status(404).json({ 
         success: false, 
-        message: 'Código inválido o expirado' 
+        message: 'Cï¿½digo invï¿½lido o expirado' 
       });
     }
 
     const retiro = results[0];
 
-    // Aquí se podría agregar lógica adicional:
+    // Aquï¿½ se podrï¿½a agregar lï¿½gica adicional:
     // - Marcar el retiro como procesado
-    // - Registrar quién lo procesó
-    // - Enviar notificación al cliente
+    // - Registrar quiï¿½n lo procesï¿½
+    // - Enviar notificaciï¿½n al cliente
     // etc.
 
     console.log('[RETIRO] Retiro procesado por empleado', { 
@@ -1998,6 +1998,177 @@ const procesarRetiroConCodigo = (req, res) => {
         monto: retiro.amount,
         cuenta: retiro.accNum
       }
+    });
+  });
+};
+
+const getAccountStatement = (req, res) => {
+  const { accountId } = req.params;
+  
+  if (!accountId) {
+    return res.status(400).json({ 
+      success: false,
+      msg: 'Se requiere el ID de la cuenta' 
+    });
+  }
+
+  const accountInfoSql = `
+    SELECT 
+      ca.accountId,
+      ca.mainId,
+      ca.cardNum,
+      ca.balance,
+      ca.clabe,
+      ca.accNum,
+      ca.accPhone,
+      ca.accType,
+      COALESCE(c.firstName, e.firstName) AS firstName,
+      COALESCE(c.lastNameP, e.lastNameP) AS lastNameP,
+      COALESCE(c.lastNameM, e.lastNameM) AS lastNameM
+    FROM cAccount ca
+    LEFT JOIN customer c ON ca.mainId = c.mainId
+    LEFT JOIN employee e ON ca.mainId = e.mainId
+    WHERE ca.accountId = ?
+  `;
+
+  db.query(accountInfoSql, [accountId], (err, accountResults) => {
+    if (err) {
+      console.error('[STATEMENT] Error al obtener info de cuenta:', err);
+      return res.status(500).json({ 
+        success: false,
+        msg: 'Error al obtener informaciÃ³n de la cuenta' 
+      });
+    }
+
+    if (accountResults.length === 0) {
+      return res.status(404).json({ 
+        success: false,
+        msg: 'Cuenta no encontrada' 
+      });
+    }
+
+    const accountInfo = accountResults[0];
+    const accNum = accountInfo.accNum;
+    const clabe = accountInfo.clabe;
+
+    const movementsSql = `
+      SELECT 
+        'transfer_out' as type,
+        t.tranId as id,
+        t.doDate as date,
+        t.ammount as amount,
+        t.fee,
+        t.description,
+        t.destiny,
+        t.origin,
+        NULL as withdrawid,
+        NULL as depId
+      FROM transfer t
+      WHERE t.origin = ? OR t.origin = ?
+      
+      UNION ALL
+      
+      SELECT 
+        'transfer_in' as type,
+        t.tranId as id,
+        t.doDate as date,
+        t.ammount as amount,
+        0 as fee,
+        t.description,
+        t.destiny,
+        t.origin,
+        NULL as withdrawid,
+        NULL as depId
+      FROM transfer t
+      WHERE t.destiny = ? OR t.destiny = ?
+      
+      UNION ALL
+      
+      SELECT 
+        'deposit' as type,
+        NULL as id,
+        d.depositDate as date,
+        d.amount,
+        0 as fee,
+        d.description,
+        d.accNum as destiny,
+        NULL as origin,
+        NULL as withdrawid,
+        d.depId
+      FROM deposito d
+      WHERE d.accNum = ?
+      
+      UNION ALL
+      
+      SELECT 
+        'withdrawal' as type,
+        NULL as id,
+        r.withdrawdate as date,
+        r.amount,
+        0 as fee,
+        r.description,
+        r.accNum as destiny,
+        NULL as origin,
+        r.withdrawid,
+        NULL as depId
+      FROM retiros r
+      WHERE r.accNum = ?
+      
+      ORDER BY date DESC
+      LIMIT 500
+    `;
+
+    db.query(movementsSql, [accNum, clabe, accNum, clabe, accNum, accNum], (err, movements) => {
+      if (err) {
+        console.error('[STATEMENT] Error al obtener movimientos:', err);
+        return res.status(500).json({ 
+          success: false,
+          msg: 'Error al obtener movimientos' 
+        });
+      }
+
+      let runningBalance = accountInfo.balance;
+      const formattedMovements = [];
+
+      for (let i = movements.length - 1; i >= 0; i--) {
+        const mov = movements[i];
+        formattedMovements.unshift({
+          type: mov.type,
+          id: mov.id || mov.depId || mov.withdrawid,
+          date: mov.date,
+          amount: parseFloat(mov.amount || 0),
+          fee: parseFloat(mov.fee || 0),
+          description: mov.description,
+          destiny: mov.destiny,
+          origin: mov.origin,
+          balance: runningBalance
+        });
+
+        if (mov.type === 'transfer_out') {
+          runningBalance += (parseFloat(mov.amount) + parseFloat(mov.fee));
+        } else if (mov.type === 'transfer_in') {
+          runningBalance -= parseFloat(mov.amount);
+        } else if (mov.type === 'deposit') {
+          runningBalance -= parseFloat(mov.amount);
+        } else if (mov.type === 'withdrawal') {
+          runningBalance += parseFloat(mov.amount);
+        }
+      }
+
+      return res.json({
+        success: true,
+        accountInfo: {
+          accountId: accountInfo.accountId,
+          accNum: accountInfo.accNum,
+          clabe: accountInfo.clabe,
+          balance: parseFloat(accountInfo.balance),
+          cardNum: accountInfo.cardNum,
+          accType: accountInfo.accType,
+          accountHolder: `${accountInfo.firstName} ${accountInfo.lastNameP} ${accountInfo.lastNameM || ''}`.trim()
+        },
+        movements: formattedMovements,
+        totalMovements: formattedMovements.length
+      });
     });
   });
 };
@@ -2021,5 +2192,6 @@ module.exports = {
   crearRetiroSinTarjeta,
   getRetirosRecientes,
   validarCodigoRetiro,
-  procesarRetiroConCodigo
+  procesarRetiroConCodigo,
+  getAccountStatement
 };

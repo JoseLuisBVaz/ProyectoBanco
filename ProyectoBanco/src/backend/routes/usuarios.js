@@ -19,7 +19,8 @@ const {
   crearRetiroSinTarjeta,
   getRetirosRecientes,
   validarCodigoRetiro,
-  procesarRetiroConCodigo
+  procesarRetiroConCodigo,
+  getAccountStatement
 } = require('../controller/usuariosCtrl');
 
 // === RUTAS DE CONSULTA ===
@@ -59,5 +60,8 @@ router.get('/receipt/:tranId', generateReceipt);
 // === PDF DOWNLOADS ===
 router.get('/transfer-pdf/:tranId', generateTransferPDF);
 router.get('/deposit-pdf/:depId', generateDepositPDF);
+
+// === ESTADO DE CUENTA ===
+router.get('/account-statement/:accountId', getAccountStatement);
 
 module.exports = router;
