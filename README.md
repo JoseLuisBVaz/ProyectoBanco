@@ -358,4 +358,3 @@ Development team focused on modern banking solutions.
 
 ## License
 
-Academic project for educational purposes.
