@@ -255,6 +255,77 @@ end$$
 
 delimiter ;
 
+-- procedimiento para depositos
+drop procedure if exists sp_deposit_funds;
+
+delimiter $$
+create definer=`root`@`localhost` procedure sp_deposit_funds(
+    in p_mainId int,
+    in p_amount decimal(12,2),
+    in p_description varchar(255)
+)
+begin
+    declare v_account_id int default null;
+    declare v_current_balance decimal(12,2) default 0;
+    declare v_new_balance decimal(12,2);
+    declare v_deposit_id int;
+    declare v_accNum varchar(10);
+    
+    -- Manejo de errores
+    declare exit handler for sqlexception
+    begin
+        rollback;
+        signal sqlstate '45000'
+        set message_text = 'Error en el deposito: No se pudo completar la operacion';
+    end;
+
+    -- Validar monto
+    if p_amount is null or p_amount <= 0 then
+        signal sqlstate '45000'
+        set message_text = 'El monto del deposito debe ser mayor a 0';
+    end if;
+
+    start transaction;
+
+    -- Buscar la primera cuenta del usuario
+    select accountId, balance, accNum into v_account_id, v_current_balance, v_accNum
+    from cAccount
+    where mainId = p_mainId
+    limit 1;
+
+    -- Validar que la cuenta existe
+    if v_account_id is null then
+        signal sqlstate '45000'
+        set message_text = 'No se encontro una cuenta para el usuario';
+    end if;
+
+    -- Calcular nuevo balance
+    set v_new_balance = v_current_balance + p_amount;
+
+    -- Actualizar el saldo de la cuenta
+    update cAccount
+    set balance = v_new_balance
+    where accountId = v_account_id;
+
+    -- Registrar el deposito en la tabla deposito
+    insert into deposito (mainId, accNum, amount, description)
+    values (p_mainId, v_accNum, p_amount, coalesce(p_description, 'Deposito en efectivo'));
+
+    set v_deposit_id = last_insert_id();
+
+    commit;
+
+    -- Retornar resultado
+    select 
+        v_deposit_id as depId,
+        0.00 as fee,
+        v_new_balance as newBalance,
+        v_accNum as accountNumber,
+        'Deposito realizado exitosamente' as message;
+
+end $$
+delimiter ;
+
 -- procedimiento para disposicion de credito (actualizado)
 drop procedure if exists sp_dispose_credit;
 

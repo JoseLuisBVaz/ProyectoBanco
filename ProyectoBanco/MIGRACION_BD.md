@@ -131,10 +131,15 @@ ALTER TABLE creditDisposal
 -- Recrear funciones y procedimientos
 DROP FUNCTION IF EXISTS fn_calculate_credit_limit;
 DROP PROCEDURE IF EXISTS sp_transfer_funds;
+DROP PROCEDURE IF EXISTS sp_deposit_funds;
 DROP PROCEDURE IF EXISTS sp_dispose_credit;
 
 -- Ejecutar las funciones y procedimientos del archivo database.sql
--- (Copiar y pegar desde el archivo database.sql las secciones de funciones y procedimientos)
+-- (Copiar y pegar desde el archivo database.sql las secciones de:
+--  - fn_calculate_credit_limit
+--  - sp_transfer_funds
+--  - sp_deposit_funds
+--  - sp_dispose_credit)
 ```
 
 ---
