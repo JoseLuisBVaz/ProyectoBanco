@@ -2,7 +2,7 @@
 echo "🚀 Desplegando Banco JETY..."
 
 # Actualizar código
-git pull origin main
+git pull origin Joseluis
 
 # Instalar dependencias del backend
 cd src/backend
