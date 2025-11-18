@@ -6,17 +6,17 @@ show tables;
 select * from main;
 select * from customer;
 select * from employee;
-select * from caccount;
+select * from cAccount;
 select * from transfer;
 select * from deposito;
 select * from retiros;
-select * from creditdisposal;
+select * from creditDisposal;
 
 
 
 -- tabla principal de usuarios
 create table main (
-    mainid int auto_increment primary key,
+    mainId int auto_increment primary key,
     mail varchar(100) not null,
     pass varchar(100) not null,
     rol enum ('c','e','m') not null
@@ -24,112 +24,112 @@ create table main (
 
 -- tabla de clientes
 create table customer (
-    mainid int primary key,
-    phonenumber varchar(12) not null,
-    firstname varchar(100) not null,
-    lastnamep varchar(50) not null,
-    lastnamem varchar(50) not null,
+    mainId int primary key,
+    phoneNumber varchar(12) not null,
+    firstName varchar(100) not null,
+    lastNameP varchar(50) not null,
+    lastNameM varchar(50) not null,
     birthday date not null,
     address varchar(250) not null,
-    enterdate timestamp default current_timestamp not null,
+    enterDate timestamp default current_timestamp not null,
     curp varchar(18) not null,
     rfc varchar(13),
-    foreign key (mainid) references main(mainid)
+    foreign key (mainId) references main(mainId)
         on delete cascade
         on update cascade
 );
 
 -- tabla de empleados
 create table employee (
-    mainid int primary key,
-    phonenumber varchar(12) not null,
-    firstname varchar(100) not null,
-    lastnamep varchar(50) not null,
-    lastnamem varchar(50) not null,
+    mainId int primary key,
+    phoneNumber varchar(12) not null,
+    firstName varchar(100) not null,
+    lastNameP varchar(50) not null,
+    lastNameM varchar(50) not null,
     birthday date not null,
     address varchar(250) not null,
-    enterdate timestamp default current_timestamp not null,
+    enterDate timestamp default current_timestamp not null,
     curp varchar(18) not null,
     rfc varchar(13),
     nss varchar(11),
-    foreign key (mainid) references main(mainid)
+    foreign key (mainId) references main(mainId)
         on delete cascade
         on update cascade
 );
 
 -- cuentas bancarias
-create table caccount (
-    accountid int auto_increment primary key,
-    mainid int not null,
-    cardnum varchar(16) not null,
+create table cAccount (
+    accountId int auto_increment primary key,
+    mainId int not null,
+    cardNum varchar(16) not null,
     balance decimal(12,2) not null default 0,
     clabe varchar(18) not null,
-    accnum varchar(10) not null,
-    accphone varchar(10),
-    acctype enum('debito','credito') not null,
-    constraint fk_caccount_main foreign key (mainid)
-        references main(mainid)
+    accNum varchar(10) not null,
+    accPhone varchar(10),
+    accType enum('Debito','Credito') not null,
+    constraint fk_caccount_main foreign key (mainId)
+        references main(mainId)
         on delete cascade on update cascade,
-    unique key uq_caccount_cardnum (cardnum),
+    unique key uq_caccount_cardnum (cardNum),
     unique key uq_caccount_clabe (clabe),
-    unique key uq_caccount_accnum (accnum),
-    index idx_caccount_mainid (mainid)
+    unique key uq_caccount_accnum (accNum),
+    index idx_caccount_mainid (mainId)
 );
 
 -- transferencias
 create table transfer (
-    tranid int auto_increment primary key,
+    tranId int auto_increment primary key,
     origin varchar(30) not null,
     destiny varchar(30) not null,
     ammount decimal(12,2) not null,
     fee decimal(12,2) not null,
     description varchar(300),
-    dodate date
+    doDate date
 );
 
 -- depositos
 create table if not exists deposito (
-    depid int auto_increment primary key,
-    mainid int not null,
-    accnum varchar(10) not null,
+    depId int auto_increment primary key,
+    mainId int not null,
+    accNum varchar(10) not null,
     amount decimal(12,2) not null,
     description varchar(300),
-    depositdate timestamp default current_timestamp not null,
-    constraint fk_deposito_main foreign key (mainid) references main(mainid),
-    constraint fk_deposito_account foreign key (accnum) references caccount(accnum)
+    depositDate timestamp default current_timestamp not null,
+    constraint fk_deposito_main foreign key (mainId) references main(mainId),
+    constraint fk_deposito_account foreign key (accNum) references cAccount(accNum)
 );
 
 -- retiros
 create table if not exists retiros (
-  withdrawid int auto_increment primary key,
-  mainid int not null,
-  accnum varchar(10) not null,
+  withdrawId int auto_increment primary key,
+  mainId int not null,
+  accNum varchar(10) not null,
   amount decimal(12,2) not null,
   description varchar(300),
-  withdrawdate timestamp default current_timestamp,
-  constraint fk_retiros_main foreign key (mainid) references main(mainid)
+  withdrawDate timestamp default current_timestamp,
+  constraint fk_retiros_main foreign key (mainId) references main(mainId)
     on delete cascade on update cascade,
-  constraint fk_retiros_acc foreign key (accnum) references caccount(accnum)
+  constraint fk_retiros_acc foreign key (accNum) references cAccount(accNum)
     on delete cascade on update cascade,
-  index idx_retiros_mainid (mainid),
-  index idx_retiros_accnum (accnum),
-  index idx_retiros_date (withdrawdate)
+  index idx_retiros_mainid (mainId),
+  index idx_retiros_accnum (accNum),
+  index idx_retiros_date (withdrawDate)
 );
 
 -- disposicion de credito (actualizada)
 drop table if exists creditdisposal;
 
-create table creditdisposal (
-    disposalid int auto_increment primary key,
-    accountid int not null,
+create table creditDisposal (
+    disposalId int auto_increment primary key,
+    accountId int not null,
     amount decimal(12,2) not null,
     description varchar(300),
     timestamp timestamp default current_timestamp,
-    availableafter decimal(12,2),
-    constraint fk_creditdisposal_account foreign key (accountid) 
-        references caccount(accountid)
+    availableAfter decimal(12,2),
+    constraint fk_creditdisposal_account foreign key (accountId) 
+        references cAccount(accountId)
         on delete cascade on update cascade,
-    index idx_creditdisposal_accountid (accountid),
+    index idx_creditdisposal_accountid (accountId),
     index idx_creditdisposal_date (timestamp)
 );
 
@@ -137,7 +137,7 @@ create table creditdisposal (
 drop function if exists fn_calculate_credit_limit;
 
 delimiter $$
-create function fn_calculate_credit_limit(p_mainid int)
+create function fn_calculate_credit_limit(p_mainId int)
 returns decimal(12,2)
 deterministic
 reads sql data
@@ -155,12 +155,12 @@ begin
         v_months_with_data
     from (
         select 
-            date_format(depositdate, '%y-%m') as deposit_month,
+            date_format(depositDate, '%y-%m') as deposit_month,
             sum(amount) as monthly_total
         from deposito
-        where mainid = p_mainid
-          and depositdate >= date_sub(curdate(), interval 1 month)
-        group by date_format(depositdate, '%y-%m')
+        where mainId = p_mainId
+          and depositDate >= date_sub(curdate(), interval 1 month)
+        group by date_format(depositDate, '%y-%m')
     ) as monthly_deposits;
     
     if v_months_with_data < 1 then
@@ -214,8 +214,8 @@ begin
 
   start transaction;
   set v_not_found = 0;
-  select accountid, balance into v_origin_accountid, v_origin_balance
-  from caccount where accnum = p_origin or clabe = p_origin for update;
+  select accountId, balance into v_origin_accountid, v_origin_balance
+  from cAccount where accNum = p_origin or clabe = p_origin for update;
     
   if v_not_found = 1 or v_origin_accountid is null then
     rollback;
@@ -223,8 +223,8 @@ begin
   end if;
 
   set v_not_found = 0;
-  select accountid into v_dest_accountid
-  from caccount where accnum = p_destiny or clabe = p_destiny for update;
+  select accountId into v_dest_accountid
+  from cAccount where accNum = p_destiny or clabe = p_destiny for update;
     
   if v_not_found = 1 or v_dest_accountid is null then
     rollback;
@@ -241,16 +241,16 @@ begin
     signal sqlstate '45000' set message_text = 'fondos insuficientes.';
   end if;
 
-  update caccount set balance = balance - (p_amount + v_fee) where accountid = v_origin_accountid;
-  update caccount set balance = balance + p_amount where accountid = v_dest_accountid;
+  update cAccount set balance = balance - (p_amount + v_fee) where accountId = v_origin_accountid;
+  update cAccount set balance = balance + p_amount where accountId = v_dest_accountid;
 
-  insert into transfer (origin, destiny, ammount, fee, description, dodate)
+  insert into transfer (origin, destiny, ammount, fee, description, doDate)
   values (p_origin, p_destiny, p_amount, v_fee, p_description, curdate());
 
   set v_tranid = last_insert_id();
   commit;
 
-  select v_tranid as tranid, v_fee as fee;
+  select v_tranid as tranId, v_fee as fee;
 end$$
 
 delimiter ;
@@ -260,7 +260,7 @@ drop procedure if exists sp_dispose_credit;
 
 delimiter $$
 create procedure sp_dispose_credit(
-    in p_accountid int,
+    in p_accountId int,
     in p_amount decimal(12,2),
     in p_description varchar(300)
 )
@@ -271,7 +271,7 @@ begin
     declare v_available decimal(12,2);
     declare v_newavailable decimal(12,2);
     declare v_disposalid int;
-    declare v_mainid int;
+    declare v_mainId int;
     
     declare exit handler for sqlexception
     begin
@@ -279,7 +279,7 @@ begin
         resignal;
     end;
     
-    if p_accountid is null or p_amount is null then
+    if p_accountId is null or p_amount is null then
         signal sqlstate '45000' 
         set message_text = 'parametros invalidos o nulos';
     end if;
@@ -291,10 +291,10 @@ begin
     
     start transaction;
     
-    select acctype, balance, mainid 
-    into v_acctype, v_balance, v_mainid
-    from caccount 
-    where accountid = p_accountid
+    select accType, balance, mainId 
+    into v_acctype, v_balance, v_mainId
+    from cAccount 
+    where accountId = p_accountId
     for update;
     
     if v_acctype is null then
@@ -303,13 +303,13 @@ begin
         set message_text = 'cuenta no encontrada';
     end if;
     
-    if v_acctype != 'credito' then
+    if v_acctype != 'Credito' then
         rollback;
         signal sqlstate '45000' 
         set message_text = 'solo las cuentas de credito pueden disponer';
     end if;
     
-    set v_creditlimit = fn_calculate_credit_limit(v_mainid);
+    set v_creditlimit = fn_calculate_credit_limit(v_mainId);
     -- balance = deuda actual, disponible = límite - deuda
     set v_available = v_creditlimit - v_balance;
     
@@ -322,22 +322,22 @@ begin
     set v_newavailable = v_available - p_amount;
     
     -- SUMAR al balance porque el balance representa la DEUDA (lo que se debe)
-    update caccount 
+    update cAccount 
         set balance = balance + p_amount
-        where accountid = p_accountid;
+        where accountId = p_accountId;
     
-    insert into creditdisposal (accountid, amount, description, timestamp, availableafter)
-        values (p_accountid, p_amount, coalesce(p_description, 'prestamo de credito'), now(), v_newavailable);
+    insert into creditDisposal (accountId, amount, description, timestamp, availableAfter)
+        values (p_accountId, p_amount, coalesce(p_description, 'prestamo de credito'), now(), v_newavailable);
     
     set v_disposalid = last_insert_id();
     
     commit;
     
     select 
-        v_disposalid as disposalid,
-        v_newavailable as availableafter,
-        v_creditlimit as creditlimit,
-        (v_creditlimit - v_newavailable) as usedcredit,
+        v_disposalid as disposalId,
+        v_newavailable as availableAfter,
+        v_creditlimit as creditLimit,
+        (v_creditlimit - v_newavailable) as usedCredit,
         'disposicion realizada correctamente' as message;
         
 end $$
