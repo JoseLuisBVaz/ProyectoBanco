@@ -80,7 +80,9 @@ create table cAccount (
 create table transfer (
     tranId int auto_increment primary key,
     origin varchar(30) not null,
+    banco_origen varchar(100) not null default 'Banco JETY',
     destiny varchar(30) not null,
+    banco_destino varchar(100) not null default 'Banco JETY',
     ammount decimal(12,2) not null,
     fee decimal(12,2) not null,
     description varchar(300),
@@ -186,7 +188,9 @@ create procedure sp_transfer_funds(
   in p_origin varchar(30),
   in p_destiny varchar(30),
   in p_amount decimal(12,2),
-  in p_description varchar(300)
+  in p_description varchar(300),
+  in p_banco_origen varchar(100),
+  in p_banco_destino varchar(100)
 )
 begin
   declare v_origin_accountid int;
@@ -195,6 +199,8 @@ begin
   declare v_tranid int;
   declare v_fee decimal(12,2);
   declare v_not_found int default 0;
+  declare v_banco_origen_final varchar(100);
+  declare v_banco_destino_final varchar(100);
 
   declare continue handler for not found set v_not_found = 1;
 
@@ -209,6 +215,10 @@ begin
   if p_origin = p_destiny then
     signal sqlstate '45000' set message_text = 'cuenta origen y destino iguales.';
   end if;
+
+  -- Usar 'Banco JETY' por defecto si no se especifica
+  set v_banco_origen_final = coalesce(p_banco_origen, 'Banco JETY');
+  set v_banco_destino_final = coalesce(p_banco_destino, 'Banco JETY');
 
   set v_fee = (floor(p_amount / 100) * 5) + (floor(p_amount / 1500) * 10);
 
@@ -244,8 +254,8 @@ begin
   update cAccount set balance = balance - (p_amount + v_fee) where accountId = v_origin_accountid;
   update cAccount set balance = balance + p_amount where accountId = v_dest_accountid;
 
-  insert into transfer (origin, destiny, ammount, fee, description, doDate)
-  values (p_origin, p_destiny, p_amount, v_fee, p_description, curdate());
+  insert into transfer (origin, banco_origen, destiny, banco_destino, ammount, fee, description, doDate)
+  values (p_origin, v_banco_origen_final, p_destiny, v_banco_destino_final, p_amount, v_fee, p_description, curdate());
 
   set v_tranid = last_insert_id();
   commit;
@@ -367,7 +377,7 @@ begin
     from cAccount 
     where accountId = p_accountId
     for update;
-    
+
     if v_acctype is null then
         rollback;
         signal sqlstate '45000' 

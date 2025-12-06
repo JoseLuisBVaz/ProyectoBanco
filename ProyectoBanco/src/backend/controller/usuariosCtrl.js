@@ -403,7 +403,7 @@ const registerUser = async (req, res) => {
 // ==================== TRANSFERENCIAS ====================
 
 const transferFunds = (req, res) => {
-  const { origin, destiny, amount, description } = req.body || {};
+  const { origin, destiny, amount, description, banco_origen, banco_destino } = req.body || {};
   
   if (!origin || !destiny || !amount) {
     return res.status(400).json({ 
@@ -420,8 +420,12 @@ const transferFunds = (req, res) => {
     });
   }
 
-  const sql = `CALL sp_transfer_funds(?, ?, ?, ?)`;
-  const params = [origin, destiny, numericAmount, description || null];
+  // Usar 'Banco JETY' como valor por defecto si no se especifica
+  const bancoOrigenFinal = banco_origen || 'Banco JETY';
+  const bancoDestinoFinal = banco_destino || 'Banco JETY';
+
+  const sql = `CALL sp_transfer_funds(?, ?, ?, ?, ?, ?)`;
+  const params = [origin, destiny, numericAmount, description || null, bancoOrigenFinal, bancoDestinoFinal];
   
   db.query(sql, params, (err, results) => {
     if (err) {
@@ -440,7 +444,7 @@ const transferFunds = (req, res) => {
       
       // ==================== ENVIAR CORREOS DESPU�S DE LA TRANSFERENCIA ====================
       // Enviar correos de forma as�ncrona sin bloquear la respuesta
-      sendTransferEmails(origin, destiny, numericAmount, description, tranId, fee)
+      sendTransferEmails(origin, destiny, numericAmount, description, tranId, fee, bancoOrigenFinal, bancoDestinoFinal)
         .catch(emailErr => {
           console.error('? [TRANSFER] Error al enviar correos:', emailErr);
           // No afectar la respuesta de la transferencia si falla el correo
@@ -450,6 +454,8 @@ const transferFunds = (req, res) => {
         success: true, 
         tranId: tranId, 
         fee: fee,
+        banco_origen: bancoOrigenFinal,
+        banco_destino: bancoDestinoFinal,
         msg: 'Transferencia realizada exitosamente'
       });
       
@@ -463,7 +469,7 @@ const transferFunds = (req, res) => {
 };
 
 // ==================== FUNCI�N AUXILIAR PARA ENVIAR CORREOS DE TRANSFERENCIA ====================
-async function sendTransferEmails(origin, destiny, amount, description, tranId, fee) {
+async function sendTransferEmails(origin, destiny, amount, description, tranId, fee, bancoOrigen, bancoDestino) {
   try {
     const date = new Date().toLocaleString('es-MX', {
       year: 'numeric',
@@ -516,6 +522,7 @@ async function sendTransferEmails(origin, destiny, amount, description, tranId, 
         amount: amount,
         destinationAccount: destiny,
         destinationName: destName,
+        destinationBank: bancoDestino,
         description: description,
         tranId: tranId,
         date: date,
@@ -536,6 +543,7 @@ async function sendTransferEmails(origin, destiny, amount, description, tranId, 
         amount: amount,
         originAccount: origin,
         originName: originName,
+        originBank: bancoOrigen,
         description: description,
         tranId: tranId,
         date: date,
@@ -844,7 +852,7 @@ const generateReceipt = (req, res) => {
         // Pipe del PDF a la respuesta
         doc.pipe(res);
 
-      // ========== DISE�O DEL COMPROBANTE (estilo BBVA) ==========
+      // ========== DISE�O DEL COMPROBANTE ==========
 
       // 1. HEADER - Logo y nombre del banco
       doc.fontSize(36)

@@ -40,3 +40,36 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Capacitor
+.capacitor/
+
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+android/captures/
+android/*.iml
+*.keystore
+keystore.properties
+
+# APKs (except versioned releases)
+*.apk
+!*-release-*.apk
+
+# Backend Environment Variables
+src/backend/.env
+src/backend/node_modules/
+src/backend/package-lock.json
+
+# Logs
+*.log
+logs/
+src/backend/logs/
+
+# Sensitive files
+*.pem
+*.key
+*.cert

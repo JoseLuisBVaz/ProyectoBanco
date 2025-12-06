@@ -1,0 +1,85 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Banco JETY</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="login-container">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title class="ion-text-center">¡BIENVENIDO!</ion-card-title>
+      </ion-card-header>
+
+      <ion-card-content>
+        <form (ngSubmit)="login()">
+          <ion-item>
+            <ion-icon name="person-outline" slot="start"></ion-icon>
+            <ion-input 
+              type="email"
+              [(ngModel)]="mail" 
+              name="mail" 
+              label="Correo electrónico"
+              labelPlacement="floating"
+              required>
+            </ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-icon name="lock-closed-outline" slot="start"></ion-icon>
+            <ion-input 
+              [type]="passwordVisible ? 'text' : 'password'"
+              [(ngModel)]="password" 
+              name="password" 
+              label="Contraseña"
+              labelPlacement="floating"
+              required>
+            </ion-input>
+            <ion-button fill="clear" slot="end" (click)="togglePassword()">
+              <ion-icon [name]="passwordVisible ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+            </ion-button>
+          </ion-item>
+
+          <ion-button expand="block" type="submit" class="ion-margin-top">
+            Ingresar
+          </ion-button>
+
+          <ion-text color="danger" *ngIf="errorMsg">
+            <p class="ion-text-center">{{ errorMsg }}</p>
+          </ion-text>
+
+          <ion-button expand="block" fill="clear" routerLink="/formulario-contrasena" size="small">
+            ¿Olvidaste tu contraseña?
+          </ion-button>
+        </form>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card class="aviso-card">
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="alert-circle-outline"></ion-icon>
+          Aviso de privacidad
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        LA-LI-LU-LE-LO
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <ion-title size="small" class="ion-text-center">JETY</ion-title>
+  </ion-toolbar>
+  <ion-toolbar>
+    <div class="footer-links ion-text-center">
+      <ion-text>Términos y condiciones</ion-text>
+      <span> | </span>
+      <ion-text>Aviso Legal</ion-text>
+      <span> | </span>
+      <ion-text>Costos y comisiones</ion-text>
+    </div>
+  </ion-toolbar>
+</ion-footer>

@@ -40,6 +40,7 @@ export class Transfers implements OnInit {
     this.transferForm = this.fb.group({
       origen: [null as any, Validators.required],
       destino: ['', [Validators.required, Validators.minLength(10)]],
+      bancoDestino: ['Banco JETY', Validators.required],
       beneficiario: ['', Validators.required],
       referencia: ['', Validators.required],
       monto: [0, [Validators.required, Validators.min(1)]],
@@ -82,12 +83,12 @@ export class Transfers implements OnInit {
   }
 
   enviarTransferencia() {
-    const { origen, destino, beneficiario, referencia, monto, contrasena, contrasena2 } = this.transferForm.value;
+    const { origen, destino, bancoDestino, beneficiario, referencia, monto, contrasena, contrasena2 } = this.transferForm.value;
 
     this.errorMsg = '';
     this.successMsg = '';
 
-    if (!origen || !destino || !beneficiario || !referencia || !monto || !contrasena || !contrasena2) {
+    if (!origen || !destino || !bancoDestino || !beneficiario || !referencia || !monto || !contrasena || !contrasena2) {
       this.errorMsg = 'Debes completar todos los campos.';
       return;
     }
@@ -119,7 +120,9 @@ export class Transfers implements OnInit {
       origin: originStr,
       destiny: String(destino).trim(),
       amount: Number(monto),
-      description: referencia || null
+      description: referencia || null,
+      banco_origen: 'Banco JETY',
+      banco_destino: String(bancoDestino).trim()
     };
 
     // Primero login (verificación de contraseña), luego transfer
@@ -144,7 +147,7 @@ export class Transfers implements OnInit {
               acc.balance = Math.max(0, Number(acc.balance) - (amt + fee));
             }
             // Limpiar campos del destino y confirmación, conservar origen
-            this.transferForm.patchValue({ destino: '', beneficiario: '', referencia: '', monto: 0, contrasena: '', contrasena2: '' });
+            this.transferForm.patchValue({ destino: '', bancoDestino: 'Banco JETY', beneficiario: '', referencia: '', monto: 0, contrasena: '', contrasena2: '' });
             this.passwordVisible = false;
             this.confirmPasswordVisible = false;
 
@@ -168,7 +171,7 @@ export class Transfers implements OnInit {
   }
 
   cancelarTransferencia() {
-    this.transferForm.reset({ monto: 0 });
+    this.transferForm.reset({ monto: 0, bancoDestino: 'Banco JETY' });
     this.errorMsg = '';
     this.successMsg = '';
   }
