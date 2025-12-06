@@ -14,4 +14,171 @@
 @import '@ionic/angular/css/text-transformation.css';
 @import '@ionic/angular/css/flex-utils.css';
 
-/* You can add global styles to this file, and also import other style files */
+/* ========================================
+   ESTILOS GLOBALES RESPONSIVOS
+   ======================================== */
+
+/* Reset de márgenes para ion-content */
+ion-content {
+  --background: #f5f6fa;
+}
+
+ion-header ion-toolbar {
+  --background: #1a2aff;
+  --color: #ffffff;
+}
+
+/* Ajustes para contenedores en móvil */
+.home-container {
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 0.5rem;
+  box-sizing: border-box;
+}
+
+.home-panel {
+  width: 100%;
+  background: #fff;
+  border-radius: 12px;
+  border: 2px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+/* Títulos responsivos */
+.home-title {
+  font-size: clamp(1.2rem, 4vw, 1.6rem);
+  margin: 0.5rem 0 1rem;
+  text-align: center;
+}
+
+/* Botones adaptables */
+.btn-dispose,
+.btn-secondary,
+button[type="submit"] {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+/* Inputs responsivos */
+.form-input,
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+select,
+textarea {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  box-sizing: border-box;
+  border: 2px solid #e0e0e0;
+  transition: border-color 0.3s ease;
+}
+
+.form-input:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #1a2aff;
+}
+
+/* Tarjetas de cuenta responsivas */
+.account-card {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 12px;
+  box-sizing: border-box;
+  margin-bottom: 1rem;
+}
+
+.account-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.account-left,
+.account-right {
+  flex: 1;
+  min-width: 140px;
+}
+
+/* Grid de acciones adaptable */
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 1rem;
+  padding: 0.5rem 0;
+}
+
+/* Media queries para diferentes pantallas */
+@media (max-width: 768px) {
+  .home-container {
+    padding: 0.25rem;
+  }
+  
+  .home-panel {
+    padding: 0.75rem;
+    border-radius: 8px;
+  }
+  
+  .actions-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+  
+  .account-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .account-left,
+  .account-right {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-panel {
+    padding: 0.5rem;
+  }
+  
+  .form-input,
+  input,
+  select,
+  textarea {
+    font-size: 16px; /* Evita zoom en iOS */
+  }
+  
+  .btn-dispose,
+  .btn-secondary,
+  button[type="submit"] {
+    min-height: 44px; /* Mínimo recomendado para touch */
+  }
+}
+
+/* Mejoras de accesibilidad táctil */
+@media (hover: none) and (pointer: coarse) {
+  /* Dispositivos táctiles */
+  .action-item,
+  button,
+  a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

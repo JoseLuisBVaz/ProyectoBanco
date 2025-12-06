@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { UsuariosService } from '../services/usuarios.service';
 import { LoginService } from '../services/login.service';
 import { Navbar } from '../navbar/navbar';
+import { IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton } from '@ionic/angular/standalone';
 
 interface Account {
   accountId: number;
@@ -26,7 +27,7 @@ interface RetiroReciente {
 @Component({
   selector: 'app-retiro',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, Navbar],
+  imports: [CommonModule, ReactiveFormsModule, Navbar, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton],
   templateUrl: './retiro.html',
   styleUrl: './retiro.css'
 })

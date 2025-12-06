@@ -1,7 +1,15 @@
-<app-navbar class="top-navbar"></app-navbar>
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Depósitos</ion-title>
+  </ion-toolbar>
+</ion-header>
 
-<div class="home-container">
-  <section class="home-panel">
+<ion-content [scrollY]="true" class="ion-padding">
+  <div class="home-container">
+    <section class="home-panel">
     <h2 class="home-title">Depósitos</h2>
 
     <!-- Mensajes de error/éxito -->
@@ -131,6 +139,7 @@
       </button>
     </div>
 
-  </section>
-</div>
+    </section>
+  </div>
+</ion-content>
 

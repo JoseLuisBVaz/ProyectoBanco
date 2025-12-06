@@ -1,7 +1,15 @@
-<app-navbar class="top-navbar"></app-navbar>
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Línea de Crédito</ion-title>
+  </ion-toolbar>
+</ion-header>
 
-<div class="home-container">
-  <section class="home-panel">
+<ion-content [scrollY]="true" class="ion-padding">
+  <div class="home-container">
+    <section class="home-panel">
     <h2 class="home-title">Línea de Crédito</h2>
     
     <!-- Tarjeta de cuenta de crédito -->
@@ -277,5 +285,6 @@
       <p>Solicita una línea de crédito en tu sucursal más cercana</p>
     </div>
 
-  </section>
-</div>
+    </section>
+  </div>
+</ion-content>

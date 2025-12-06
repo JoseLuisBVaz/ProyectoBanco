@@ -1,0 +1,305 @@
+/* ========================================
+   ESTILOS COMPARTIDOS PARA COMPONENTES
+   ======================================== */
+
+/* Contenedores */
+.home-container {
+  width: 100%;
+  padding: 0;
+}
+
+.home-panel {
+  width: 100%;
+  background: #fff;
+  border-radius: 8px;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+/* Títulos */
+.home-title {
+  color: #1a2aff;
+  font-size: clamp(1.2rem, 5vw, 1.6rem);
+  font-weight: 700;
+  text-align: center;
+  margin: 0.5rem 0 1rem;
+}
+
+/* Grupos de inputs */
+.input-group {
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.form-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: clamp(0.9rem, 3vw, 1rem);
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #1a2aff;
+  box-shadow: 0 0 0 3px rgba(26, 42, 255, 0.1);
+}
+
+/* Mensajes */
+.error-box,
+.success-box,
+.warn-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.error-box {
+  background: #fee;
+  border: 2px solid #fcc;
+  color: #c33;
+}
+
+.success-box {
+  background: #efe;
+  border: 2px solid #cfc;
+  color: #3a3;
+}
+
+.warn-box {
+  background: #fff3cd;
+  border: 2px solid #ffecb5;
+  color: #856404;
+}
+
+/* Botones */
+.btn-dispose,
+.btn-secondary {
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  box-sizing: border-box;
+}
+
+.btn-dispose {
+  background: #1a2aff;
+  color: #fff;
+}
+
+.btn-dispose:active {
+  transform: scale(0.98);
+  background: #1520cc;
+}
+
+.btn-dispose:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: #fff;
+}
+
+.btn-secondary:active {
+  transform: scale(0.98);
+  background: #545b62;
+}
+
+/* Tarjetas de cuenta */
+.account-card {
+  background: #fff;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+.account-card.clickable {
+  cursor: pointer;
+}
+
+.account-card.clickable:active {
+  transform: scale(0.98);
+}
+
+.account-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.account-left,
+.account-right {
+  flex: 1;
+  min-width: 0;
+}
+
+.account-name {
+  font-weight: 700;
+  font-size: clamp(0.95rem, 3.5vw, 1.1rem);
+  color: #333;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.account-num,
+.account-clabe,
+.account-cardnum {
+  font-size: clamp(0.85rem, 3vw, 0.95rem);
+  color: #666;
+  margin: 0.25rem 0;
+  word-break: break-all;
+}
+
+.account-balance {
+  font-size: clamp(1.2rem, 5vw, 1.5rem);
+  font-weight: 700;
+  color: #1a2aff;
+  margin: 0.25rem 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: #f0f5ff;
+  border: 1px solid #1a2aff;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: #1a2aff;
+  font-weight: 600;
+}
+
+/* Password wrapper */
+.password-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-wrapper .form-input {
+  padding-right: 3rem;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.toggle-password:active {
+  color: #1a2aff;
+}
+
+/* Input hints */
+.input-hint {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 0.35rem;
+  line-height: 1.4;
+}
+
+.input-hint b {
+  color: #1a2aff;
+  font-weight: 600;
+}
+
+.input-hint .negative {
+  color: #dc3545;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .home-panel {
+    border-radius: 0;
+    padding: 0.75rem;
+  }
+  
+  .account-row {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .account-left,
+  .account-right {
+    width: 100%;
+  }
+  
+  .btn-dispose,
+  .btn-secondary {
+    padding: 0.75rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-panel {
+    padding: 0.5rem;
+  }
+  
+  .form-input {
+    font-size: 16px; /* Evita zoom automático en iOS */
+    padding: 0.65rem;
+  }
+  
+  .input-group {
+    margin-bottom: 0.75rem;
+  }
+}
+
+/* Touch improvements */
+@media (hover: none) and (pointer: coarse) {
+  .btn-dispose,
+  .btn-secondary,
+  .toggle-password,
+  .account-card.clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
