@@ -5,14 +5,11 @@ import { Navbar } from '../navbar/navbar';
 import { HttpClientModule } from '@angular/common/http';
 import { LoginService } from '../services/login.service';
 import { Router, RouterModule } from '@angular/router';
-import { BiometricAuth, BiometryType } from '@aparajita/capacitor-biometric-auth';
-import { Capacitor } from '@capacitor/core';
-import { IonContent } from '@ionic/angular/standalone';
 
 @Component({
   selector: 'app-login-cliente',
   standalone: true,
-  imports: [FormsModule, CommonModule, Navbar, HttpClientModule, RouterModule, IonContent],
+  imports: [FormsModule, CommonModule, Navbar, HttpClientModule, RouterModule],
   providers: [LoginService],
   templateUrl: './login.html',
   styleUrls: ['./login.css']
@@ -22,52 +19,11 @@ export class LogIn {
   password: string = '';
   passwordVisible: boolean = false;
   errorMsg: string = '';
-  isBiometricAvailable: boolean = false;
-  pendingLoginData: any = null;
 
-  constructor(private loginService: LoginService, private router: Router) {
-    this.checkBiometricAvailability();
-  }
-
-  async checkBiometricAvailability() {
-    if (Capacitor.getPlatform() === 'android') {
-      try {
-        const result = await BiometricAuth.checkBiometry();
-        this.isBiometricAvailable = result.isAvailable;
-        console.log('Biometría disponible:', this.isBiometricAvailable);
-      } catch (error) {
-        console.error('Error verificando biometría:', error);
-        this.isBiometricAvailable = false;
-      }
-    }
-  }
+  constructor(private loginService: LoginService, private router: Router) {}
 
   togglePassword() {
     this.passwordVisible = !this.passwordVisible;
-  }
-
-  async authenticateWithBiometric(loginData: any): Promise<void> {
-    try {
-      const result: any = await BiometricAuth.authenticate({
-        reason: 'Confirma tu identidad para acceder',
-        cancelTitle: 'Cancelar',
-        allowDeviceCredential: false,
-        iosFallbackTitle: 'Usar código',
-        androidTitle: 'Autenticación requerida',
-        androidSubtitle: 'Banco JETY',
-        androidConfirmationRequired: false
-      });
-
-      if (result?.authenticated) {
-        console.log('✅ Autenticación biométrica exitosa');
-        this.navigateByRole(loginData);
-      } else {
-        this.errorMsg = 'Autenticación biométrica fallida';
-      }
-    } catch (error: any) {
-      console.error('❌ Error en autenticación biométrica:', error);
-      this.errorMsg = 'Error en autenticación biométrica';
-    }
   }
 
   navigateByRole(res: any) {
@@ -112,13 +68,8 @@ export class LogIn {
 
         console.log('Procesando rol en frontend:', res && res.rol);
         if (res && (res.rol || (res as any).role || (res as any).success === true)) {
-          // Si está en Android y hay biometría disponible, pedir autenticación
-          if (Capacitor.getPlatform() === 'android' && this.isBiometricAvailable) {
-            await this.authenticateWithBiometric(res);
-          } else {
-            // Si no es Android o no hay biometría, navegar directamente
-            this.navigateByRole(res);
-          }
+          // Navegar directamente según el rol
+          this.navigateByRole(res);
         } else {
           this.errorMsg = 'Usuario o contraseña incorrectos';
         }

@@ -3,12 +3,11 @@ import { CommonModule } from '@angular/common';
 import { Navbar } from '../navbar/navbar';
 import { RouterLink } from '@angular/router';
 import { InactivityService } from '../services/inactivity.service';
-import { IonContent } from '@ionic/angular/standalone';
 
 @Component({
   selector: 'app-novedades',
   standalone: true,
-  imports: [CommonModule, Navbar, RouterLink, IonContent],
+  imports: [CommonModule, Navbar, RouterLink],
   templateUrl: './novedades.html',
   styleUrls: ['./novedades.css']
 })

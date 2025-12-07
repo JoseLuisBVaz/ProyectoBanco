@@ -5,13 +5,12 @@ import { Navbar } from '../navbar/navbar';
 import { LoginService } from '../services/login.service';
 import { UsuariosService } from '../services/usuarios.service';
 import { TransferService } from '../services/transfer.service';
-import { IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton } from '@ionic/angular/standalone';
 import { InactivityService } from '../services/inactivity.service';
 
 @Component({
   selector: 'app-depositos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton],
+  imports: [CommonModule, ReactiveFormsModule, Navbar],
   templateUrl: './depositos.html',
   styleUrls: ['./depositos.css']
 })
@@ -356,7 +355,7 @@ export class Depositos implements OnInit, OnDestroy {
       return;
     }
     
-    const url = `http://localhost:3000/api/usuarios/deposit-pdf/${this.lastDepositId}`;
+    const url = `http://18.116.122.121:3000/api/usuarios/deposit-pdf/${this.lastDepositId}`;
     window.open(url, '_blank');
   }
 

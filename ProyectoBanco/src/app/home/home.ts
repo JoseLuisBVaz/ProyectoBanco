@@ -7,16 +7,11 @@ import { LoginService } from '../services/login.service';
 import { Router, RouterLink } from '@angular/router';
 import { UsuariosService } from '../services/usuarios.service';
 import { HttpClientModule } from '@angular/common/http';
-import { IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonIcon, IonMenuButton, IonBackButton } from '@ionic/angular/standalone';
-import { addIcons } from 'ionicons';
-import { personCircleOutline } from 'ionicons/icons';
 import { InactivityService } from '../services/inactivity.service';
-
-addIcons({ personCircleOutline });
 
 @Component({
   selector: 'app-home',
-  imports: [CommonModule, RouterLink, HttpClientModule, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonIcon, IonMenuButton],
+  imports: [CommonModule, RouterLink, HttpClientModule, Navbar],
   standalone: true,
   templateUrl: './home.html',
   styleUrls: ['./home.css']

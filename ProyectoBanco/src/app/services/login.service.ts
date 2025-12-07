@@ -5,7 +5,7 @@ import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class LoginService {
-  private apiUrl = 'http://localhost:3000/api/usuarios';
+  private apiUrl = 'http://18.116.122.121:3000/api/usuarios';
 
   constructor(private http: HttpClient) {}
 

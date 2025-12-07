@@ -1,19 +1,6 @@
-<ion-header>
-  <ion-toolbar color="primary">
-    <ion-buttons slot="start">
-      <ion-menu-button></ion-menu-button>
-    </ion-buttons>
-    <ion-title>Inicio</ion-title>
-    <ion-buttons slot="end">
-      <ion-button [routerLink]="['/user']">
-        <ion-icon name="person-circle-outline"></ion-icon>
-      </ion-button>
-    </ion-buttons>
-  </ion-toolbar>
-</ion-header>
+<app-navbar class="top-navbar"></app-navbar>
 
-<ion-content [scrollY]="true" class="ion-padding">
-  <div class="home-container">
+<div class="home-container">
     <section class="home-panel">
   <h2 class="home-title">Hola, {{ userName }}</h2>
 
@@ -91,7 +78,6 @@
     </div>
     </section>
   </div>
-</ion-content>
 
 <!-- Modal de oferta de Línea de Crédito -->
 <div class="credit-modal-overlay" *ngIf="showCreditModal" (click)="closeCreditModal()">

@@ -5,13 +5,12 @@ import { Navbar } from '../navbar/navbar';
 import { LoginService } from '../services/login.service';
 import { UsuariosService } from '../services/usuarios.service';
 import { TransferService } from '../services/transfer.service';
-import { IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton } from '@ionic/angular/standalone';
 import { InactivityService } from '../services/inactivity.service';
 
 @Component({
   selector: 'app-transfers',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton],
+  imports: [CommonModule, ReactiveFormsModule, Navbar],
   templateUrl: './transfers.html',
   styleUrls: ['./transfers.css']
 })
@@ -366,7 +365,7 @@ export class Transfers implements OnInit, OnDestroy {
       return;
     }
     
-    const url = `http://localhost:3000/api/usuarios/transfer-pdf/${this.lastTransferId}`;
+    const url = `http://18.116.122.121:3000/api/usuarios/transfer-pdf/${this.lastTransferId}`;
     window.open(url, '_blank');
   }
 
@@ -377,7 +376,7 @@ export class Transfers implements OnInit, OnDestroy {
       return;
     }
     
-    const url = `http://localhost:3000/api/usuarios/receipt/${this.lastTransferId}`;
+    const url = `http://18.116.122.121:3000/api/usuarios/receipt/${this.lastTransferId}`;
     window.open(url, '_blank');
   }
 

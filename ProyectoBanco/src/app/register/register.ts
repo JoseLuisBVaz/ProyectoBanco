@@ -4,12 +4,11 @@ import { CommonModule } from '@angular/common';
 import { Navbar } from '../navbar/navbar';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
-import { IonContent } from '@ionic/angular/standalone';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [FormsModule, CommonModule, Navbar, HttpClientModule, RouterModule, IonContent],
+  imports: [FormsModule, CommonModule, Navbar, HttpClientModule, RouterModule],
   templateUrl: './register.html',
   styleUrls: ['./register.css']
 })
@@ -93,7 +92,7 @@ export class Register {
 
     console.log('Datos enviados al backend:', userData);
 
-    this.http.post('http://localhost:3000/api/usuarios/register', userData).subscribe({
+    this.http.post('http://18.116.122.121:3000/api/usuarios/register', userData).subscribe({
       next: () => {
         alert('Registro exitoso');
         this.router.navigate(['/login']);
