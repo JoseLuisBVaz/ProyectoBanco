@@ -2,16 +2,10 @@
 
 Guía completa para desplegar Banco JETY en AWS EC2 con Nginx y PM2.
 
----
 
 ## 📋 Requisitos Previos en AWS
 
-- **EC2 Instance** (Ubuntu 20.04+ o Amazon Linux 2)
-- **Security Group** abierto en puertos: 22 (SSH), 80 (HTTP), 443 (HTTPS opcional)
-- **RDS MySQL** o MySQL instalado en la instancia
-- **Dominio** configurado (opcional)
 
----
 
 ## 1️⃣ Preparar el Servidor EC2
 
@@ -47,7 +41,6 @@ sudo npm install -g pm2
 sudo npm install -g @angular/cli
 ```
 
----
 
 ## 2️⃣ Clonar el Proyecto
 
@@ -58,7 +51,6 @@ sudo chown -R $USER:$USER ProyectoBanco
 cd ProyectoBanco/ProyectoBanco
 ```
 
----
 
 ## 3️⃣ Configurar la Base de Datos
 
@@ -94,7 +86,6 @@ const db = mysql.createConnection({
 });
 ```
 
----
 
 ## 4️⃣ Instalar Dependencias
 
@@ -110,7 +101,6 @@ cd ../..
 npm install
 ```
 
----
 
 ## 5️⃣ Compilar el Frontend
 
@@ -120,7 +110,6 @@ npm run build
 
 Esto genera archivos en: `dist/ProyectoBanco/browser/`
 
----
 
 ## 6️⃣ Configurar PM2 (Backend)
 
@@ -142,7 +131,6 @@ pm2 startup
 # Ejecutar el comando que PM2 te muestre
 ```
 
----
 
 ## 7️⃣ Configurar Nginx
 
@@ -157,8 +145,6 @@ sudo nano /etc/nginx/sites-available/banco-jety
 ```
 
 Cambiar:
-- `server_name` → Tu dominio o IP pública
-- `root` → `/var/www/ProyectoBanco/ProyectoBanco/dist/ProyectoBanco/browser`
 
 ### Habilitar el sitio:
 ```bash
@@ -176,7 +162,6 @@ sudo nginx -t
 sudo systemctl restart nginx
 ```
 
----
 
 ## 8️⃣ Verificar el Despliegue
 
@@ -197,7 +182,6 @@ pm2 status
 http://tu-ip-publica
 ```
 
----
 
 ## 🔄 Despliegue Continuo
 
@@ -216,7 +200,6 @@ El script `deploy.sh` automáticamente:
 4. Reinicia el backend
 5. Recarga Nginx
 
----
 
 ## 🔒 Configurar HTTPS (Opcional pero Recomendado)
 
@@ -232,7 +215,6 @@ sudo certbot --nginx -d tu-dominio.com
 
 Certbot configurará automáticamente Nginx para HTTPS.
 
----
 
 ## 📊 Monitoreo
 
@@ -254,7 +236,6 @@ pm2 web
 # Acceder a: http://tu-ip:9615
 ```
 
----
 
 ## 🛠️ Solución de Problemas
 
@@ -282,7 +263,6 @@ curl http://localhost:3000/api/usuarios/main
 mysql -h tu-endpoint-rds.amazonaws.com -u admin -p
 ```
 
----
 
 ## 🔐 Seguridad Recomendada
 
@@ -305,15 +285,9 @@ sudo ufw enable
 sudo apt update && sudo apt upgrade -y
 ```
 
----
 
 ## 💰 Estimación de Costos AWS
 
-- **EC2 t3.small:** ~$15/mes
-- **RDS db.t3.micro:** ~$15/mes
-- **EBS Storage:** ~$1/mes por 10GB
-- **Total aproximado:** $30-35/mes
 
----
 
 **¿Necesitas ayuda?** Consulta la documentación completa en `INSTALACION.md`
