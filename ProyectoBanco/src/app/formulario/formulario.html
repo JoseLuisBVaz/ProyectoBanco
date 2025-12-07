@@ -1,5 +1,6 @@
 <app-navbar class="top-navbar"></app-navbar>
 
+<ion-content [scrollY]="true" class="ion-padding">
 <div class="cuenta-container">
   <main class="cuenta-main">
     <section class="cuenta-card">
@@ -117,9 +118,10 @@
   <div class="modal-content" (click)="$event.stopPropagation()" [ngClass]="{'success': !modalError, 'error': modalError}">
     <div class="modal-icon">
       <i [class]="modalError ? 'fa fa-times-circle' : 'fa fa-check-circle'"></i>
-    </div>
-    <h3 class="modal-title">{{ modalTitle }}</h3>
-    <p class="modal-message">{{ modalMsg }}</p>
-    <button class="modal-btn" (click)="closeModal()">Aceptar</button>
   </div>
+  <h3 class="modal-title">{{ modalTitle }}</h3>
+  <p class="modal-message">{{ modalMsg }}</p>
+  <button class="modal-btn" (click)="closeModal()">Aceptar</button>
 </div>
+</div>
+</ion-content>

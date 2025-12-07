@@ -392,7 +392,7 @@ const emailTemplates = {
         </ul>
         
         <div style="text-align: center; margin-top: 30px;">
-          <a href="http://localhost:4200" class="btn">Acceder al Portal</a>
+          <a href="http://18.116.122.121" class="btn">Acceder al Portal</a>
         </div>
       </div>
     `;

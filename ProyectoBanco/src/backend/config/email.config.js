@@ -19,9 +19,9 @@ module.exports = {
   
   // URLs del sistema (para links en correos)
   urls: {
-    resetPassword: process.env.RESET_PASSWORD_URL || 'http://localhost:4200/reset-password',
-    dashboard: process.env.DASHBOARD_URL || 'http://localhost:4200/main',
-    support: process.env.SUPPORT_URL || 'http://localhost:4200/support'
+    resetPassword: process.env.RESET_PASSWORD_URL || 'http://18.116.122.121/reset-password',
+    dashboard: process.env.DASHBOARD_URL || 'http://18.116.122.121/main',
+    support: process.env.SUPPORT_URL || 'http://18.116.122.121/support'
   },
   
   // Configuración de reintentos

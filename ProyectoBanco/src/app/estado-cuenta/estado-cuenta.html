@@ -1,5 +1,6 @@
 <app-navbar class="top-navbar"></app-navbar>
 
+<ion-content [scrollY]="true" class="ion-padding">
 <div class="home-container">
   <section class="home-panel">
     <h2 class="home-title">Estado de Cuenta</h2>
@@ -192,8 +193,9 @@
     <div class="empty-state" *ngIf="!isLoading && filteredMovements.length === 0 && movements.length > 0">
       <i class="fa-solid fa-filter"></i>
       <h3>No se encontraron movimientos</h3>
-      <p>Intenta ajustar los filtros de búsqueda</p>
-    </div>
+    <p>Intenta ajustar los filtros de búsqueda</p>
+  </div>
 
-  </section>
+</section>
 </div>
+</ion-content>

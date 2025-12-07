@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -6,6 +6,7 @@ import { UsuariosService } from '../services/usuarios.service';
 import { LoginService } from '../services/login.service';
 import { Navbar } from '../navbar/navbar';
 import { IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton } from '@ionic/angular/standalone';
+import { InactivityService } from '../services/inactivity.service';
 
 interface Account {
   accountId: number;
@@ -27,11 +28,11 @@ interface RetiroReciente {
 @Component({
   selector: 'app-retiro',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, Navbar, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton],
+  imports: [CommonModule, ReactiveFormsModule, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton],
   templateUrl: './retiro.html',
   styleUrl: './retiro.css'
 })
-export class Retiro implements OnInit {
+export class Retiro implements OnInit, OnDestroy {
   retiroForm: FormGroup;
   userAccounts: Account[] = [];
   retirosRecientes: RetiroReciente[] = [];
@@ -59,7 +60,8 @@ export class Retiro implements OnInit {
     private loginService: LoginService,
     private usuariosService: UsuariosService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private inactivityService: InactivityService
   ) {
     this.retiroForm = this.fb.group({
       accountId: ['', Validators.required],
@@ -74,6 +76,8 @@ export class Retiro implements OnInit {
   }
 
   ngOnInit(): void {
+    this.inactivityService.startWatching();
+    
     this.loadUserData();
     this.setupFormValidation();
   }
@@ -405,5 +409,9 @@ export class Retiro implements OnInit {
    */
   togglePasswordVisibility(): void {
     this.showPassword = !this.showPassword;
+  }
+
+  ngOnDestroy() {
+    this.inactivityService.stopWatching();
   }
 }

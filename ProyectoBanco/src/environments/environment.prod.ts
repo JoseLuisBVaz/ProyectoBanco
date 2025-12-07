@@ -1,5 +1,5 @@
 // Archivo de configuración para producción
 export const environment = {
   production: true,
-  apiUrl: '/api/usuarios' // Usa ruta relativa para que Nginx haga el proxy
+  apiUrl: 'http://18.116.122.121:3000/api/usuarios'
 };

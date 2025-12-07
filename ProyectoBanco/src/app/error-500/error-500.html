@@ -1,0 +1,30 @@
+<app-navbar class="top-navbar"></app-navbar>
+
+<div class="error-bg"></div>
+
+<div class="error-container">
+  <div class="error-header">
+    <div class="error-icon-circle">
+      <i class="fa-solid fa-server"></i>
+      <i class="fa-solid fa-exclamation-triangle error-icon"></i>
+    </div>
+  </div>
+
+  <div class="error-card">
+    <div class="error-code">500</div>
+    <h2 class="error-title">Error interno del servidor</h2>
+    <p class="error-description">
+      Algo salió mal en nuestro servidor. Estamos trabajando para solucionarlo lo antes posible.
+    </p>
+    <div class="error-actions">
+      <button class="btn-primary" (click)="reload()">
+        <i class="fa-solid fa-rotate-right"></i>
+        Reintentar
+      </button>
+      <button class="btn-secondary" (click)="goHome()">
+        <i class="fa-solid fa-home"></i>
+        Ir al inicio
+      </button>
+    </div>
+  </div>
+</div>

@@ -1140,8 +1140,8 @@ const requestPasswordReset = async (req, res) => {
         const token = passwordResetService.generateResetToken(mail);
         const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
         
-        // Crear enlace de recuperaci�n
-        const resetLink = `http://localhost:4200/reset-password?token=${token}&mail=${encodeURIComponent(mail)}`;
+        // Crear enlace de recuperación
+        const resetLink = `http://18.116.122.121/reset-password?token=${token}&mail=${encodeURIComponent(mail)}`;
         
         const expirationTime = expiresAt.toLocaleString('es-MX', {
           year: 'numeric',

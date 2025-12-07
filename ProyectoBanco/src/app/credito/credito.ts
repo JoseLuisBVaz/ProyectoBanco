@@ -1,10 +1,11 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Navbar } from '../navbar/navbar';
 import { IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton } from '@ionic/angular/standalone';
+import { InactivityService } from '../services/inactivity.service';
 
 interface Account {
   accountId: number;
@@ -39,11 +40,11 @@ interface Disposal {
 @Component({
   selector: 'app-credito',
   standalone: true,
-  imports: [CommonModule, FormsModule, Navbar, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton],
+  imports: [CommonModule, FormsModule, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton],
   templateUrl: './credito.html',
   styleUrl: './credito.css'
 })
-export class Credito implements OnInit {
+export class Credito implements OnInit, OnDestroy {
   accounts: Account[] = [];
   creditAccounts: Account[] = [];
   selectedAccount: Account | null = null;
@@ -79,10 +80,13 @@ export class Credito implements OnInit {
   constructor(
     private http: HttpClient,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private inactivityService: InactivityService
   ) {}
   
   ngOnInit(): void {
+    this.inactivityService.startWatching();
+    
     const currentUserRaw = localStorage.getItem('currentUser');
     
     if (!currentUserRaw) {
@@ -429,5 +433,9 @@ export class Credito implements OnInit {
       h |= 0;
     }
     return Math.abs(h);
+  }
+
+  ngOnDestroy() {
+    this.inactivityService.stopWatching();
   }
 }

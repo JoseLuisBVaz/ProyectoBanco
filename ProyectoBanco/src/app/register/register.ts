@@ -4,11 +4,12 @@ import { CommonModule } from '@angular/common';
 import { Navbar } from '../navbar/navbar';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
+import { IonContent } from '@ionic/angular/standalone';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [FormsModule, CommonModule, Navbar, HttpClientModule, RouterModule],
+  imports: [FormsModule, CommonModule, Navbar, HttpClientModule, RouterModule, IonContent],
   templateUrl: './register.html',
   styleUrls: ['./register.css']
 })

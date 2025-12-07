@@ -1,5 +1,6 @@
 <app-navbar class="top-navbar"></app-navbar>
 
+<ion-content [scrollY]="true" class="ion-padding">
 <div class="loading-overlay" *ngIf="loading">
   <div class="spinner"></div>
   <p>Cargando información...</p>
@@ -149,3 +150,4 @@
   <i class="fas fa-exclamation-circle"></i>
   <p>{{ errorMsg }}</p>
 </div>
+</ion-content>

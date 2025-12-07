@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Navbar } from '../navbar/navbar';
@@ -6,15 +6,16 @@ import { LoginService } from '../services/login.service';
 import { UsuariosService } from '../services/usuarios.service';
 import { TransferService } from '../services/transfer.service';
 import { IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton } from '@ionic/angular/standalone';
+import { InactivityService } from '../services/inactivity.service';
 
 @Component({
   selector: 'app-depositos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, Navbar, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton],
+  imports: [CommonModule, ReactiveFormsModule, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton],
   templateUrl: './depositos.html',
   styleUrls: ['./depositos.css']
 })
-export class Depositos implements OnInit {
+export class Depositos implements OnInit, OnDestroy {
   depositForm: FormGroup;
 
   errorMsg = '';
@@ -35,7 +36,8 @@ export class Depositos implements OnInit {
     private fb: FormBuilder,
     private loginService: LoginService,
     private usuariosService: UsuariosService,
-    private transferService: TransferService
+    private transferService: TransferService,
+    private inactivityService: InactivityService
   ) {
     this.depositForm = this.fb.group({
       destino: [null as any, Validators.required],
@@ -46,6 +48,8 @@ export class Depositos implements OnInit {
   }
 
   ngOnInit(): void {
+    this.inactivityService.startWatching();
+    
     // Cargar usuario cacheado y pintar cuentas inmediatamente si existen en cache
     const cachedUser = this.loginService.getCurrentUser();
     if (cachedUser) {
@@ -354,5 +358,9 @@ export class Depositos implements OnInit {
     
     const url = `http://localhost:3000/api/usuarios/deposit-pdf/${this.lastDepositId}`;
     window.open(url, '_blank');
+  }
+
+  ngOnDestroy() {
+    this.inactivityService.stopWatching();
   }
 }

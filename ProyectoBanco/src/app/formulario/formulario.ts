@@ -1,19 +1,21 @@
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Navbar } from '../navbar/navbar';
+import { InactivityService } from '../services/inactivity.service';
+import { IonContent } from '@ionic/angular/standalone';
 
 @Component({
   selector: 'app-formulario',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, HttpClientModule, Navbar],
+  imports: [CommonModule, ReactiveFormsModule, HttpClientModule, Navbar, IonContent],
   templateUrl: './formulario.html',
   styleUrls: ['./formulario.css']
 })
-export class Formulario implements OnInit {
+export class Formulario implements OnInit, OnDestroy {
   cuentaForm: FormGroup;
   modalVisible = false;
   modalTitle = '';
@@ -28,7 +30,8 @@ export class Formulario implements OnInit {
   constructor(
     private fb: FormBuilder,
     private http: HttpClient,
-    private router: Router
+    private router: Router,
+    private inactivityService: InactivityService
   ) {
     this.cuentaForm = this.fb.group({
       mainId: ['', Validators.required],
@@ -40,6 +43,8 @@ export class Formulario implements OnInit {
   }
 
   ngOnInit() {
+    this.inactivityService.startWatching();
+    
     const userData = localStorage.getItem('currentUser');
     if (!userData) {
       this.modalTitle = 'Error';
@@ -164,5 +169,9 @@ export class Formulario implements OnInit {
 
   resetForm() {
     this.cuentaForm.reset();
+  }
+
+  ngOnDestroy() {
+    this.inactivityService.stopWatching();
   }
 }

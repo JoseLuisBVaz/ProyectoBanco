@@ -18,6 +18,8 @@ import { Retiro } from './retiro/retiro';
 import { EstadoCuenta } from './estado-cuenta/estado-cuenta';
 import { Credito } from './credito/credito';
 import { Progreso } from './progreso/progreso';
+import { Error404Component } from './error-404/error-404';
+import { Error500Component } from './error-500/error-500';
 
 export const routes: Routes = [
     {path: '', component: Main},
@@ -36,4 +38,6 @@ export const routes: Routes = [
     {path: 'retiro', component: Retiro, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }},
     {path: 'progreso', component: Progreso, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }},
     {path: 'formulario-contrasena', component: FormularioContrasena},
+    {path: 'error-500', component: Error500Component},
+    {path: '**', component: Error404Component}
 ];

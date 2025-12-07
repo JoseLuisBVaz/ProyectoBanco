@@ -9,13 +9,13 @@
 .formulario-container {
     position: relative;
     z-index: 1;
-    min-height: 100vh;
+    min-height: auto;
     width: 100vw;
     display: flex;
     justify-content: center;
     align-items: flex-start;
     background: #f5f6fa;
-    padding-top: 3rem;
+    padding: 2rem 0;
     box-sizing: border-box;
 }
 

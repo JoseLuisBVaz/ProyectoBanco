@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, Inject, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
@@ -10,17 +10,18 @@ import { HttpClientModule } from '@angular/common/http';
 import { IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonIcon, IonMenuButton, IonBackButton } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { personCircleOutline } from 'ionicons/icons';
+import { InactivityService } from '../services/inactivity.service';
 
 addIcons({ personCircleOutline });
 
 @Component({
   selector: 'app-home',
-  imports: [CommonModule, Navbar, RouterLink, HttpClientModule, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonIcon, IonMenuButton],
+  imports: [CommonModule, RouterLink, HttpClientModule, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonIcon, IonMenuButton],
   standalone: true,
   templateUrl: './home.html',
   styleUrls: ['./home.css']
 })
-export class Home implements OnInit {
+export class Home implements OnInit, OnDestroy {
   userName: string = '';
   account: any | null = null;
   noAccount = false;
@@ -36,12 +37,15 @@ export class Home implements OnInit {
     private usuariosService: UsuariosService,
     private router: Router,
     private cdr: ChangeDetectorRef,
+    private inactivityService: InactivityService,
     @Inject(PLATFORM_ID) platformId: Object
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
   }
 
   ngOnInit() {
+    this.inactivityService.startWatching();
+    
     if (!this.isBrowser) {
       return;
     }
@@ -174,5 +178,9 @@ export class Home implements OnInit {
     const oneMinuteFifteenSeconds = 75000;
     
     return timeDiff >= oneMinuteFifteenSeconds;
+  }
+
+  ngOnDestroy() {
+    this.inactivityService.stopWatching();
   }
 }

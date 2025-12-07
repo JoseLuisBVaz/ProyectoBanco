@@ -1,0 +1,29 @@
+<app-navbar class="top-navbar"></app-navbar>
+
+<div class="error-bg"></div>
+
+<div class="error-container">
+  <div class="error-header">
+    <div class="error-icon-circle">
+      <i class="fa-solid fa-magnifying-glass"></i>
+    </div>
+  </div>
+
+  <div class="error-card">
+    <div class="error-code">404</div>
+    <h2 class="error-title">Página no encontrada</h2>
+    <p class="error-description">
+      Lo sentimos, la página que estás buscando no existe o ha sido movida.
+    </p>
+    <div class="error-actions">
+      <button class="btn-primary" (click)="goHome()">
+        <i class="fa-solid fa-home"></i>
+        Ir al inicio
+      </button>
+      <button class="btn-secondary" (click)="goBack()">
+        <i class="fa-solid fa-arrow-left"></i>
+        Volver atrás
+      </button>
+    </div>
+  </div>
+</div>

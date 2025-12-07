@@ -4,10 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { Navbar } from '../navbar/navbar';
 import { HttpClient } from '@angular/common/http';
+import { IonContent } from '@ionic/angular/standalone';
 
 @Component({
   selector: 'app-formulario-contrasena',
-  imports: [CommonModule, FormsModule, RouterModule, Navbar],
+  imports: [CommonModule, FormsModule, RouterModule, Navbar, IonContent],
   templateUrl: './formulario-contrasena.html',
   styleUrl: './formulario-contrasena.css'
 })

@@ -1,8 +1,10 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Navbar } from '../navbar/navbar';
+import { InactivityService } from '../services/inactivity.service';
+import { IonContent } from '@ionic/angular/standalone';
 
 interface UserData {
   mainId: number;
@@ -40,11 +42,11 @@ interface Movement {
 @Component({
   selector: 'app-detalles-cuenta',
   standalone: true,
-  imports: [CommonModule, RouterModule, Navbar],
+  imports: [CommonModule, RouterModule, Navbar, IonContent],
   templateUrl: './user.html',
   styleUrls: ['./user.css']
 })
-export class DetallesCuenta implements OnInit {
+export class DetallesCuenta implements OnInit, OnDestroy {
   userData: UserData | null = null;
   accounts: Account[] = [];
   movements: any[] = [];
@@ -56,10 +58,12 @@ export class DetallesCuenta implements OnInit {
 
   constructor(
     private http: HttpClient,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private inactivityService: InactivityService
   ) {}
 
   ngOnInit() {
+    this.inactivityService.startWatching();
     this.loadUserData();
   }
 
@@ -171,6 +175,10 @@ export class DetallesCuenta implements OnInit {
       month: '2-digit', 
       year: 'numeric' 
     });
+  }
+
+  ngOnDestroy() {
+    this.inactivityService.stopWatching();
   }
 }
 

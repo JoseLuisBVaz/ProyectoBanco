@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Navbar } from '../navbar/navbar';
@@ -6,15 +6,16 @@ import { LoginService } from '../services/login.service';
 import { UsuariosService } from '../services/usuarios.service';
 import { TransferService } from '../services/transfer.service';
 import { IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton } from '@ionic/angular/standalone';
+import { InactivityService } from '../services/inactivity.service';
 
 @Component({
   selector: 'app-transfers',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, Navbar, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton],
+  imports: [CommonModule, ReactiveFormsModule, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton],
   templateUrl: './transfers.html',
   styleUrls: ['./transfers.css']
 })
-export class Transfers implements OnInit {
+export class Transfers implements OnInit, OnDestroy {
   transferForm: FormGroup;
 
   errorMsg = '';
@@ -36,7 +37,8 @@ export class Transfers implements OnInit {
     private fb: FormBuilder,
     private loginService: LoginService,
     private usuariosService: UsuariosService,
-    private transferService: TransferService
+    private transferService: TransferService,
+    private inactivityService: InactivityService
   ) {
     this.transferForm = this.fb.group({
       origen: [null as any, Validators.required],
@@ -51,6 +53,8 @@ export class Transfers implements OnInit {
   }
 
   ngOnInit(): void {
+    this.inactivityService.startWatching();
+    
     // 1) Cargar usuario cacheado y pintar cuentas inmediatamente si existen en cache
     const cachedUser = this.loginService.getCurrentUser();
     if (cachedUser) {
@@ -375,5 +379,9 @@ export class Transfers implements OnInit {
     
     const url = `http://localhost:3000/api/usuarios/receipt/${this.lastTransferId}`;
     window.open(url, '_blank');
+  }
+
+  ngOnDestroy() {
+    this.inactivityService.stopWatching();
   }
 }

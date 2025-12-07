@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, Inject, ChangeDetectorRef } from '@angular/core';
 import { PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser, CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -7,6 +7,8 @@ import { LoginService } from '../services/login.service';
 import { UsuariosService } from '../services/usuarios.service';
 import { TransferService } from '../services/transfer.service';
 import { FormsModule } from '@angular/forms';
+import { InactivityService } from '../services/inactivity.service';
+import { IonContent } from '@ionic/angular/standalone';
 
 interface Movement {
   type: 'transfer_out' | 'transfer_in' | 'deposit' | 'withdrawal';
@@ -22,11 +24,11 @@ interface Movement {
 
 @Component({
   selector: 'app-estado-cuenta',
-  imports: [CommonModule, Navbar, FormsModule],
+  imports: [CommonModule, Navbar, FormsModule, IonContent],
   templateUrl: './estado-cuenta.html',
   styleUrl: './estado-cuenta.css'
 })
-export class EstadoCuenta implements OnInit {
+export class EstadoCuenta implements OnInit, OnDestroy {
   private isBrowser: boolean;
   
   userName: string = '';
@@ -58,12 +60,15 @@ export class EstadoCuenta implements OnInit {
     private transferService: TransferService,
     private http: HttpClient,
     private cdr: ChangeDetectorRef,
+    private inactivityService: InactivityService,
     @Inject(PLATFORM_ID) platformId: Object
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
   }
 
   ngOnInit() {
+    this.inactivityService.startWatching();
+    
     if (!this.isBrowser) return;
 
     const cached = this.loginService.getCurrentUser();
@@ -342,4 +347,8 @@ export class EstadoCuenta implements OnInit {
     'linear-gradient(135deg, #ef4444 0%, #f59e0b 100%)',
     'linear-gradient(135deg, #111827 0%, #374151 100%)'
   ];
+
+  ngOnDestroy() {
+    this.inactivityService.stopWatching();
+  }
 }

@@ -1,13 +1,13 @@
 .registro-container {
     position: relative;
     z-index: 1;
-    min-height: 100vh;
-    width: 100vw;
+    min-height: auto;
+    width: 100%;
     display: flex;
-    justify-content: center; /* centrado horizontal */
-    align-items: flex-start; /* subida vertical */
+    justify-content: center;
+    align-items: flex-start;
     background: #f5f6fa;
-    padding-top: 3rem; /* espacio superior */
+    padding: 2rem 0;
     box-sizing: border-box;
 }
 

@@ -28,8 +28,9 @@ body, html {
 .cliente-container {
     position: relative;
     z-index: 1;
-    min-height: 100vh;
-    width: 100vw;
+    min-height: auto;
+    width: 100%;
+    padding: 2rem 0;
     display: flex;
     flex-direction: column;
     align-items: center;
