@@ -1,0 +1,151 @@
+<app-navbar class="top-navbar"></app-navbar>
+
+<div class="loading-overlay" *ngIf="loading">
+  <div class="spinner"></div>
+  <p>Cargando información...</p>
+</div>
+
+<div class="container" *ngIf="!loading && userData">
+  <div class="profile-header">
+    <div class="profile-avatar">
+      <i class="fas fa-user-circle"></i>
+    </div>
+    <div class="profile-info">
+      <h1 class="profile-name">{{ userData.firstName }} {{ userData.lastNameP }} {{ userData.lastNameM }}</h1>
+      <p class="profile-email">
+        <i class="fas fa-envelope"></i>
+        {{ userData.mail }}
+      </p>
+      <p class="profile-phone">
+        <i class="fas fa-phone"></i>
+        {{ userData.phoneNumber }}
+      </p>
+    </div>
+    <div class="profile-badge">
+      <span class="badge" [ngClass]="{'badge-customer': userData.rol === 'c', 'badge-employee': userData.rol === 'e'}">
+        {{ userData.rol === 'c' ? 'Cliente' : 'Empleado' }}
+      </span>
+    </div>
+  </div>
+
+  <div class="cards-grid">
+    <div class="card personal-info-card">
+      <div class="card-header-section">
+        <i class="fas fa-user card-icon"></i>
+        <h2>Datos Personales</h2>
+      </div>
+      <div class="card-body">
+        <div class="info-row">
+          <span class="info-label">
+            <i class="fas fa-calendar"></i>
+            Fecha de Nacimiento
+          </span>
+          <span class="info-value">{{ formatDate(userData.birthday) }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">
+            <i class="fas fa-map-marker-alt"></i>
+            Dirección
+          </span>
+          <span class="info-value">{{ userData.address }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">
+            <i class="fas fa-id-card"></i>
+            CURP
+          </span>
+          <span class="info-value">{{ userData.curp }}</span>
+        </div>
+        <div class="info-row" *ngIf="userData.rfc">
+          <span class="info-label">
+            <i class="fas fa-file-invoice"></i>
+            RFC
+          </span>
+          <span class="info-value">{{ userData.rfc }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">
+            <i class="fas fa-clock"></i>
+            Cliente Desde
+          </span>
+          <span class="info-value">{{ formatDate(userData.enterDate) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card accounts-card">
+      <div class="card-header-section">
+        <i class="fas fa-wallet card-icon"></i>
+        <h2>Mis Cuentas</h2>
+      </div>
+      <div class="card-body">
+        <div class="account-summary">
+          <div class="summary-item">
+            <span class="summary-label">Total de Cuentas</span>
+            <span class="summary-value">{{ accounts.length }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Balance Total</span>
+            <span class="summary-value balance-amount">${{ totalBalance | number:'1.2-2' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card transactions-card">
+    <div class="card-header-section">
+      <i class="fas fa-history card-icon"></i>
+      <h2>Últimos Movimientos</h2>
+    </div>
+    <div class="card-body">
+      <div class="transactions-table-container">
+        <table class="transactions-table" *ngIf="movements.length > 0">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Descripción</th>
+              <th>Tipo</th>
+              <th class="text-right">Monto</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let mov of movements">
+              <td>{{ formatDate(mov.date) }}</td>
+              <td>{{ mov.description }}</td>
+              <td>
+                <span class="movement-badge" [ngClass]="mov.type">
+                  <i class="fas" [ngClass]="{
+                    'fa-arrow-up': mov.type === 'deposit',
+                    'fa-arrow-down': mov.type === 'withdrawal',
+                    'fa-exchange-alt': mov.type === 'transfer'
+                  }"></i>
+                  {{ mov.type === 'deposit' ? 'Depósito' : mov.type === 'withdrawal' ? 'Retiro' : 'Transferencia' }}
+                </span>
+              </td>
+              <td class="text-right" [ngClass]="{'amount-positive': mov.amount > 0, 'amount-negative': mov.amount < 0}">
+                {{ mov.amount > 0 ? '+' : '' }}${{ mov.amount | number:'1.2-2' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="no-movements" *ngIf="movements.length === 0">
+          <i class="fas fa-inbox"></i>
+          <p>No hay movimientos recientes</p>
+        </div>
+      </div>
+      
+      <div class="debt-status">
+        <div class="debt-indicator" [ngClass]="{'has-debt': hasDebts, 'no-debt': !hasDebts}">
+          <i class="fas" [ngClass]="hasDebts ? 'fa-exclamation-triangle' : 'fa-check-circle'"></i>
+          <span>{{ hasDebts ? 'Hay adeudos pendientes' : 'Sin adeudos' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="error-message" *ngIf="!loading && errorMsg">
+  <i class="fas fa-exclamation-circle"></i>
+  <p>{{ errorMsg }}</p>
+</div>

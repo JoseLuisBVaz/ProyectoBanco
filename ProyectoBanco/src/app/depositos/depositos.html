@@ -1,0 +1,136 @@
+<app-navbar class="top-navbar"></app-navbar>
+
+<div class="home-container">
+  <section class="home-panel">
+    <h2 class="home-title">Depósitos</h2>
+
+    <!-- Mensajes de error/éxito -->
+    <div class="error-box" *ngIf="errorMsg">
+      <i class="fa-solid fa-exclamation-circle"></i>
+      {{ errorMsg }}
+    </div>
+
+    <div class="success-box" *ngIf="successMsg">
+      <i class="fa-solid fa-check-circle"></i>
+      {{ successMsg }}
+    </div>
+
+    <!-- Selector de Cuenta Destino (clickeable) -->
+    <div class="input-group">
+      <label class="form-label">
+        <i class="fa-solid fa-wallet"></i>
+        Cuenta Destino
+      </label>
+      
+      <div class="account-card colorful" 
+           *ngIf="selectedDestination" 
+           [ngStyle]="selectedCardStyle"
+           [class.clickable]="accounts.length > 1"
+           (click)="accounts.length > 1 && toggleAccountSelector()">
+        <div class="account-row">
+          <div class="account-left">
+            <div class="account-name">
+              {{ selectedDestination.accType || 'Cuenta' }}
+              <span class="badge" *ngIf="selectedDestination.accType">
+                <i [ngClass]="selectedDestination.accType === 'Credito' ? 'fa-solid fa-credit-card' : 'fa-solid fa-money-check'"></i>
+                {{ selectedDestination.accType }}
+              </span>
+            </div>
+            <div class="account-num">{{ maskAcc(selectedDestination.accNum) }}</div>
+            <div class="account-clabe">CLABE: {{ selectedDestination.clabe }}</div>
+          </div>
+          <div class="account-right">
+            <div class="account-balance" *ngIf="selectedDestination.balance != null">${{ selectedDestination.balance | number:'1.2-2' }}</div>
+            <div class="account-cardnum" *ngIf="selectedDestination.cardNum">{{ maskCard(selectedDestination.cardNum) }}</div>
+            <div class="change-account-hint" *ngIf="accounts.length > 1">
+              <i class="fa-solid fa-chevron-down"></i> Cambiar cuenta
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista de otras cuentas -->
+      <div class="other-accounts" *ngIf="showAccountSelector && accounts.length > 1">
+        <h3 class="other-title">Selecciona una cuenta</h3>
+        <div class="other-list">
+          <div class="other-item" 
+               *ngFor="let acc of accounts"
+               [class.selected]="acc.accountId === selectedDestination?.accountId"
+               (click)="selectDestinationAccount(acc)">
+            <div class="other-left">
+              <div class="other-name">{{ maskAcc(acc.accNum) }} 
+                <span class="badge">
+                  <i [ngClass]="acc.accType === 'Credito' ? 'fa-solid fa-credit-card' : 'fa-solid fa-money-check'"></i>
+                  {{ acc.accType }}
+                </span>
+              </div>
+              <div class="other-clabe">CLABE: {{ acc.clabe }}</div>
+            </div>
+            <div class="other-right">
+              <div class="other-balance">${{ acc.balance | number:'1.2-2' }}</div>
+              <div class="other-cardnum" *ngIf="acc.cardNum">{{ maskCard(acc.cardNum) }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulario de depósito -->
+    <form [formGroup]="depositForm" (ngSubmit)="enviarDeposito()">
+      
+      <!-- Monto -->
+      <div class="input-group">
+        <label class="form-label">
+          <i class="fa-solid fa-dollar-sign"></i>
+          Monto a Depositar
+        </label>
+        <input type="number" class="form-input" formControlName="monto" placeholder="0.00" />
+        <div class="input-hint" *ngIf="depositForm.value.monto > 0">
+          Sin comisión • Total a depositar: <b>${{ depositForm.value.monto | number:'1.2-2' }}</b>
+          <span *ngIf="selectedDestination"> • 
+            Nuevo saldo: <b>${{ (selectedDestination.balance + depositForm.value.monto) | number:'1.2-2' }}</b>
+          </span>
+        </div>
+      </div>
+
+      <!-- Descripción -->
+      <div class="input-group">
+        <label class="form-label">
+          <i class="fa-solid fa-sticky-note"></i>
+          Descripción
+        </label>
+        <input type="text" class="form-input" formControlName="descripcion" placeholder="Depósito en efectivo" />
+      </div>
+
+      <!-- Contraseña -->
+      <div class="input-group">
+        <label class="form-label">
+          <i class="fa-solid fa-lock"></i>
+          Contraseña
+        </label>
+        <div class="password-wrapper">
+          <input [type]="passwordVisible ? 'text' : 'password'" class="form-input" formControlName="contrasena" placeholder="Ingresa tu contraseña" />
+          <button type="button" class="toggle-password" (click)="togglePassword()">
+            <i [class]="passwordVisible ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Botones -->
+      <button type="submit" class="btn-dispose" [disabled]="depositForm.invalid">
+        <i class="fa-solid fa-piggy-bank"></i>
+        Realizar Depósito
+      </button>
+    </form>
+
+    <!-- Botón de comprobante -->
+    <div *ngIf="lastDepositId" style="margin-top: 1rem;">
+      <button type="button" class="btn-dispose" (click)="downloadPDF()">
+        <i class="fa-solid fa-file-pdf"></i>
+        Descargar Comprobante PDF
+      </button>
+    </div>
+
+  </section>
+</div>
+

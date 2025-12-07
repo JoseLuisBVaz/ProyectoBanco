@@ -1,0 +1,2493 @@
+================================================================================
+                    DOCUMENTACIÓN COMPLETA DEL BACKEND
+                         Sistema Bancario - Banco Jety
+================================================================================
+
+📁 ESTRUCTURA DE ARCHIVOS
+================================================================================
+
+ProyectoBanco/src/backend/
+│
+├── 📄 server.js                    // Servidor principal Express
+├── 📄 db.js                        // Configuración de conexión a MySQL
+├── 📄 package.json                 // Dependencias del proyecto
+│
+├── 📁 controller/
+│   └──�📄 usuariosCtrl.js          // Controladores de lógica de negocio
+│
+├── 📁 routes/
+│   └── 📄 usuarios.js              // Definición de rutas/endpoints
+│
+├── 📁 services/                    // Servicios reutilizables
+│   ├── 📄 emailService.js          // Envío de correos con adjuntos PDF
+│   ├── 📄 emailTemplates.js        // Plantillas HTML de correos
+│   ├── 📄 pdfService.js            // Generación de PDFs (transferencias y depósitos)
+│   └── 📄 passwordResetService.js  // Tokens de recuperación de contraseña
+│
+├── 📁 config/
+│   └── 📄 email.config.js          // Configuración de SMTP (Nodemailer)
+│
+└── 📁 sql/                         // (Deprecado) - Consolidado en src/database.sql
+   └── 📄 (vacío)                  // Los SPs y tablas viven en el archivo central
+
+ProyectoBanco/src/
+└── 📄 database.sql                 // Esquema y SPs consolidados (transfer/deposit)
+
+
+================================================================================
+🔌 CONFIGURACIÓN DE CONEXIÓN A BASE DE DATOS
+================================================================================
+
+Archivo: db.js
+--------------
+• Librería: mysql2
+• Host: localhost
+• Usuario: root
+• Contraseña: root
+• Base de datos: Banco_Jety
+
+Configuración:
+--------------
+const db = mysql.createConnection({
+  host: 'localhost',
+  user: 'root',
+  password: 'root',
+  database: 'Banco_Jety',
+});
+
+Nota: La conexión se exporta para ser usada en todos los controladores.
+
+
+================================================================================
+🚀 SERVIDOR PRINCIPAL
+================================================================================
+
+Archivo: server.js
+------------------
+• Framework: Express.js
+• Puerto: 3000
+• Middlewares:
+  - express.json()          // Para parsear JSON en requests
+  - cors()                  // Para permitir peticiones desde Angular
+
+Rutas registradas:
+------------------
+• /api/usuarios             // Todas las operaciones de usuarios
+
+Inicio del servidor:
+--------------------
+node server.js
+(Escucha en http://localhost:3000)
+
+
+================================================================================
+📡 RUTAS (ENDPOINTS) DISPONIBLES
+================================================================================
+
+Archivo: routes/usuarios.js
+----------------------------
+
+1. GET /api/usuarios/main
+   • Descripción: Obtiene todos los registros de la tabla main
+   • Controlador: getMain
+   • Respuesta: Array de objetos main
+
+2. GET /api/usuarios/customers
+   • Descripción: Obtiene todos los clientes con sus datos completos
+   • Controlador: getCustomers
+   • Respuesta: Array con JOIN de main + customer
+
+3. GET /api/usuarios/employees
+   • Descripción: Obtiene todos los empleados con sus datos completos
+   • Controlador: getEmployees
+   • Respuesta: Array con JOIN de main + employee
+
+4. GET /api/usuarios/:id
+   • Descripción: Obtiene un usuario específico por mainId
+   • Controlador: getUsuario
+   • Parámetro: id (mainId)
+   • Respuesta: Objeto con datos normalizados del usuario
+
+5. POST /api/usuarios/login
+   • Descripción: Autenticación de usuarios
+   • Controlador: login
+   • Body: { mail: string, password: string }
+   • Respuesta: { success: boolean, rol: string, user: object }
+
+6. POST /api/usuarios/register
+   • Descripción: Registro de nuevos usuarios (clientes o empleados)
+   • Controlador: registerUser
+   • Body: {
+       mail: string,
+       pass: string,
+       rol: string,              // 'customer' o 'employee'
+       firstName: string,
+       lastNameP: string,
+       lastNameM: string,
+       phoneNumber: string,
+       birthday: date,
+       address: string,
+       curp: string,
+       rfc: string,              // Solo para customer
+       nss: string               // Solo para employee
+     }
+   • Respuesta: { success: boolean, mainId: number, accountInfo: object }
+
+7. GET /api/usuarios/accounts/:mainId
+   • Descripción: Obtiene todas las cuentas de un usuario
+   • Controlador: getAccountsByUser
+   • Parámetro: mainId
+   • Respuesta: Array de cuentas del usuario
+
+8. POST /api/usuarios/transfer
+   • Descripción: Realiza transferencias entre cuentas
+   • Controlador: transferFunds
+   • Body: {
+       origin: string,          // accNum o CLABE origen
+       destiny: string,         // accNum o CLABE destino
+       amount: number,          // Monto a transferir
+       description: string      // Descripción (opcional)
+     }
+   • Respuesta: { 
+       success: boolean, 
+       tranId: number,          // ID de la transferencia
+       fee: number,             // Comisión cobrada
+       msg: string 
+     }
+
+9. POST /api/create-account
+   • Descripción: Crea una nueva cuenta bancaria para un cliente (solo managers/empleados)
+   • Controlador: createAccount
+   • Body: {
+       customerId: number,      // ID del cliente
+       createdBy: number,       // ID del manager/empleado
+       accType: string,         // 'Debito' o 'Credito'
+       accPhone: string,        // Teléfono de 10 dígitos
+       password: string,        // Contraseña del cliente (validación)
+       curp: string             // CURP del cliente (18 caracteres)
+     }
+   • Respuesta: {
+       success: boolean,
+       accountId: number,       // ID de la cuenta creada
+       cardNum: string,         // Número de tarjeta generado (16 dígitos)
+       clabe: string,           // CLABE generada (18 dígitos)
+       accNum: string,          // Número de cuenta generado (10 dígitos)
+       msg: string
+     }
+   • Validaciones:
+     - customerId y createdBy deben existir
+     - createdBy debe ser manager ('m') o empleado ('e')
+     - customerId debe ser cliente ('c')
+     - password y curp del cliente deben coincidir
+     - accPhone debe tener exactamente 10 dígitos
+     - accType solo acepta 'Debito' o 'Credito'
+   • Generación automática:
+     - cardNum: Algoritmo de Luhn con prefijo 4000
+     - clabe: Prefijo 646 + 15 dígitos aleatorios
+     - accNum: Basado en customerId + 4 dígitos aleatorios
+     - balance inicial: 0
+
+10. GET /api/receipt/:tranId 🆕
+   • Descripción: Genera y descarga un comprobante PDF de una transferencia
+   • Controlador: generateReceipt
+   • Parámetros URL:
+       tranId: number           // ID de la transferencia
+   • Respuesta: Documento PDF (application/pdf)
+   • Headers de respuesta:
+       Content-Type: application/pdf
+       Content-Disposition: inline; filename=comprobante-{tranId}.pdf
+   • Contenido del PDF:
+     - Logo/nombre del banco
+     - Tipo de operación
+     - Fecha
+     - Importe con signo negativo ($ -X,XXX.XX)
+     - Nombre del ordenante (MAYÚSCULAS)
+     - Cuenta origen (CLABE)
+     - Nombre del beneficiario
+     - Cuenta destino (CLABE)
+     - Banco destino
+     - Concepto/descripción
+     - Fecha y hora de operación
+     - Referencia (tranId)
+     - Folio de operación (generado)
+     - Comisión (si aplica)
+   • Diseño: Estilo similar a comprobantes bancarios profesionales (BBVA)
+   • Librería utilizada: pdfkit
+   • Nota: El PDF se abre en una nueva pestaña del navegador
+
+   11. POST /api/deposit 🆕
+      • Descripción: Realiza un depósito a la cuenta principal del usuario (por mainId)
+      • Controlador: depositFunds
+      • Body: {
+          mainId: number,         // ID del usuario (desde localStorage)
+          amount: number,         // Monto a depositar (> 0)
+          description?: string    // Opcional
+        }
+      • Lógica: Llama al SP sp_deposit_funds(mainId, amount, description)
+      • Respuesta: { success, depId, newBalance, message }
+
+   12. GET /api/transfer-pdf/:tranId 🆕
+      • Descripción: Descarga directa del PDF de transferencia (adjuntable)
+      • Controlador: generateTransferPDF
+      • Respuesta: application/pdf (Content-Disposition: attachment)
+
+   13. GET /api/deposit-pdf/:depId 🆕
+      • Descripción: Descarga directa del PDF de depósito (adjuntable)
+      • Controlador: generateDepositPDF
+      • Respuesta: application/pdf (Content-Disposition: attachment)
+
+   14. GET /api/account-statement/:accountId 🆕
+      • Descripción: Obtiene el estado de cuenta completo de una cuenta específica
+      • Controlador: getAccountStatement
+      • Parámetros URL:
+          accountId: number           // ID de la cuenta (cAccount.accountId)
+      • Respuesta: {
+          success: boolean,
+          movements: Array<Movement>  // Lista de todos los movimientos
+        }
+      • Estructura de Movement:
+        {
+          type: string,               // 'transfer_in', 'transfer_out', 'deposit', 'withdrawal'
+          date: datetime,             // Fecha y hora del movimiento
+          description: string,        // Descripción del movimiento
+          amount: decimal,            // Monto del movimiento
+          fee: decimal,               // Comisión cobrada (0 si no aplica)
+          balance: decimal,           // Saldo después del movimiento
+          origin: string,             // Cuenta origen (solo en transfers)
+          destiny: string             // Cuenta destino (solo en transfers)
+        }
+      • Lógica:
+        - Consulta transferencias donde la cuenta es origen (transfer_out)
+        - Consulta transferencias donde la cuenta es destino (transfer_in)
+        - Consulta depósitos a la cuenta
+        - Consulta retiros de la cuenta
+        - Combina todos los movimientos con UNION ALL
+        - Ordena por fecha descendente (más recientes primero)
+        - Calcula el saldo después de cada movimiento
+      • Query SQL: Ver sección "CONSULTA: Estado de Cuenta Completo"
+      • Manejo de errores:
+        - 400: accountId no proporcionado o inválido
+        - 500: Error al consultar la base de datos
+      • Uso desde frontend:
+        this.http.get(`http://localhost:3000/api/account-statement/${accountId}`)
+
+
+================================================================================
+🎮 CONTROLADORES
+================================================================================
+
+Archivo: controller/usuariosCtrl.js
+------------------------------------
+
+FUNCIÓN: getMain
+----------------
+• Descripción: Obtiene todos los usuarios de la tabla main
+• Query SQL: SELECT * FROM main
+• Sin parámetros
+
+FUNCIÓN: getCustomers
+---------------------
+• Descripción: Obtiene clientes con JOIN
+• Query SQL: SELECT main + customer con INNER JOIN
+• Retorna: mainId, mail, rol, datos personales del customer
+
+FUNCIÓN: getEmployees
+---------------------
+• Descripción: Obtiene empleados con JOIN
+• Query SQL: SELECT main + employee con INNER JOIN
+• Retorna: mainId, mail, rol, datos personales del employee + NSS
+
+FUNCIÓN: getUsuario
+-------------------
+• Descripción: Obtiene usuario específico (customer o employee)
+• Query SQL: LEFT JOIN con customer y employee
+• Parámetro: mainId
+• Retorna: Datos normalizados del usuario
+
+FUNCIÓN: login
+--------------
+• Descripción: Autenticación con bcrypt
+• Pasos:
+  1. Busca usuario por email en tabla main
+  2. Compara contraseña con bcrypt.compare()
+  3. Si es válido, retorna datos del usuario y rol
+• Seguridad: Contraseñas hasheadas con bcrypt
+
+FUNCIÓN: registerUser
+---------------------
+• Descripción: Registro completo de usuario
+• Flujo:
+  1. Valida datos de entrada
+  2. Hashea la contraseña con bcrypt (10 rounds)
+  3. Inserta en tabla main (mail, pass, rol)
+  4. Inserta en customer o employee según rol
+  5. Si es customer, crea cuenta por defecto
+  6. Genera automáticamente:
+     - Número de tarjeta (16 dígitos con Luhn check)
+     - CLABE (18 dígitos)
+     - Número de cuenta (10 dígitos)
+• Transacciones: Maneja rollback en caso de error
+
+FUNCIÓN: getAccountsByUser
+--------------------------
+• Descripción: Lista todas las cuentas de un usuario
+• Query SQL: SELECT * FROM cAccount WHERE mainId = ?
+• Parámetro: mainId
+• Retorna: Array con todas las cuentas del usuario
+
+FUNCIÓN: transferFunds ⭐ TRANSFERENCIAS
+----------------------------------------
+• Descripción: Realiza transferencias usando Stored Procedure
+• Parámetros de entrada:
+  - origin: accNum o CLABE de cuenta origen
+  - destiny: accNum o CLABE de cuenta destino
+  - amount: Monto a transferir (número positivo)
+  - description: Descripción de la transferencia (opcional)
+
+• Validaciones:
+  ✓ Campos obligatorios: origin, destiny, amount
+  ✓ amount debe ser número positivo
+  ✓ Conversión automática a número decimal
+
+• Llamada al SP:
+  CALL sp_transfer_funds(origin, destiny, amount, description)
+
+• Respuesta del SP:
+  - tranId: ID de la transferencia creada
+  - fee: Comisión cobrada
+
+• Manejo de errores:
+  - Errores del SP (SIGNAL) se capturan y retornan al cliente
+  - Incluye mensajes descriptivos del error
+
+• Logs detallados:
+  ✓ Parámetros recibidos
+  ✓ Llamada al SP
+  ✓ Resultado exitoso o error
+  ✓ Datos de respuesta (tranId, fee)
+
+FUNCIÓN: createAccount ⭐ CREACIÓN DE CUENTAS
+----------------------------------------------
+• Descripción: Permite a managers y empleados crear cuentas bancarias para clientes
+  con validación de seguridad mediante contraseña y CURP del cliente.
+
+• Parámetros de entrada:
+  - customerId: ID del cliente para quien se crea la cuenta (número)
+  - createdBy: ID del manager/empleado que crea la cuenta (número)
+  - accType: Tipo de cuenta ('Debito' o 'Credito')
+  - accPhone: Teléfono de la cuenta (10 dígitos)
+  - password: Contraseña del cliente (para validación de seguridad)
+  - curp: CURP del cliente (18 caracteres, para validación de seguridad)
+
+• Flujo de validación (7 pasos):
+  1️⃣ Validar campos obligatorios
+  2️⃣ Validar que customerId y createdBy sean números
+  3️⃣ Validar formato de teléfono (10 dígitos)
+  4️⃣ Validar tipo de cuenta (Debito/Credito)
+  5️⃣ Validar CURP (18 caracteres)
+  6️⃣ Verificar usuario creador:
+     - Debe existir en tabla main
+     - Debe tener rol 'm' (manager) o 'e' (empleado)
+  7️⃣ Verificar cliente:
+     - Debe existir en tabla main
+     - Debe tener rol 'c' (customer)
+     - Contraseña debe coincidir (bcrypt.compare)
+     - CURP debe coincidir exactamente
+
+• Query SQL para verificar creador:
+  SELECT mainId, rol FROM main WHERE mainId = ?
+
+• Query SQL para verificar cliente:
+  SELECT m.mainId, m.rol, m.pass, c.curp 
+  FROM main m
+  LEFT JOIN customer c ON m.mainId = c.mainId
+  WHERE m.mainId = ?
+
+• Generación automática de números:
+  - cardNum: Algoritmo de Luhn con prefijo 4000 + customerId + aleatorios
+  - clabe: Prefijo 646 + 15 dígitos aleatorios
+  - accNum: customerId (últimos 6 dígitos) + 4 aleatorios
+  - balance: Siempre inicia en 0
+
+• Query SQL de inserción:
+  INSERT INTO cAccount (mainId, cardNum, balance, clabe, accNum, accPhone, accType)
+  VALUES (?, ?, 0, ?, ?, ?, ?)
+
+• Respuesta exitosa:
+  - success: true
+  - accountId: ID de la nueva cuenta
+  - cardNum, clabe, accNum: Números generados
+  - msg: "Cuenta creada exitosamente"
+
+• Manejo de errores:
+  - 400: Campos faltantes o inválidos
+  - 401: Contraseña o CURP incorrectos
+  - 403: Permisos insuficientes (no es manager/empleado o no es cliente)
+  - 404: Usuario creador o cliente no encontrado
+  - 500: Error de servidor o ER_DUP_ENTRY
+
+• Notas de seguridad: 
+  ⚠️ La tabla cAccount NO almacena contraseña
+  ⚠️ La contraseña solo se usa para validar la identidad del cliente
+  ⚠️ El CURP proporciona una capa adicional de seguridad
+  ⚠️ Solo managers (rol 'm') y empleados (rol 'e') pueden crear cuentas
+  ⚠️ Las contraseñas se validan con bcrypt (hash de 10 salt rounds)
+
+
+FUNCIÓN: generateReceipt 🆕 GENERACIÓN DE COMPROBANTES PDF
+-----------------------------------------------------------
+• Descripción: Genera un comprobante en formato PDF de una transferencia realizada,
+  con diseño profesional similar a comprobantes bancarios (estilo BBVA).
+
+• Parámetro de entrada:
+  - tranId: ID de la transferencia (número, desde URL)
+
+• Flujo de generación:
+  1️⃣ Validar que tranId esté presente
+  2️⃣ Consultar información completa de la transferencia con JOIN:
+     - Datos de la transferencia (amount, fee, description, timestamp)
+     - Cuenta origen (accNum, clabe)
+     - Cuenta destino (accNum, clabe)
+     - Datos del ordenante (nombre completo)
+     - Datos del beneficiario (nombre completo)
+  3️⃣ Crear documento PDF con PDFDocument (pdfkit)
+  4️⃣ Configurar headers de respuesta HTTP:
+     - Content-Type: application/pdf
+     - Content-Disposition: inline (para abrir en navegador)
+  5️⃣ Diseñar el comprobante con las siguientes secciones:
+     - Header con nombre del banco (BANCO JETY)
+     - Título "Comprobante de la operación"
+     - Tipo de operación: "Transferencia a otros bancos"
+     - Fecha en formato largo (español)
+     - Importe destacado en grande con signo negativo ($ -X,XXX.XX)
+     - Nombre del ordenante en MAYÚSCULAS
+     - Cuenta origen (CLABE completa)
+     - Nombre del beneficiario (capitalizado)
+     - Cuenta destino (CLABE completa)
+     - Banco destino
+     - Concepto/descripción de la transferencia
+     - Fecha y hora de operación (formato: DD/MM/YYYY, HH:MM:SS h)
+     - Referencia (tranId)
+     - Folio de operación (generado: 00{tranId}{6 dígitos random})
+     - Comisión (solo si fee > 0)
+     - Footer: "Este comprobante es válido sin firma autógrafa"
+
+• Query SQL utilizado:
+  SELECT 
+    t.tranId, t.amount, t.fee, t.description, t.timestamp, t.tranStatus,
+    origin_acc.accNum, origin_acc.clabe,
+    dest_acc.accNum, dest_acc.clabe,
+    origin_main.name, origin_main.fLastName, origin_main.mLastName,
+    dest_main.name, dest_main.fLastName, dest_main.mLastName
+  FROM transfer t
+  INNER JOIN cAccount origin_acc ON t.origin = origin_acc.accountId
+  INNER JOIN cAccount dest_acc ON t.destiny = dest_acc.accountId
+  INNER JOIN main origin_main ON origin_acc.mainId = origin_main.mainId
+  INNER JOIN main dest_main ON dest_acc.mainId = dest_main.mainId
+  WHERE t.tranId = ?
+
+• Respuesta:
+  - Tipo: Documento PDF binario
+  - Nombre archivo: comprobante-{tranId}.pdf
+  - Visualización: Se abre en nueva pestaña del navegador
+
+• Manejo de errores:
+  - 400: tranId no proporcionado
+  - 404: Transferencia no encontrada
+  - 500: Error al consultar o generar PDF
+
+• Características del PDF:
+  - Tamaño: A4
+  - Márgenes: 50px
+  - Colores corporativos: #072146 (azul oscuro BBVA-style)
+  - Tipografías: Sans-serif con diferentes tamaños y pesos
+  - Secciones visualmente separadas con espaciado vertical
+  - Información destacada en negrita
+  - Etiquetas en gris (#666666) y valores en negro (#000000)
+
+• Librería: pdfkit (PDFDocument)
+• Uso desde frontend:
+  window.open(`http://localhost:3000/api/receipt/${tranId}`, '_blank')
+
+• Notas:
+  ⚠️ El PDF se genera en tiempo real, no se almacena en disco
+  ⚠️ Cada comprobante es único y no expira
+  ⚠️ Solo se requiere el tranId para regenerar el comprobante en cualquier momento
+  ⚠️ El folio de operación incluye dígitos aleatorios para mayor autenticidad
+
+
+FUNCIÓN: getAccountStatement 🆕 ESTADO DE CUENTA
+-------------------------------------------------
+• Descripción: Obtiene el historial completo de movimientos de una cuenta bancaria,
+  incluyendo transferencias (enviadas y recibidas), depósitos y retiros, ordenados
+  cronológicamente con el saldo después de cada operación.
+
+• Parámetro de entrada:
+  - accountId: ID de la cuenta (número, desde URL)
+
+• Flujo de consulta:
+  1️⃣ Validar que accountId esté presente y sea un número
+  2️⃣ Ejecutar consulta SQL con UNION ALL de 4 tipos de movimientos:
+     a. Transferencias enviadas (type = 'transfer_out')
+     b. Transferencias recibidas (type = 'transfer_in')
+     c. Depósitos (type = 'deposit')
+     d. Retiros (type = 'withdrawal')
+  3️⃣ Ordenar resultados por fecha descendente (más recientes primero)
+  4️⃣ Retornar JSON con el array de movimientos
+
+• Estructura del Query SQL:
+  ------------------------
+  La consulta utiliza UNION ALL para combinar 4 sub-consultas:
+  
+  A) TRANSFERENCIAS ENVIADAS (dinero que sale de la cuenta):
+     SELECT 
+       'transfer_out' AS type,
+       t.timestamp AS date,
+       t.description,
+       t.ammount AS amount,
+       t.fee,
+       origin_acc.balance AS balance,
+       origin_acc.accNum AS origin,
+       dest_acc.accNum AS destiny
+     FROM transfer t
+     INNER JOIN cAccount origin_acc ON t.origin = origin_acc.accountId
+     INNER JOIN cAccount dest_acc ON t.destiny = dest_acc.accountId
+     WHERE origin_acc.accountId = ?
+  
+  B) TRANSFERENCIAS RECIBIDAS (dinero que entra a la cuenta):
+     SELECT 
+       'transfer_in' AS type,
+       t.timestamp AS date,
+       t.description,
+       t.ammount AS amount,
+       0 AS fee,
+       dest_acc.balance AS balance,
+       origin_acc.accNum AS origin,
+       dest_acc.accNum AS destiny
+     FROM transfer t
+     INNER JOIN cAccount origin_acc ON t.origin = origin_acc.accountId
+     INNER JOIN cAccount dest_acc ON t.destiny = dest_acc.accountId
+     WHERE dest_acc.accountId = ?
+  
+  C) DEPÓSITOS (dinero depositado a la cuenta):
+     SELECT 
+       'deposit' AS type,
+       d.timestamp AS date,
+       d.description,
+       d.ammount AS amount,
+       0 AS fee,
+       acc.balance AS balance,
+       NULL AS origin,
+       acc.accNum AS destiny
+     FROM deposito d
+     INNER JOIN cAccount acc ON d.accountId = acc.accountId
+     WHERE acc.accountId = ?
+  
+  D) RETIROS (dinero retirado de la cuenta):
+     SELECT 
+       'withdrawal' AS type,
+       r.timestamp AS date,
+       r.description,
+       r.ammount AS amount,
+       0 AS fee,
+       acc.balance AS balance,
+       acc.accNum AS origin,
+       NULL AS destiny
+     FROM retiros r
+     INNER JOIN cAccount acc ON r.accountId = acc.accountId
+     WHERE acc.accountId = ?
+
+  Ordenamiento final:
+  ORDER BY date DESC
+
+• Estructura de la respuesta:
+  ---------------------------
+  {
+    success: true,
+    movements: [
+      {
+        type: 'transfer_out',           // Tipo de movimiento
+        date: '2025-11-03T10:30:00',    // Fecha y hora
+        description: 'Pago de servicios', // Descripción
+        amount: 1500.00,                 // Monto del movimiento
+        fee: 17.50,                      // Comisión (si aplica)
+        balance: 8482.50,                // Saldo después del movimiento
+        origin: '0000026492',            // Cuenta origen (si aplica)
+        destiny: '646756986252423592'    // Cuenta destino (si aplica)
+      },
+      // ... más movimientos
+    ]
+  }
+
+• Tipos de movimientos:
+  ---------------------
+  - transfer_out: Transferencia enviada desde la cuenta
+    • amount: Monto transferido (valor positivo)
+    • fee: Comisión cobrada
+    • origin: Número de cuenta actual
+    • destiny: Cuenta que recibió el dinero
+    • balance: Saldo después de descontar (amount + fee)
+  
+  - transfer_in: Transferencia recibida en la cuenta
+    • amount: Monto recibido (valor positivo)
+    • fee: Siempre 0 (no se cobra comisión al recibir)
+    • origin: Cuenta que envió el dinero
+    • destiny: Número de cuenta actual
+    • balance: Saldo después de sumar amount
+  
+  - deposit: Depósito realizado a la cuenta
+    • amount: Monto depositado (valor positivo)
+    • fee: Siempre 0
+    • origin: null (no aplica)
+    • destiny: Número de cuenta actual
+    • balance: Saldo después de sumar amount
+  
+  - withdrawal: Retiro realizado desde la cuenta
+    • amount: Monto retirado (valor positivo)
+    • fee: Siempre 0
+    • origin: Número de cuenta actual
+    • destiny: null (no aplica)
+    • balance: Saldo después de restar amount
+
+• Validaciones:
+  -------------
+  ✓ accountId debe estar presente
+  ✓ accountId debe ser un número válido
+  ✓ La cuenta debe existir en la base de datos
+
+• Manejo de errores:
+  ------------------
+  - 400: "Se requiere el ID de la cuenta" o "ID de cuenta inválido"
+  - 404: La cuenta no existe (sin movimientos)
+  - 500: "Error al obtener el estado de cuenta"
+
+• Logs del sistema:
+  -----------------
+  [ACCOUNT STATEMENT] Consultando movimientos para cuenta: {accountId}
+  [ACCOUNT STATEMENT] ✅ {count} movimientos encontrados
+  ❌ Error al consultar estado de cuenta: {error}
+
+• Uso desde el frontend:
+  ----------------------
+  Angular HttpClient:
+  this.http.get<any>(`http://localhost:3000/api/account-statement/${accountId}`)
+    .subscribe(
+      response => {
+        if (response.success) {
+          this.movements = response.movements;
+        }
+      },
+      error => console.error('Error:', error)
+    );
+
+• Características especiales:
+  ---------------------------
+  ✓ Incluye el saldo DESPUÉS de cada movimiento (no antes)
+  ✓ Ordena cronológicamente descendente (más reciente primero)
+  ✓ Combina todos los tipos de operaciones en una sola lista
+  ✓ Calcula automáticamente el impacto en el saldo
+  ✓ Incluye información de cuentas origen/destino cuando aplica
+  ✓ No requiere paginación en el backend (se maneja en frontend)
+
+• Rendimiento:
+  ------------
+  • La consulta usa INNER JOIN para eficiencia
+  • Utiliza índices en accountId para búsqueda rápida
+  • UNION ALL es más rápido que UNION (no elimina duplicados)
+  • ORDER BY date DESC usa índice temporal en memoria
+
+• Integración con otras funcionalidades:
+  --------------------------------------
+  • Los movimientos se generan automáticamente por:
+    - Stored Procedure: sp_transfer_funds (transferencias)
+    - Stored Procedure: sp_deposit_funds (depósitos)
+    - Stored Procedure: sp_withdraw_funds (retiros)
+  • El saldo (balance) se actualiza en tiempo real en la tabla cAccount
+  • Cada movimiento refleja el saldo ACTUAL al momento de la operación
+
+• Casos de uso:
+  -------------
+  1. Ver historial completo de movimientos en una cuenta
+  2. Generar reportes de actividad bancaria
+  3. Auditoría de transacciones
+  4. Verificar saldos históricos
+  5. Filtrar movimientos por tipo, fecha o monto (en frontend)
+
+• Notas técnicas:
+  ---------------
+  ⚠️ El balance mostrado es el saldo DESPUÉS del movimiento
+  ⚠️ Los movimientos negativos (transfer_out, withdrawal) ya están descontados
+  ⚠️ Los movimientos positivos (transfer_in, deposit) ya están sumados
+  ⚠️ Las comisiones solo aparecen en transfer_out
+  ⚠️ La consulta no filtra por fecha (se hace en frontend)
+
+
+================================================================================
+💾 STORED PROCEDURE: sp_transfer_funds
+================================================================================
+
+Archivo: sql/sp_transfer_funds.sql
+Ubicación en DB: Banco_Jety.sp_transfer_funds
+-------------------------------------------
+
+PARÁMETROS DE ENTRADA:
+----------------------
+• p_origin      VARCHAR(30)      // accNum o CLABE origen
+• p_destiny     VARCHAR(30)      // accNum o CLABE destino
+• p_amount      DECIMAL(12,2)    // Monto a transferir
+• p_description VARCHAR(300)     // Descripción (opcional)
+
+VARIABLES INTERNAS:
+-------------------
+• v_origin_accountId    INT              // ID de cuenta origen
+• v_dest_accountId      INT              // ID de cuenta destino
+• v_origin_balance      DECIMAL(12,2)    // Saldo actual del origen
+• v_tranId              INT              // ID de transferencia generado
+• v_fee                 DECIMAL(12,2)    // Comisión calculada
+• v_not_found           INT              // Flag para controlar NOT FOUND
+
+LÓGICA DEL PROCEDIMIENTO:
+--------------------------
+
+1. VALIDACIONES INICIALES:
+   ✓ Parámetros no nulos
+   ✓ Monto mayor a 0
+   ✓ Origen y destino diferentes
+
+2. CÁLCULO DE COMISIÓN:
+   • Fórmula: 
+     - $5 por cada $100
+     - $10 por cada $1,500
+   • Cálculo: v_fee = (FLOOR(amount/100) * 5) + (FLOOR(amount/1500) * 10)
+   • Ejemplo: 
+     - Monto $100 → Fee $5
+     - Monto $1,500 → Fee $17.50 ($15 + $10)
+
+3. INICIO DE TRANSACCIÓN:
+   START TRANSACTION;
+
+4. BLOQUEO DE CUENTA ORIGEN:
+   • SELECT ... FOR UPDATE (bloqueo pesimista)
+   • Obtiene accountId y balance
+   • Valida que exista la cuenta
+   • Si no existe → ROLLBACK + SIGNAL error
+
+5. BLOQUEO DE CUENTA DESTINO:
+   • SELECT ... FOR UPDATE
+   • Obtiene accountId
+   • Valida que exista la cuenta
+   • Si no existe → ROLLBACK + SIGNAL error
+
+6. VALIDACIÓN DE FONDOS:
+   • Verifica: balance_origen >= (amount + fee)
+   • Si no hay fondos → ROLLBACK + SIGNAL error
+
+7. ACTUALIZACIÓN DE SALDOS:
+   • Origen: balance = balance - (amount + fee)
+   • Destino: balance = balance + amount
+
+8. REGISTRO DE TRANSFERENCIA:
+   • INSERT INTO transfer (origin, destiny, ammount, fee, description, doDate)
+   • Obtiene ID con LAST_INSERT_ID()
+
+9. COMMIT DE TRANSACCIÓN:
+   • Si todo es exitoso, confirma cambios
+
+10. RETORNO DE RESULTADOS:
+    • SELECT tranId, fee
+    • El backend recibe estos valores
+
+MANEJO DE ERRORES:
+------------------
+• NOT FOUND: Cuando no encuentra una cuenta
+• SIGNAL SQLSTATE '45000': Para errores personalizados
+• ROLLBACK automático en cualquier error
+• Mensajes descriptivos en cada error
+
+
+================================================================================
+🔐 SEGURIDAD
+================================================================================
+
+AUTENTICACIÓN:
+--------------
+• Librería: bcrypt
+• Hash: bcrypt.hash(password, 10)
+• Verificación: bcrypt.compare(plainPassword, hashedPassword)
+• Rounds: 10 (balance entre seguridad y rendimiento)
+
+TRANSACCIONES EN BD:
+--------------------
+• START TRANSACTION - BEGIN
+• COMMIT - Confirma cambios
+• ROLLBACK - Revierte en caso de error
+• FOR UPDATE - Bloqueo pesimista para evitar race conditions
+
+VALIDACIONES:
+-------------
+✓ Validación de entrada en backend
+✓ Validación en stored procedure
+✓ Manejo de excepciones en todos los niveles
+✓ CORS configurado para el frontend
+
+
+================================================================================
+📊 TABLAS DE BASE DE DATOS UTILIZADAS
+================================================================================
+
+1. main
+   ------
+   • mainId (PK, AUTO_INCREMENT)
+   • mail (UNIQUE)
+   • pass (hasheado con bcrypt)
+   • rol ('customer', 'employee', 'admin')
+
+2. customer
+   --------
+   • mainId (FK → main.mainId)
+   • phoneNumber
+   • firstName, lastNameP, lastNameM
+   • birthday, address
+   • curp (UNIQUE)
+   • rfc
+
+3. employee
+   --------
+   • mainId (FK → main.mainId)
+   • phoneNumber
+   • firstName, lastNameP, lastNameM
+   • birthday, address
+   • curp (UNIQUE)
+   • rfc
+   • nss (UNIQUE)
+
+4. cAccount
+   --------
+   • accountId (PK, AUTO_INCREMENT)
+   • mainId (FK → main.mainId)
+   • cardNum (16 dígitos, UNIQUE)
+   • balance (DECIMAL)
+   • clabe (18 dígitos, UNIQUE)
+   • accNum (10 dígitos, UNIQUE)
+   • accPhone (10 dígitos)
+   • accType ('Debito', 'Credito')
+
+5. transfer
+   --------
+   • transferId (PK, AUTO_INCREMENT)
+   • origin (accNum o CLABE)
+   • destiny (accNum o CLABE)
+   • ammount (DECIMAL)
+   • fee (DECIMAL)
+   • description (VARCHAR)
+   • doDate (DATE)
+
+
+================================================================================
+🔄 FLUJO COMPLETO: TRANSFERENCIA
+================================================================================
+
+1. FRONTEND (Angular)
+   │
+   ├─→ Usuario completa formulario:
+   │   • Selecciona cuenta origen
+   │   • Ingresa cuenta destino
+   │   • Especifica monto
+   │   • Agrega descripción (opcional)
+   │
+   └─→ HTTP POST a: http://localhost:3000/api/usuarios/transfer
+       Body: { origin, destiny, amount, description }
+
+2. BACKEND (Node.js/Express)
+   │
+   ├─→ server.js recibe la petición
+   │
+   ├─→ Middleware express.json() parsea el body
+   │
+   ├─→ Router (usuarios.js) dirige a transferFunds
+   │
+   └─→ Controller (usuariosCtrl.js)
+       │
+       ├─→ Valida parámetros
+       ├─→ Convierte amount a número
+       └─→ Llama al Stored Procedure
+
+3. BASE DE DATOS (MySQL)
+   │
+   ├─→ Ejecuta sp_transfer_funds(origin, destiny, amount, description)
+   │
+   ├─→ Calcula comisión automáticamente
+   │
+   ├─→ Valida cuentas y fondos
+   │
+   ├─→ Realiza transacción:
+   │   • Descuenta de origen (monto + fee)
+   │   • Acredita a destino (solo monto)
+   │   • Registra en tabla transfer
+   │
+   └─→ Retorna: tranId y fee
+
+4. RESPUESTA AL FRONTEND
+   │
+   └─→ Backend envía JSON:
+       {
+         success: true,
+         tranId: 123,
+         fee: 5.00,
+         msg: 'Transferencia realizada exitosamente'
+       }
+
+
+================================================================================
+📦 DEPENDENCIAS (package.json)
+================================================================================
+
+{
+  "dependencies": {
+    "express": "^4.x.x",        // Framework web
+    "mysql2": "^3.x.x",         // Cliente MySQL
+    "cors": "^2.x.x",           // Cross-Origin Resource Sharing
+    "bcrypt": "^5.x.x",         // Encriptación de contraseñas
+    "pdfkit": "^0.x.x"          // Generación de documentos PDF
+  }
+}
+
+Instalación:
+-----------
+npm install
+
+
+================================================================================
+🚀 CÓMO INICIAR EL BACKEND
+================================================================================
+
+1. Asegurarse de tener MySQL corriendo con la base de datos Banco_Jety
+
+2. Ejecutar el Stored Procedure en MySQL Workbench:
+   • Abrir sql/sp_transfer_funds.sql
+   • Ejecutar todo el script
+
+3. Instalar dependencias (primera vez):
+   npm install
+
+4. Iniciar el servidor:
+   node server.js
+
+5. Verificar que esté corriendo:
+   Debe mostrar: "Servidor corriendo en puerto 3000"
+   Y: "Conectado a la base de datos MySQL"
+
+6. El backend estará disponible en:
+   http://localhost:3000
+
+
+================================================================================
+🧪 PRUEBAS
+================================================================================
+
+ENDPOINT DE PRUEBA: POST /api/usuarios/transfer
+-----------------------------------------------
+
+Ejemplo con cURL:
+-----------------
+curl -X POST http://localhost:3000/api/usuarios/transfer \
+  -H "Content-Type: application/json" \
+  -d '{
+    "origin": "0000026492",
+    "destiny": "646756986252423592",
+    "amount": 100,
+    "description": "Prueba de transferencia"
+  }'
+
+Ejemplo con Postman:
+-------------------
+• Método: POST
+• URL: http://localhost:3000/api/usuarios/transfer
+• Headers: Content-Type: application/json
+• Body (raw JSON):
+  {
+    "origin": "0000026492",
+    "destiny": "646756986252423592",
+    "amount": 100,
+    "description": "Prueba de transferencia"
+  }
+
+Respuesta esperada:
+------------------
+{
+  "success": true,
+  "tranId": 1,
+  "fee": 5,
+  "msg": "Transferencia realizada exitosamente"
+}
+
+
+ENDPOINT DE PRUEBA: POST /api/create-account
+---------------------------------------------
+
+⚠️ IMPORTANTE: Este endpoint permite a managers y empleados crear cuentas 
+bancarias para clientes. Requiere validación de seguridad mediante la contraseña 
+y CURP del cliente.
+
+Flujo de seguridad:
+1. Manager/Empleado selecciona un cliente
+2. Ingresa la contraseña del cliente
+3. Ingresa el CURP del cliente (18 caracteres)
+4. El sistema valida ambos datos antes de crear la cuenta
+
+Ejemplo con cURL:
+-----------------
+curl -X POST http://localhost:3000/api/create-account \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerId": 1,
+    "createdBy": 7,
+    "accType": "Debito",
+    "accPhone": "5512345678",
+    "password": "password123",
+    "curp": "ABCD123456HDFRRL09"
+  }'
+
+Ejemplo con Postman:
+-------------------
+• Método: POST
+• URL: http://localhost:3000/api/create-account
+• Headers: Content-Type: application/json
+• Body (raw JSON):
+  {
+    "customerId": 1,
+    "createdBy": 7,
+    "accType": "Debito",
+    "accPhone": "5512345678",
+    "password": "password123",
+    "curp": "ABCD123456HDFRRL09"
+  }
+
+Parámetros:
+-----------
+• customerId: ID del cliente para quien se crea la cuenta
+• createdBy: ID del manager/empleado que crea la cuenta
+• accType: Tipo de cuenta ("Debito" o "Credito")
+• accPhone: Teléfono de 10 dígitos
+• password: Contraseña del cliente (para validación)
+• curp: CURP del cliente de 18 caracteres (para validación)
+
+Respuesta esperada:
+------------------
+{
+  "success": true,
+  "accountId": 3,
+  "cardNum": "4000000123456789",
+  "clabe": "646123456789012345",
+  "accNum": "0000015678",
+  "msg": "Cuenta creada exitosamente"
+}
+
+
+ENDPOINT DE PRUEBA: GET /api/receipt/:tranId 🆕
+-----------------------------------------------
+
+⚠️ NUEVO: Este endpoint genera un comprobante PDF profesional de una transferencia.
+
+Ejemplo con navegador:
+----------------------
+http://localhost:3000/api/receipt/1
+
+Ejemplo con cURL (descarga):
+-----------------------------
+curl -X GET http://localhost:3000/api/receipt/1 \
+  --output comprobante.pdf
+
+Ejemplo con Postman:
+-------------------
+• Método: GET
+• URL: http://localhost:3000/api/receipt/1
+• Headers: (ninguno requerido)
+• Send and Download: Seleccionar esta opción para ver el PDF
+
+Ejemplo desde JavaScript/TypeScript:
+------------------------------------
+// Abrir en nueva pestaña
+window.open(`http://localhost:3000/api/receipt/${tranId}`, '_blank');
+
+// O descargar programáticamente
+fetch(`http://localhost:3000/api/receipt/${tranId}`)
+  .then(res => res.blob())
+  .then(blob => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `comprobante-${tranId}.pdf`;
+    a.click();
+  });
+
+Respuesta esperada:
+------------------
+Documento PDF con:
+• Header: BANCO JETY
+• Título: Comprobante de la operación
+• Tipo: Transferencia a otros bancos
+• Fecha: 18 octubre 2025
+• Importe: $ -1,400.00 (destacado en grande)
+• Nombre del ordenante: ERICK MANUEL HERNANDEZ CASTAÑEDA
+• Cuenta origen: 012290015282687005
+• Nombre del beneficiario: Erick Manuel Hernandez Castañeda
+• Cuenta destino: 722969010083306457
+• Banco destino: Banco Jety
+• Concepto: mimi
+• Fecha de operación: 18 octubre 2025, 18:03:02 h
+• Referencia: 810250
+• Folio de operación: 00699797476722
+• Footer: Este comprobante es válido sin firma autógrafa
+
+Notas:
+------
+• El PDF se abre directamente en el navegador (Content-Disposition: inline)
+• El diseño es profesional, similar a comprobantes de BBVA
+• Se puede regenerar el comprobante en cualquier momento usando el tranId
+• No requiere autenticación (público)
+
+
+================================================================================
+⚠️ MANEJO DE ERRORES
+================================================================================
+
+ERRORES COMUNES Y SUS MENSAJES:
+--------------------------------
+
+TRANSFERENCIAS:
+---------------
+1. "Parámetros inválidos o nulos"
+   → Falta origin, destiny o amount
+
+2. "El monto debe ser mayor a 0"
+   → amount es negativo o cero
+
+3. "La cuenta origen y destino no pueden ser la misma"
+   → origin y destiny son iguales
+
+4. "Cuenta de origen no encontrada"
+   → No existe cuenta con ese accNum o CLABE origen
+
+5. "Cuenta de destino no encontrada"
+   → No existe cuenta con ese accNum o CLABE destino
+
+6. "Fondos insuficientes en la cuenta de origen"
+   → balance < (amount + fee)
+
+7. "Error en transferencia"
+   → Error genérico del servidor
+
+CREACIÓN DE CUENTAS:
+--------------------
+1. "Todos los campos son requeridos: customerId, createdBy, accType, accPhone, password, curp"
+   → Falta alguno de los campos requeridos
+
+2. "customerId y createdBy deben ser números válidos"
+   → Los IDs no son numéricos
+
+3. "El teléfono debe tener exactamente 10 dígitos"
+   → accPhone no tiene 10 dígitos
+
+4. "El tipo de cuenta debe ser Debito o Credito"
+   → accType tiene un valor inválido
+
+5. "El CURP debe tener exactamente 18 caracteres"
+   → curp no tiene 18 caracteres
+
+6. "Usuario creador no encontrado"
+   → No existe usuario con el createdBy proporcionado
+
+7. "Solo managers y empleados pueden crear cuentas para clientes"
+   → El usuario creador no tiene rol 'm' o 'e'
+
+8. "Cliente no encontrado"
+   → No existe usuario con el customerId proporcionado
+
+9. "El usuario seleccionado no es un cliente"
+   → El customerId no corresponde a un usuario con rol 'c'
+
+10. "Contraseña del cliente incorrecta"
+    → La password no coincide con la del cliente
+
+11. "El CURP no coincide con el registrado del cliente"
+    → El curp ingresado no coincide con el del cliente
+
+12. "Error: número de cuenta duplicado. Intenta nuevamente"
+    → Colisión en números generados (reintentar)
+
+13. "Error al crear la cuenta"
+    → Error genérico del servidor
+
+COMPROBANTES PDF:
+-----------------
+1. "Se requiere el ID de la transferencia"
+   → No se proporcionó tranId en la URL
+
+2. "Transferencia no encontrada"
+   → No existe transferencia con ese tranId
+
+3. "Error al obtener información de la transferencia"
+   → Error al consultar la base de datos
+
+4. "Error en el servidor al crear la cuenta"
+   → Error durante la generación del PDF
+
+
+================================================================================
+📝 LOGS DEL SISTEMA
+================================================================================
+
+El sistema genera logs detallados en consola:
+
+[TRANSFER] ========== NUEVA SOLICITUD ==========
+[TRANSFER] Body recibido: { origin, destiny, amount, description }
+[TRANSFER] Llamando a sp_transfer_funds con:
+  - origin: 0000026492
+  - destiny: 646756986252423592
+  - amount: 100
+  - description: Prueba
+[TRANSFER] ✅ Transferencia exitosa
+[TRANSFER] Resultado del SP: { tranId: 1, fee: 5 }
+[TRANSFER] - tranId: 1
+[TRANSFER] - fee (comisión): 5
+
+[RECEIPT] 📄 Comprobante generado para transferencia #1
+❌ Error al consultar transferencia: [Error details]
+
+
+================================================================================
+🔧 MANTENIMIENTO
+================================================================================
+
+MODIFICAR COMISIONES:
+---------------------
+Editar en sp_transfer_funds.sql la línea:
+SET v_fee = (FLOOR(p_amount / 100) * 5) + (FLOOR(p_amount / 1500) * 10);
+
+AGREGAR NUEVAS RUTAS:
+---------------------
+1. Agregar función en usuariosCtrl.js
+2. Exportar en module.exports
+3. Agregar ruta en usuarios.js
+
+CAMBIAR PUERTO DEL SERVIDOR:
+-----------------------------
+Editar en server.js:
+const PORT = 3000; // Cambiar por el puerto deseado
+
+
+================================================================================
+👥 CONTACTO Y SOPORTE
+================================================================================
+
+Repositorio: ProyectoBanco
+Rama: Joseluis
+Owner: JoseLuisBVaz
+
+Para reportar problemas o sugerencias, contactar al equipo de desarrollo.
+
+
+================================================================================
+🎨 SISTEMA DE COLORES CONSISTENTE (FRONTEND)
+================================================================================
+
+DESCRIPCIÓN GENERAL
+-------------------
+El frontend implementa un sistema de colores consistente para las tarjetas de
+cuenta que garantiza que la misma cuenta siempre tenga el mismo color en todas
+las pantallas de la aplicación (Home, Transferencias, Depósitos, Retiros).
+
+UBICACIÓN
+---------
+Archivos implementados:
+• src/app/home/home.ts
+• src/app/transfers/transfers.ts
+• src/app/depositos/depositos.ts
+• src/app/retiro/retiro.ts
+
+PALETA DE COLORES (5 gradientes)
+---------------------------------
+La aplicación utiliza una paleta fija de 5 gradientes CSS:
+
+1. Azul:        linear-gradient(135deg, #1a2aff 0%, #5b7dff 100%)
+2. Morado:      linear-gradient(135deg, #5a189a 0%, #9c1de7 100%)
+3. Cyan-Verde:  linear-gradient(135deg, #0ea5e9 0%, #22c55e 100%)
+4. Rojo-Naranja: linear-gradient(135deg, #ef4444 0%, #f59e0b 100%)
+5. Gris oscuro: linear-gradient(135deg, #111827 0%, #374151 100%)
+
+Código TypeScript:
+------------------
+private palettes: string[] = [
+  'linear-gradient(135deg, #1a2aff 0%, #5b7dff 100%)',
+  'linear-gradient(135deg, #5a189a 0%, #9c1de7 100%)',
+  'linear-gradient(135deg, #0ea5e9 0%, #22c55e 100%)',
+  'linear-gradient(135deg, #ef4444 0%, #f59e0b 100%)',
+  'linear-gradient(135deg, #111827 0%, #374151 100%)'
+];
+
+ALGORITMO DE ASIGNACIÓN
+------------------------
+El sistema utiliza una función hash determinística para asignar colores:
+
+1. FUNCIÓN HASH (hashString)
+   -------------------------
+   • Entrada: String (número de cuenta, CLABE o número de tarjeta)
+   • Salida: Número entero positivo (hash)
+   • Algoritmo: Operaciones bit a bit para generar hash consistente
+   
+   Código:
+   -------
+   private hashString(s: string): number {
+     let h = 0;
+     for (let i = 0; i < s.length; i++) {
+       h = (h << 5) - h + s.charCodeAt(i);  // Desplazamiento de bits
+       h |= 0;                               // Convierte a int32
+     }
+     return Math.abs(h);                     // Valor positivo
+   }
+
+   Ejemplo:
+   --------
+   hashString("4152313770004217") → 847362891
+   hashString("5678123498765432") → 923847562
+
+2. SELECCIÓN DE COLOR (getStyleFor)
+   ---------------------------------
+   • Paso 1: Obtener identificador único de la cuenta
+   • Paso 2: Calcular hash del identificador
+   • Paso 3: Aplicar módulo 5 (número de colores disponibles)
+   • Paso 4: Seleccionar color en la posición calculada
+   
+   Código:
+   -------
+   private getStyleFor(acc: Account): { [k: string]: string } {
+     const key = String(acc.accNum || acc.clabe || acc.cardNum || 'x');
+     const idx = this.hashString(key) % this.palettes.length;
+     return { background: this.palettes[idx], color: '#ffffff' };
+   }
+
+   Ejemplo completo:
+   -----------------
+   Cuenta: 4152-3137-7000-4217
+   ↓
+   Hash: 847362891
+   ↓
+   Índice: 847362891 % 5 = 1
+   ↓
+   Color: palettes[1] = Morado (#5a189a → #9c1de7)
+
+CARACTERÍSTICAS DEL SISTEMA
+----------------------------
+✅ Consistencia Total
+   • La misma cuenta SIEMPRE tiene el mismo color
+   • Funciona en todas las pantallas de la aplicación
+   • No importa el orden de carga de las cuentas
+
+✅ Sin Almacenamiento
+   • No requiere base de datos para guardar colores
+   • Se calcula en tiempo real en el navegador
+   • Cero overhead en el backend
+
+✅ Distribución Uniforme
+   • El operador módulo (%) distribuye equitativamente
+   • ~20% de cuentas tendrá cada uno de los 5 colores
+   • Evita concentración en un solo color
+
+✅ Identificación Visual
+   • Los usuarios pueden identificar sus cuentas por color
+   • Mejora la experiencia de usuario (UX)
+   • Reduce errores al seleccionar cuentas
+
+FLUJO DE APLICACIÓN
+--------------------
+1. Usuario inicia sesión
+2. Backend devuelve lista de cuentas (con accNum, clabe, cardNum)
+3. Frontend recibe las cuentas
+4. Para cada cuenta:
+   a. Se extrae su identificador único (accNum)
+   b. Se calcula el hash del identificador
+   c. Se determina el índice del color (hash % 5)
+   d. Se aplica el gradiente correspondiente
+5. La tarjeta se muestra con su color asignado
+
+PANTALLAS QUE USAN EL SISTEMA
+------------------------------
+• 🏠 Home: Tarjeta principal de cuenta y cuentas adicionales
+• 💸 Transfers: Cuenta origen y cuenta destino
+• 💰 Depósitos: Cuenta destino seleccionada
+• 🏧 Retiro: Cuenta seleccionada para retiro sin tarjeta
+
+EJEMPLO DE USO EN COMPONENTE
+-----------------------------
+// En el archivo .ts del componente
+export class MiComponente {
+  selectedCardStyle: any = {};
+  
+  private palettes: string[] = [...]; // Los 5 gradientes
+  
+  onAccountChange(): void {
+    if (this.selectedAccount) {
+      this.selectedCardStyle = this.getStyleFor(this.selectedAccount);
+    }
+  }
+  
+  private getStyleFor(acc: Account) {
+    const key = String(acc.accNum || acc.clabe || acc.cardNum || 'x');
+    const idx = this.hashString(key) % this.palettes.length;
+    return { background: this.palettes[idx], color: '#ffffff' };
+  }
+  
+  private hashString(s: string): number { ... }
+}
+
+// En el HTML del componente
+<div class="account-card" [ngStyle]="selectedCardStyle">
+  <!-- Contenido de la tarjeta -->
+</div>
+
+MATEMÁTICAS DEL HASH
+--------------------
+La función hash utiliza operaciones bit a bit para eficiencia:
+
+• (h << 5): Desplaza bits 5 posiciones a la izquierda (multiplica por 32)
+• (h << 5) - h: Equivalente a h * 31 (número primo para mejor distribución)
+• + s.charCodeAt(i): Suma el código ASCII del carácter
+• h |= 0: Operación OR bit a bit para convertir a entero de 32 bits
+• Math.abs(): Asegura que el resultado sea positivo
+
+Esta técnica es similar a la función hashCode() de Java y garantiza:
+• Consistencia: Mismo input → Mismo output
+• Rapidez: Operaciones O(n) donde n = longitud del string
+• Distribución: Valores distribuidos uniformemente
+
+VENTAJAS SOBRE OTROS ENFOQUES
+------------------------------
+❌ Color Aleatorio (Random):
+   • Problema: La misma cuenta tendría diferentes colores cada vez
+   • Confunde al usuario
+
+❌ Color por Posición en Array:
+   • Problema: Si cambia el orden, cambia el color
+   • No es consistente entre pantallas
+
+❌ Color Almacenado en BD:
+   • Problema: Requiere campo extra en base de datos
+   • Mayor complejidad y mantenimiento
+   • Overhead en consultas
+
+✅ Color por Hash (Implementado):
+   • Determinístico: Siempre el mismo resultado
+   • Sin almacenamiento: Cálculo en tiempo real
+   • Consistente: Funciona en todas las pantallas
+   • Eficiente: Operaciones rápidas
+
+COMPATIBILIDAD
+--------------
+• Navegadores: Todos los modernos (Chrome, Firefox, Safari, Edge)
+• CSS: Gradientes lineales soportados desde 2012
+• TypeScript: Funciones puras sin dependencias externas
+• Angular: Directiva [ngStyle] para binding dinámico
+
+NOTAS TÉCNICAS
+--------------
+⚠️ El color NO se envía desde el backend
+   • Es una decisión de presentación (frontend)
+   • El backend solo envía los datos de la cuenta
+   • El cálculo es 100% en el navegador
+
+⚠️ No afecta la funcionalidad
+   • Si el hash falla, se usa color por defecto
+   • Los colores son solo visuales, no críticos
+   • La aplicación funciona sin el sistema de colores
+
+⚠️ Cambiar la paleta afecta todos los colores
+   • Si se modifica el array de palettes
+   • Las mismas cuentas tendrán diferentes colores
+   • Mantener la paleta estable para consistencia
+
+
+================================================================================
+📊 CONSULTA SQL: Estado de Cuenta Completo
+================================================================================
+
+DESCRIPCIÓN
+-----------
+Esta consulta SQL combina todos los tipos de movimientos de una cuenta bancaria
+(transferencias enviadas/recibidas, depósitos y retiros) en una sola lista 
+ordenada cronológicamente, mostrando el saldo después de cada operación.
+
+QUERY COMPLETO
+--------------
+SELECT 
+  'transfer_out' AS type,
+  t.timestamp AS date,
+  t.description,
+  t.ammount AS amount,
+  t.fee,
+  origin_acc.balance AS balance,
+  origin_acc.accNum AS origin,
+  dest_acc.accNum AS destiny
+FROM transfer t
+INNER JOIN cAccount origin_acc ON t.origin = origin_acc.accountId
+INNER JOIN cAccount dest_acc ON t.destiny = dest_acc.accountId
+WHERE origin_acc.accountId = ?
+
+UNION ALL
+
+SELECT 
+  'transfer_in' AS type,
+  t.timestamp AS date,
+  t.description,
+  t.ammount AS amount,
+  0 AS fee,
+  dest_acc.balance AS balance,
+  origin_acc.accNum AS origin,
+  dest_acc.accNum AS destiny
+FROM transfer t
+INNER JOIN cAccount origin_acc ON t.origin = origin_acc.accountId
+INNER JOIN cAccount dest_acc ON t.destiny = dest_acc.accountId
+WHERE dest_acc.accountId = ?
+
+UNION ALL
+
+SELECT 
+  'deposit' AS type,
+  d.timestamp AS date,
+  d.description,
+  d.ammount AS amount,
+  0 AS fee,
+  acc.balance AS balance,
+  NULL AS origin,
+  acc.accNum AS destiny
+FROM deposito d
+INNER JOIN cAccount acc ON d.accountId = acc.accountId
+WHERE acc.accountId = ?
+
+UNION ALL
+
+SELECT 
+  'withdrawal' AS type,
+  r.timestamp AS date,
+  r.description,
+  r.ammount AS amount,
+  0 AS fee,
+  acc.balance AS balance,
+  acc.accNum AS origin,
+  NULL AS destiny
+FROM retiros r
+INNER JOIN cAccount acc ON r.accountId = acc.accountId
+WHERE acc.accountId = ?
+
+ORDER BY date DESC;
+
+EXPLICACIÓN POR PARTES
+----------------------
+
+1️⃣ TRANSFERENCIAS ENVIADAS (transfer_out):
+   ---------------------------------------
+   • Busca en la tabla 'transfer' donde origin = accountId
+   • Hace JOIN con cuentas origen y destino para obtener accNum
+   • El saldo (balance) es de la cuenta origen (actual después del envío)
+   • Incluye la comisión (fee) que se cobró
+   • Muestra ambas cuentas: origin (actual) y destiny (recibió el dinero)
+
+2️⃣ TRANSFERENCIAS RECIBIDAS (transfer_in):
+   ----------------------------------------
+   • Busca en la tabla 'transfer' donde destiny = accountId
+   • Hace JOIN con cuentas origen y destino para obtener accNum
+   • El saldo (balance) es de la cuenta destino (actual después de recibir)
+   • Fee es 0 (no se cobra comisión al recibir dinero)
+   • Muestra ambas cuentas: origin (envió) y destiny (cuenta actual)
+
+3️⃣ DEPÓSITOS (deposit):
+   ---------------------
+   • Busca en la tabla 'deposito' donde accountId = cuenta actual
+   • Hace JOIN con cAccount para obtener accNum y balance
+   • origin es NULL (no aplica en depósitos)
+   • destiny es el accNum de la cuenta actual
+   • Fee siempre es 0
+
+4️⃣ RETIROS (withdrawal):
+   ----------------------
+   • Busca en la tabla 'retiros' donde accountId = cuenta actual
+   • Hace JOIN con cAccount para obtener accNum y balance
+   • origin es el accNum de la cuenta actual
+   • destiny es NULL (no aplica en retiros)
+   • Fee siempre es 0
+
+UNION ALL
+---------
+• Combina los 4 resultados en una sola tabla
+• NO elimina duplicados (más rápido que UNION)
+• Cada sub-consulta debe tener el mismo número y tipo de columnas
+
+ORDER BY date DESC
+------------------
+• Ordena todos los movimientos por fecha y hora
+• DESC = Descendente (más recientes primero)
+• Permite ver el historial cronológico completo
+
+COLUMNAS DEL RESULTADO
+----------------------
+• type: Identifica el tipo de movimiento (transfer_out, transfer_in, deposit, withdrawal)
+• date: Fecha y hora exacta del movimiento (DATETIME)
+• description: Texto descriptivo de la operación
+• amount: Monto de la operación (DECIMAL 12,2)
+• fee: Comisión cobrada (DECIMAL 12,2), 0 si no aplica
+• balance: Saldo en la cuenta DESPUÉS de la operación
+• origin: Número de cuenta origen (NULL si no aplica)
+• destiny: Número de cuenta destino (NULL si no aplica)
+
+EJEMPLO DE RESULTADO
+--------------------
+| type         | date                | description    | amount  | fee  | balance  | origin      | destiny     |
+|--------------|---------------------|----------------|---------|------|----------|-------------|-------------|
+| deposit      | 2025-11-03 14:30:00 | Depósito ATM   | 5000.00 | 0.00 | 15000.00 | NULL        | 0000026492  |
+| transfer_out | 2025-11-03 10:15:00 | Pago servicios | 1500.00 | 17.50| 10000.00 | 0000026492  | 6467569865  |
+| transfer_in  | 2025-11-02 18:45:00 | Reembolso      | 2000.00 | 0.00 | 11517.50 | 6467890123  | 0000026492  |
+| withdrawal   | 2025-11-01 09:00:00 | Retiro cajero  | 500.00  | 0.00 | 9517.50  | 0000026492  | NULL        |
+
+ÍNDICES RECOMENDADOS
+--------------------
+Para optimizar el rendimiento de esta consulta:
+
+1. Índice en transfer.origin:
+   CREATE INDEX idx_transfer_origin ON transfer(origin);
+
+2. Índice en transfer.destiny:
+   CREATE INDEX idx_transfer_destiny ON transfer(destiny);
+
+3. Índice en deposito.accountId:
+   CREATE INDEX idx_deposito_account ON deposito(accountId);
+
+4. Índice en retiros.accountId:
+   CREATE INDEX idx_retiros_account ON retiros(accountId);
+
+5. Índice compuesto en timestamp para ORDER BY:
+   CREATE INDEX idx_transfer_timestamp ON transfer(timestamp);
+   CREATE INDEX idx_deposito_timestamp ON deposito(timestamp);
+   CREATE INDEX idx_retiros_timestamp ON retiros(timestamp);
+
+RENDIMIENTO
+-----------
+• Con índices: O(log n) para cada sub-consulta
+• UNION ALL: O(n) combina resultados sin eliminar duplicados
+• ORDER BY: O(n log n) ordena el resultado final
+• Total: Eficiente incluso con miles de movimientos
+
+LIMITACIONES
+------------
+⚠️ No filtra por fecha (se debe hacer en el frontend o agregando WHERE)
+⚠️ No pagina resultados (retorna todos los movimientos)
+⚠️ El saldo es el ACTUAL, no el histórico al momento del movimiento
+⚠️ Asume que las tablas tienen columnas 'timestamp' y 'description'
+
+
+================================================================================
+🔄 FLUJO COMPLETO: Estado de Cuenta
+================================================================================
+
+1. FRONTEND (Angular - EstadoCuenta Component)
+   │
+   ├─→ Usuario navega a /estado-cuenta desde Home
+   │
+   ├─→ Componente obtiene accountId de la cuenta seleccionada
+   │   (puede ser la principal o seleccionada de un dropdown)
+   │
+   └─→ HTTP GET a: http://localhost:3000/api/account-statement/:accountId
+
+2. BACKEND (Node.js/Express)
+   │
+   ├─→ server.js recibe la petición en router /api/usuarios
+   │
+   ├─→ Router (usuarios.js) extrae accountId del parámetro URL
+   │
+   └─→ Controller (usuariosCtrl.js - getAccountStatement)
+       │
+       ├─→ Valida que accountId sea un número válido
+       ├─→ Ejecuta query SQL con UNION ALL (4 sub-consultas)
+       └─→ Retorna JSON con array de movimientos
+
+3. BASE DE DATOS (MySQL)
+   │
+   ├─→ Ejecuta 4 sub-consultas:
+   │   1. SELECT transferencias donde origin = accountId
+   │   2. SELECT transferencias donde destiny = accountId
+   │   3. SELECT depósitos donde accountId = accountId
+   │   4. SELECT retiros donde accountId = accountId
+   │
+   ├─→ UNION ALL combina los 4 resultados
+   │
+   └─→ ORDER BY date DESC ordena por fecha descendente
+
+4. PROCESAMIENTO EN FRONTEND
+   │
+   ├─→ Recibe JSON con array de movimientos
+   │
+   ├─→ Aplica filtros locales (si el usuario selecciona):
+   │   • Por tipo de movimiento (transfer, deposit, withdrawal)
+   │   • Por rango de fechas (desde/hasta)
+   │   • Por búsqueda de texto (descripción, cuenta)
+   │
+   ├─→ Implementa paginación local:
+   │   • Muestra 20 movimientos por página
+   │   • Botones siguiente/anterior
+   │   • Indicador de página actual
+   │
+   └─→ Renderiza tabla HTML con:
+       • Fecha formateada (DD/MM/YYYY HH:MM)
+       • Tipo con badge colorido e icono
+       • Descripción truncada con tooltip
+       • Monto con signo (+ entrada, - salida)
+       • Comisión (si aplica)
+       • Saldo formateado con separadores de miles
+
+5. INTERACCIÓN DEL USUARIO
+   │
+   ├─→ Cambiar de cuenta:
+   │   • Click en tarjeta de cuenta principal
+   │   • Aparece lista de otras cuentas
+   │   • Selecciona otra cuenta
+   │   • Se recarga el estado de cuenta
+   │
+   ├─→ Filtrar movimientos:
+   │   • Selecciona tipo de movimiento en dropdown
+   │   • Ingresa fechas en date inputs
+   │   • Escribe texto en campo de búsqueda
+   │   • Los filtros se aplican en tiempo real
+   │
+   ├─→ Limpiar filtros:
+   │   • Click en botón "Limpiar filtros"
+   │   • Resetea todos los filtros a valores por defecto
+   │
+   └─→ Navegar entre páginas:
+       • Click en botones "Anterior" / "Siguiente"
+       • Actualiza la página mostrada
+
+COMPONENTES DEL FRONTEND
+-------------------------
+• estado-cuenta.ts: Lógica del componente
+  - loadAccountStatement(): Carga movimientos desde API
+  - applyFilters(): Filtra movimientos localmente
+  - paginateMovements(): Implementa paginación
+  - selectAccount(): Cambia de cuenta
+  - formatDate(): Formatea fechas para mostrar
+  - getMovementIcon(): Retorna icono según tipo
+  - getMovementLabel(): Retorna texto según tipo
+  - getMovementClass(): Retorna clase CSS según tipo
+
+• estado-cuenta.html: Estructura HTML
+  - Navbar superior
+  - Tarjeta de cuenta con colores dinámicos
+  - Selector de otras cuentas (dropdown)
+  - Sección de filtros (tipo, fechas, búsqueda)
+  - Tabla de movimientos con diseño responsive
+  - Paginación con botones e indicador
+  - Estados vacíos (sin movimientos / sin resultados)
+
+• estado-cuenta.css: Estilos visuales
+  - Diseño similar a componente Home
+  - Tarjetas con gradientes de colores
+  - Tabla responsive con hover effects
+  - Badges coloridos para tipos de movimiento
+  - Animaciones suaves (transitions)
+  - Media queries para móviles
+
+CARACTERÍSTICAS DEL FRONTEND
+-----------------------------
+✅ Diseño consistente con Home
+✅ Tarjetas de cuenta con colores por hash
+✅ Selector de cuentas con animación
+✅ Filtros múltiples (tipo, fecha, texto)
+✅ Paginación local (20 items por página)
+✅ Tabla responsive para móviles
+✅ Truncamiento de texto largo con tooltips
+✅ Iconos Font Awesome para cada tipo
+✅ Estados de carga y error
+✅ Formateo de números y fechas
+✅ Badges coloridos (verde entrada, rojo salida)
+
+FLUJO DE DATOS COMPLETO
+------------------------
+[Usuario] → [EstadoCuenta Component] → [HTTP GET] → [Backend API]
+    ↓                                                      ↓
+[Selecciona cuenta]                               [Query SQL]
+    ↓                                                      ↓
+[Muestra loading]                              [MySQL ejecuta UNION]
+    ↓                                                      ↓
+[Recibe JSON]  ←  [HTTP Response]  ←  [Retorna movements array]
+    ↓
+[Procesa localmente]
+    ↓
+[Aplica filtros]
+    ↓
+[Pagina resultados]
+    ↓
+[Renderiza tabla]
+    ↓
+[Usuario ve movimientos]
+
+
+================================================================================
+🧪 PRUEBAS DEL ENDPOINT: Estado de Cuenta
+================================================================================
+
+ENDPOINT: GET /api/account-statement/:accountId
+-----------------------------------------------
+
+CASO 1: Consulta exitosa con movimientos
+-----------------------------------------
+curl -X GET http://localhost:3000/api/account-statement/1
+
+Respuesta esperada (200 OK):
+{
+  "success": true,
+  "movements": [
+    {
+      "type": "deposit",
+      "date": "2025-11-03T14:30:00.000Z",
+      "description": "Depósito desde ATM",
+      "amount": 5000.00,
+      "fee": 0.00,
+      "balance": 15000.00,
+      "origin": null,
+      "destiny": "0000026492"
+    },
+    {
+      "type": "transfer_out",
+      "date": "2025-11-03T10:15:00.000Z",
+      "description": "Pago de servicios",
+      "amount": 1500.00,
+      "fee": 17.50,
+      "balance": 10000.00,
+      "origin": "0000026492",
+      "destiny": "646756986252423592"
+    },
+    {
+      "type": "transfer_in",
+      "date": "2025-11-02T18:45:00.000Z",
+      "description": "Reembolso",
+      "amount": 2000.00,
+      "fee": 0.00,
+      "balance": 11517.50,
+      "origin": "646789012345678901",
+      "destiny": "0000026492"
+    }
+  ]
+}
+
+CASO 2: Cuenta sin movimientos
+-------------------------------
+curl -X GET http://localhost:3000/api/account-statement/999
+
+Respuesta esperada (200 OK):
+{
+  "success": true,
+  "movements": []
+}
+
+CASO 3: accountId inválido (no numérico)
+-----------------------------------------
+curl -X GET http://localhost:3000/api/account-statement/abc
+
+Respuesta esperada (400 Bad Request):
+{
+  "success": false,
+  "msg": "ID de cuenta inválido"
+}
+
+CASO 4: accountId faltante
+---------------------------
+curl -X GET http://localhost:3000/api/account-statement/
+
+Respuesta esperada (400 Bad Request):
+{
+  "success": false,
+  "msg": "Se requiere el ID de la cuenta"
+}
+
+CASO 5: Error de base de datos
+-------------------------------
+(Simular deteniendo MySQL)
+
+Respuesta esperada (500 Internal Server Error):
+{
+  "success": false,
+  "msg": "Error al obtener el estado de cuenta"
+}
+
+PRUEBAS CON POSTMAN
+-------------------
+1. Crear colección "Estado de Cuenta"
+
+2. Request 1: Consulta exitosa
+   • Método: GET
+   • URL: http://localhost:3000/api/account-statement/1
+   • Headers: ninguno
+   • Tests:
+     pm.test("Status 200", () => pm.response.to.have.status(200));
+     pm.test("Success true", () => pm.expect(pm.response.json().success).to.be.true);
+     pm.test("Has movements", () => pm.expect(pm.response.json().movements).to.be.an('array'));
+
+3. Request 2: Validar estructura
+   • URL: http://localhost:3000/api/account-statement/1
+   • Tests:
+     const mov = pm.response.json().movements[0];
+     pm.test("Has type", () => pm.expect(mov).to.have.property('type'));
+     pm.test("Has date", () => pm.expect(mov).to.have.property('date'));
+     pm.test("Has amount", () => pm.expect(mov).to.have.property('amount'));
+
+PRUEBAS DESDE ANGULAR
+----------------------
+// En el componente de prueba
+ngOnInit() {
+  const accountId = 1;
+  this.http.get<any>(`http://localhost:3000/api/account-statement/${accountId}`)
+    .subscribe(
+      response => {
+        console.log('✅ Movimientos:', response.movements);
+        console.log('📊 Total:', response.movements.length);
+        
+        // Verificar estructura
+        response.movements.forEach(mov => {
+          console.assert(mov.type, 'Falta type');
+          console.assert(mov.date, 'Falta date');
+          console.assert(mov.amount !== undefined, 'Falta amount');
+          console.assert(mov.balance !== undefined, 'Falta balance');
+        });
+      },
+      error => {
+        console.error('❌ Error:', error);
+      }
+    );
+}
+
+LOGS ESPERADOS EN CONSOLA DEL BACKEND
+--------------------------------------
+[ACCOUNT STATEMENT] Consultando movimientos para cuenta: 1
+[ACCOUNT STATEMENT] ✅ 15 movimientos encontrados
+
+O en caso de error:
+❌ Error al consultar estado de cuenta: Error: connect ECONNREFUSED
+
+
+================================================================================
+  21. SISTEMA DE LÍNEA DE CRÉDITO CON LÍMITE DINÁMICO
+================================================================================
+
+DESCRIPCIÓN GENERAL
+-------------------
+Sistema completo de línea de crédito que calcula el límite automáticamente
+basándose en el historial de depósitos del cliente. El límite se ajusta
+dinámicamente según los ingresos promedio mensuales de los últimos 6 meses.
+
+FÓRMULA DE CÁLCULO
+------------------
+Límite de Crédito = (Promedio mensual de depósitos últimos 6 meses) × 6
+
+Ejemplo:
+- Cliente deposita $1,000 mensuales en promedio
+- Límite calculado: $1,000 × 6 = $6,000
+
+Condiciones:
+1. Requiere al menos 3 meses de historial de depósitos
+2. Si no hay historial suficiente: límite mínimo de $5,000
+3. Los límites se redondean a múltiplos de $1,000
+4. El cálculo se actualiza en cada disposición
+
+
+--------------------------------------------------------------------------------
+FUNCIÓN: fn_calculate_credit_limit
+--------------------------------------------------------------------------------
+
+PROPÓSITO
+---------
+Calcula el límite de crédito de un cliente basándose en su historial de depósitos.
+
+SINTAXIS SQL
+------------
+SELECT fn_calculate_credit_limit(mainId) AS creditLimit;
+
+PARÁMETROS DE ENTRADA
+---------------------
+• p_mainId (INT): ID del usuario (main) para calcular el límite
+
+RETORNO
+-------
+DECIMAL(12,2): Límite de crédito calculado en pesos
+
+LÓGICA INTERNA
+--------------
+1. Consulta depósitos de los últimos 6 meses
+2. Agrupa por mes y suma totales mensuales
+3. Calcula promedio mensual
+4. Multiplica promedio × 6
+5. Valida mínimo de $5,000
+6. Redondea a múltiplos de $1,000
+
+EJEMPLO DE USO
+--------------
+-- Ver límite de crédito del usuario con mainId = 5
+SELECT fn_calculate_credit_limit(5) AS limiteCredito;
+
+-- Resultado esperado:
+-- +----------------+
+-- | limiteCredito  |
+-- +----------------+
+-- |      15000.00  |
+-- +----------------+
+
+
+QUERY INTERNA
+-------------
+SELECT 
+    COALESCE(AVG(monthly_total), 0),
+    COUNT(DISTINCT deposit_month)
+FROM (
+    SELECT 
+        DATE_FORMAT(depositDate, '%Y-%m') AS deposit_month,
+        SUM(amount) AS monthly_total
+    FROM deposito
+    WHERE mainId = p_mainId
+      AND depositDate >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+    GROUP BY DATE_FORMAT(depositDate, '%Y-%m')
+) AS monthly_deposits;
+
+
+--------------------------------------------------------------------------------
+ENDPOINT 1: POST /api/dispose-credit
+--------------------------------------------------------------------------------
+
+DESCRIPCIÓN
+-----------
+Realiza una disposición de crédito validando el límite dinámico calculado
+basándose en los depósitos del cliente.
+
+MÉTODO HTTP
+-----------
+POST
+
+URL COMPLETA
+------------
+http://localhost:3000/api/dispose-credit
+
+HEADERS
+-------
+Content-Type: application/json
+
+BODY (JSON)
+-----------
+{
+  "accountId": 1,
+  "amount": 5000.00,
+  "description": "Compra de equipo"
+}
+
+PARÁMETROS DEL BODY
+-------------------
+• accountId (Number, requerido): ID de la cuenta de crédito
+• amount (Number, requerido): Monto a disponer (debe ser > 0)
+• description (String, opcional): Descripción de la disposición
+
+VALIDACIONES
+------------
+1. accountId debe ser válido y existir
+2. La cuenta debe ser de tipo 'Credito'
+3. amount debe ser mayor a 0
+4. El monto no puede exceder el crédito disponible
+5. Límite se calcula dinámicamente en cada disposición
+
+RESPUESTA EXITOSA (200)
+------------------------
+{
+  "success": true,
+  "msg": "Disposición de crédito realizada exitosamente",
+  "data": {
+    "disposalId": 23,
+    "availableAfter": 38000.00,
+    "creditLimit": 45000.00,
+    "usedCredit": 7000.00,
+    "message": "Disposición realizada exitosamente"
+  }
+}
+
+CAMPOS DE LA RESPUESTA
+----------------------
+• disposalId: ID de la disposición registrada
+• availableAfter: Crédito disponible después de la disposición
+• creditLimit: Límite total calculado dinámicamente
+• usedCredit: Crédito ya utilizado
+• message: Mensaje de confirmación
+
+RESPUESTAS DE ERROR
+-------------------
+400 - Parámetros inválidos:
+{
+  "success": false,
+  "msg": "Parámetros incompletos o inválidos"
+}
+
+404 - Cuenta no encontrada:
+{
+  "success": false,
+  "msg": "Cuenta no encontrada"
+}
+
+400 - Crédito insuficiente:
+{
+  "success": false,
+  "msg": "Crédito insuficiente. Disponible: $35000. Límite: $45000"
+}
+
+500 - Error del servidor:
+{
+  "success": false,
+  "msg": "Error al procesar disposición de crédito"
+}
+
+STORED PROCEDURE ASOCIADO
+--------------------------
+sp_dispose_credit(accountId, amount, description)
+
+FLUJO DE EJECUCIÓN
+------------------
+1. Validar parámetros de entrada
+2. Iniciar transacción
+3. Bloquear cuenta (FOR UPDATE)
+4. Validar que sea cuenta de crédito
+5. Calcular límite dinámicamente: fn_calculate_credit_limit(mainId)
+6. Calcular disponible: límite + balance (balance negativo = deuda)
+7. Validar que amount <= disponible
+8. Actualizar balance: balance - amount (aumenta deuda)
+9. Registrar en tabla creditDisposal
+10. Commit y retornar resultado
+
+EJEMPLO DE PRUEBA - POSTMAN
+----------------------------
+URL: http://localhost:3000/api/dispose-credit
+Método: POST
+Body (raw JSON):
+{
+  "accountId": 1,
+  "amount": 3000,
+  "description": "Disposición para compras"
+}
+
+Tests (Postman):
+pm.test("Status 200", () => pm.response.to.have.status(200));
+pm.test("Success true", () => pm.expect(pm.response.json().success).to.be.true);
+pm.test("Has disposalId", () => pm.expect(pm.response.json().data.disposalId).to.exist);
+
+
+--------------------------------------------------------------------------------
+ENDPOINT 2: GET /api/credit-info/:accountId
+--------------------------------------------------------------------------------
+
+DESCRIPCIÓN
+-----------
+Obtiene información completa del crédito de una cuenta, incluyendo el límite
+calculado dinámicamente, saldo usado, disponible y porcentaje de utilización.
+
+MÉTODO HTTP
+-----------
+GET
+
+URL COMPLETA
+------------
+http://localhost:3000/api/credit-info/1
+
+PARÁMETROS DE URL
+-----------------
+• accountId (Number, requerido): ID de la cuenta de crédito
+
+QUERY SQL
+---------
+SELECT 
+  ca.accountId,
+  ca.accNum,
+  ca.clabe,
+  ca.cardNum,
+  ca.balance,
+  ca.accType,
+  ca.mainId,
+  fn_calculate_credit_limit(ca.mainId) AS creditLimit,
+  CASE 
+    WHEN ca.accType = 'Credito' 
+    THEN (fn_calculate_credit_limit(ca.mainId) + ca.balance)
+    ELSE 0
+  END AS available,
+  CASE 
+    WHEN ca.accType = 'Credito' 
+    THEN (fn_calculate_credit_limit(ca.mainId) - (fn_calculate_credit_limit(ca.mainId) + ca.balance))
+    ELSE 0
+  END AS used,
+  CASE 
+    WHEN ca.accType = 'Credito' AND fn_calculate_credit_limit(ca.mainId) > 0 
+    THEN ROUND(((fn_calculate_credit_limit(ca.mainId) - (fn_calculate_credit_limit(ca.mainId) + ca.balance)) / fn_calculate_credit_limit(ca.mainId)) * 100, 2)
+    ELSE 0
+  END AS usedPercentage
+FROM cAccount ca
+WHERE ca.accountId = ?
+
+RESPUESTA EXITOSA (200)
+------------------------
+{
+  "success": true,
+  "msg": "Información de crédito obtenida",
+  "data": {
+    "accountId": 1,
+    "accNum": "1234567890",
+    "clabe": "012345678901234567",
+    "cardNum": "4152313812345678",
+    "balance": -7000.00,
+    "accType": "Credito",
+    "mainId": 5,
+    "creditLimit": 45000.00,
+    "available": 38000.00,
+    "used": 7000.00,
+    "usedPercentage": 15.56
+  }
+}
+
+CAMPOS DE LA RESPUESTA
+----------------------
+• accountId: ID de la cuenta
+• accNum: Número de cuenta (10 dígitos)
+• clabe: CLABE interbancaria (18 dígitos)
+• cardNum: Número de tarjeta (16 dígitos)
+• balance: Balance actual (negativo = deuda)
+• accType: Tipo de cuenta (debe ser 'Credito')
+• mainId: ID del usuario propietario
+• creditLimit: Límite calculado dinámicamente
+• available: Crédito disponible para usar
+• used: Crédito ya utilizado
+• usedPercentage: Porcentaje de crédito usado (0-100)
+
+RESPUESTAS DE ERROR
+-------------------
+400 - ID inválido:
+{
+  "success": false,
+  "msg": "ID de cuenta inválido"
+}
+
+404 - Cuenta no encontrada:
+{
+  "success": false,
+  "msg": "Cuenta no encontrada"
+}
+
+500 - Error del servidor:
+{
+  "success": false,
+  "msg": "Error al obtener información de crédito"
+}
+
+EJEMPLO DE PRUEBA - POSTMAN
+----------------------------
+URL: http://localhost:3000/api/credit-info/1
+Método: GET
+
+Tests:
+pm.test("Status 200", () => pm.response.to.have.status(200));
+pm.test("Has creditLimit", () => pm.expect(pm.response.json().data.creditLimit).to.be.above(0));
+pm.test("Available calculated", () => {
+  const data = pm.response.json().data;
+  const expectedAvailable = data.creditLimit + data.balance;
+  pm.expect(data.available).to.equal(expectedAvailable);
+});
+
+
+--------------------------------------------------------------------------------
+ENDPOINT 3: GET /api/credit-history/:accountId
+--------------------------------------------------------------------------------
+
+DESCRIPCIÓN
+-----------
+Obtiene el historial completo de disposiciones de crédito de una cuenta,
+ordenado por fecha descendente (más recientes primero).
+
+MÉTODO HTTP
+-----------
+GET
+
+URL COMPLETA
+------------
+http://localhost:3000/api/credit-history/1
+
+PARÁMETROS DE URL
+-----------------
+• accountId (Number, requerido): ID de la cuenta de crédito
+
+QUERY SQL
+---------
+SELECT 
+  disposalId,
+  accountId,
+  amount,
+  description,
+  timestamp,
+  availableAfter,
+  DATE_FORMAT(timestamp, '%Y-%m-%d %H:%i:%s') AS formattedDate
+FROM creditDisposal
+WHERE accountId = ?
+ORDER BY timestamp DESC
+
+RESPUESTA EXITOSA (200)
+------------------------
+{
+  "success": true,
+  "msg": "Historial de crédito obtenido",
+  "data": [
+    {
+      "disposalId": 45,
+      "accountId": 1,
+      "amount": 5000.00,
+      "description": "Compra de equipo",
+      "timestamp": "2025-11-03T14:30:00.000Z",
+      "availableAfter": 38000.00,
+      "formattedDate": "2025-11-03 14:30:00"
+    },
+    {
+      "disposalId": 44,
+      "accountId": 1,
+      "amount": 2000.00,
+      "description": "Disposición urgente",
+      "timestamp": "2025-11-02T10:15:00.000Z",
+      "availableAfter": 43000.00,
+      "formattedDate": "2025-11-02 10:15:00"
+    }
+  ]
+}
+
+CAMPOS DE CADA REGISTRO
+------------------------
+• disposalId: ID único de la disposición
+• accountId: ID de la cuenta
+• amount: Monto dispuesto
+• description: Descripción de la disposición
+• timestamp: Fecha/hora de la disposición (ISO format)
+• availableAfter: Crédito disponible después de esta disposición
+• formattedDate: Fecha formateada legible
+
+RESPUESTAS DE ERROR
+-------------------
+400 - ID inválido:
+{
+  "success": false,
+  "msg": "ID de cuenta inválido"
+}
+
+404 - Sin historial:
+{
+  "success": true,
+  "msg": "No hay historial de disposiciones",
+  "data": []
+}
+
+500 - Error del servidor:
+{
+  "success": false,
+  "msg": "Error al obtener historial de crédito"
+}
+
+EJEMPLO DE PRUEBA - POSTMAN
+----------------------------
+URL: http://localhost:3000/api/credit-history/1
+Método: GET
+
+Tests:
+pm.test("Status 200", () => pm.response.to.have.status(200));
+pm.test("Has data array", () => pm.expect(pm.response.json().data).to.be.an('array'));
+pm.test("Ordered by date DESC", () => {
+  const data = pm.response.json().data;
+  if (data.length > 1) {
+    pm.expect(new Date(data[0].timestamp) >= new Date(data[1].timestamp)).to.be.true;
+  }
+});
+
+
+================================================================================
+  INTEGRACIÓN FRONTEND - COMPONENTE DE CRÉDITO
+================================================================================
+
+UBICACIÓN
+---------
+/src/app/credito/
+
+ARCHIVOS
+--------
+• credito.ts: Lógica del componente
+• credito.html: Template HTML
+• credito.css: Estilos
+• credito.spec.ts: Tests unitarios
+
+RUTA
+----
+/credito (requiere autenticación role 'c')
+
+FUNCIONALIDADES
+---------------
+1. ✅ Selector de cuentas de crédito
+2. ✅ Visualización de información del crédito:
+   - Límite calculado dinámicamente
+   - Crédito usado
+   - Crédito disponible
+   - Barra de progreso visual
+3. ✅ Formulario de disposición
+4. ✅ Historial de disposiciones con paginación
+5. ✅ Colores consistentes por cuenta (hash-based)
+6. ✅ Diseño responsive
+
+SERVICIOS HTTP UTILIZADOS
+--------------------------
+• GET /api/credit-info/:accountId
+• POST /api/dispose-credit
+• GET /api/credit-history/:accountId
+
+
+================================================================================
+  FLUJO COMPLETO DE USO
+================================================================================
+
+1. CREAR CUENTA DE CRÉDITO
+---------------------------
+-- Insertar cuenta de tipo Credito
+INSERT INTO cAccount (mainId, accNum, clabe, cardNum, balance, accType)
+VALUES (5, '9876543210', '012345678901234567', '4152313812345678', 0, 'Credito');
+
+2. GENERAR HISTORIAL DE DEPÓSITOS
+----------------------------------
+-- Simular depósitos mensuales para calcular límite
+INSERT INTO deposito (mainId, accNum, amount, description, depositDate)
+VALUES 
+  (5, '1234567890', 1200, 'Nómina Octubre', '2025-10-15'),
+  (5, '1234567890', 1000, 'Nómina Septiembre', '2025-09-15'),
+  (5, '1234567890', 1100, 'Nómina Agosto', '2025-08-15'),
+  (5, '1234567890', 950, 'Nómina Julio', '2025-07-15');
+
+3. VERIFICAR LÍMITE CALCULADO
+------------------------------
+SELECT fn_calculate_credit_limit(5) AS limiteCredito;
+-- Resultado: $6,000 (promedio ~$1,063 × 6 ≈ $6,000 redondeado)
+
+4. REALIZAR DISPOSICIÓN
+-----------------------
+CALL sp_dispose_credit(1, 3000, 'Compra de laptop');
+
+5. VERIFICAR CRÉDITO DISPONIBLE
+--------------------------------
+SELECT 
+  fn_calculate_credit_limit(mainId) AS limite,
+  balance AS deuda,
+  (fn_calculate_credit_limit(mainId) + balance) AS disponible
+FROM cAccount
+WHERE accountId = 1;
+
+
+================================================================================
+                            FIN DE LA DOCUMENTACIÓN
+================================================================================
+
+

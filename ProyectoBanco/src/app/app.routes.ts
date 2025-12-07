@@ -1,3 +1,39 @@
-import { Routes } from '@angular/router';
+import { Routes, RouterModule } from '@angular/router';
 
-export const routes: Routes = [];
+import { LogIn } from './login/login';
+import { Formulario } from './formulario/formulario';   
+import { Prestamo } from './prestamos/prestamos';
+import { Novedades } from './novedades/novedades';
+import { Cancelacion } from './cancelacion/cancelacion';
+import { DetallesCuenta } from './user/user';
+import { Main } from './main/main';
+import { AuthGuard } from './guards/auth.guard';
+import { RoleGuard } from './guards/role.guard';
+import { Register } from './register/register';
+import { Home } from './home/home';
+import { Transfers } from './transfers/transfers';
+import { Depositos } from './depositos/depositos';
+import { FormularioContrasena } from './formulario-contrasena/formulario-contrasena';
+import { Retiro } from './retiro/retiro';
+import { EstadoCuenta } from './estado-cuenta/estado-cuenta';
+import { Credito } from './credito/credito';
+import { Progreso } from './progreso/progreso';
+
+export const routes: Routes = [
+    {path: '', component: Main},
+    {path: 'login', component: LogIn},
+    {path: 'formulario', component: Formulario, canActivate: [AuthGuard, RoleGuard], data: { roles: ['e','m'] }},
+    {path: 'register', component: Register},
+    {path: 'prestamo', component: Prestamo},
+    {path: 'novedades', component: Novedades, canActivate: [AuthGuard, RoleGuard], data: { roles: ['e','m'] }},
+    {path: 'cancelacion', component: Cancelacion, canActivate: [AuthGuard, RoleGuard], data: { roles: ['e','m'] }},
+    {path: 'usuario', component: DetallesCuenta, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }},
+    {path: 'cuenta', component: EstadoCuenta, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }},
+    {path: 'credito', component: Credito, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }},
+    {path: 'home', component: Home, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }},
+    {path: 'transferencia', component: Transfers, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }},
+    {path: 'deposito', component: Depositos, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }},
+    {path: 'retiro', component: Retiro, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }},
+    {path: 'progreso', component: Progreso, canActivate: [AuthGuard, RoleGuard], data: { roles: ['c'] }},
+    {path: 'formulario-contrasena', component: FormularioContrasena},
+];

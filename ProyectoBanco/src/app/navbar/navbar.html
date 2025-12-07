@@ -1,14 +1,92 @@
 <nav class="navbar">
-    <div class="icon-left" (click)="logout()">
-    <img src="assets/icons/logout.png" alt="Logout">
-    </div>
+  <div class="icon-left" (click)="goBack()">
+    <i class="fas fa-arrow-left"></i>
+  </div>
 
-    <div class="title">
+  <div class="title" (click)="goToHome()">
     <h1>JETY</h1>
-    </div>
+  </div>
 
-    <div class="icon-right" (click)="goProfile()">
-    <img src="assets/icons/profile.png" alt="Perfil">
+  <div class="icon-right" (click)="toggleMenu()" *ngIf="currentUser">
+    <div class="user-avatar">
+      {{ userInitials }}
     </div>
-
+  </div>
 </nav>
+
+<div class="overlay" *ngIf="menuOpen" (click)="closeMenu()"></div>
+
+<div class="side-menu" [class.open]="menuOpen">
+  <div class="menu-header">
+    <div class="user-avatar-large">
+      {{ userInitials }}
+    </div>
+    <h2 class="user-name">{{ userName }}</h2>
+    <p class="user-email" *ngIf="currentUser">{{ currentUser.mail }}</p>
+  </div>
+
+  <div class="menu-section">
+    <h3 class="section-title">Principal</h3>
+    <ul>
+      <li *ngIf="isCustomer">
+        <a [routerLink]="['/home']" (click)="closeMenu()">
+          <i class="fas fa-home"></i>
+          <span>Inicio</span>
+        </a>
+      </li>
+      <li *ngIf="isCustomer">
+        <a [routerLink]="['/transferencia']" (click)="closeMenu()">
+          <i class="fas fa-exchange-alt"></i>
+          <span>Transferencias</span>
+        </a>
+      </li>
+      <li *ngIf="isCustomer">
+        <a [routerLink]="['/deposito']" (click)="closeMenu()">
+          <i class="fas fa-piggy-bank"></i>
+          <span>Depósitos</span>
+        </a>
+      </li>
+      <li *ngIf="isCustomer">
+        <a [routerLink]="['/retiro']" (click)="closeMenu()">
+          <i class="fas fa-money-bill-wave"></i>
+          <span>Retiros</span>
+        </a>
+      </li>
+      <li *ngIf="isCustomer">
+        <a [routerLink]="['/credito']" (click)="closeMenu()">
+          <i class="fas fa-credit-card"></i>
+          <span>Línea de Crédito</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <div class="menu-section">
+    <h3 class="section-title">Mi Cuenta</h3>
+    <ul>
+      <li>
+        <a [routerLink]="['/usuario']" (click)="closeMenu()">
+          <i class="fas fa-user"></i>
+          <span>Mi Perfil</span>
+        </a>
+      </li>
+      <li *ngIf="isCustomer">
+        <a [routerLink]="['/cuenta']" (click)="closeMenu()">
+          <i class="fas fa-file-invoice"></i>
+          <span>Estado de Cuenta</span>
+        </a>
+      </li>
+      <li>
+        <a [routerLink]="['/formulario-contrasena']" (click)="closeMenu()">
+          <i class="fas fa-key"></i>
+          <span>Cambiar Contraseña</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <button class="logout-btn" (click)="logout()">
+    <i class="fas fa-sign-out-alt"></i>
+    <span>Cerrar Sesión</span>
+  </button>
+</div>

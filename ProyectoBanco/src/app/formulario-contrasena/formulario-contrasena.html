@@ -1,0 +1,169 @@
+<app-navbar class="top-navbar"></app-navbar>
+
+<div class="formulario-container">
+  <main class="formulario-main">
+    <section class="formulario-card">
+      <h2>RESTABLECER CONTRASEÑA</h2>
+
+      <!-- PASO 1: SOLICITAR CÓDIGO -->
+      <form *ngIf="step === 1" (ngSubmit)="requestCode()">
+        <div class="form-section">
+          <h3>Ingresa tu correo electrónico</h3>
+          <p class="step-description">
+            Te enviaremos un código de verificación de 6 dígitos para restablecer tu contraseña.
+          </p>
+          <div class="form-group">
+            <label for="email">Correo electrónico</label>
+            <div class="input-with-icon">
+              <i class="fa-solid fa-envelope"></i>
+              <input 
+                type="email" 
+                id="email" 
+                [(ngModel)]="email" 
+                name="email"
+                placeholder="correo@ejemplo.com"
+                [disabled]="loading"
+                required>
+            </div>
+          </div>
+        </div>
+
+        <!-- MENSAJE DE ERROR -->
+        <p class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</p>
+
+        <!-- MENSAJE DE CONFIRMACIÓN (Código enviado) -->
+        <div class="info-msg" *ngIf="codeSent && !errorMsg">
+          <i class="fa-solid fa-check-circle"></i>
+          <span>Código enviado exitosamente a tu correo</span>
+        </div>
+
+        <!-- BOTÓN DE SOLICITAR CÓDIGO -->
+        <button type="submit" class="btn-restablecer" [disabled]="loading">
+          <span *ngIf="!loading">Enviar código</span>
+          <span *ngIf="loading">
+            <i class="fa-solid fa-spinner fa-spin"></i> Enviando...
+          </span>
+        </button>
+      </form>
+
+      <!-- PASO 2: VERIFICAR CÓDIGO Y CAMBIAR CONTRASEÑA -->
+      <form *ngIf="step === 2" (ngSubmit)="verifyAndReset()">
+        <!-- CÓDIGO DE VERIFICACIÓN -->
+        <div class="form-section">
+          <h3>Código de verificación</h3>
+          <p class="step-description">
+            Hemos enviado un código de 6 dígitos a <strong>{{ email }}</strong>
+          </p>
+          <div class="form-group">
+            <label for="code">Ingresa el código</label>
+            <div class="input-with-icon">
+              <i class="fa-solid fa-key"></i>
+              <input 
+                type="text" 
+                id="code" 
+                [(ngModel)]="verificationCode" 
+                name="code"
+                placeholder="000000"
+                maxlength="6"
+                [disabled]="loading"
+                required>
+            </div>
+          </div>
+          
+          <!-- TEMPORIZADOR Y REENVIAR -->
+          <div class="resend-container">
+            <span *ngIf="canResend" class="resend-link" (click)="requestCode()">
+              <i class="fa-solid fa-rotate"></i> Reenviar código
+            </span>
+            <span *ngIf="!canResend" class="resend-timer">
+              Reenviar en {{ resendTimer }}s
+            </span>
+          </div>
+        </div>
+
+        <!-- NUEVA CONTRASEÑA -->
+        <div class="form-section">
+          <h3>Nueva contraseña</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="password">Contraseña</label>
+              <div class="password-container">
+                <input 
+                  [type]="passwordVisible ? 'text' : 'password'" 
+                  id="password" 
+                  [(ngModel)]="password"
+                  name="password"
+                  placeholder="Mínimo 6 caracteres"
+                  [disabled]="loading"
+                  required>
+                <button 
+                  type="button" 
+                  class="toggle-password" 
+                  (click)="togglePassword()"
+                  [disabled]="loading">
+                  <i [class]="passwordVisible ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="confirmPassword">Confirmar contraseña</label>
+              <div class="password-container">
+                <input 
+                  [type]="confirmPasswordVisible ? 'text' : 'password'" 
+                  id="confirmPassword" 
+                  [(ngModel)]="confirmPassword"
+                  name="confirmPassword"
+                  placeholder="Repite tu contraseña"
+                  [disabled]="loading"
+                  required>
+                <button 
+                  type="button" 
+                  class="toggle-password" 
+                  (click)="toggleConfirmPassword()"
+                  [disabled]="loading">
+                  <i [class]="confirmPasswordVisible ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MENSAJE DE ERROR -->
+        <p class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</p>
+
+        <!-- MENSAJE DE ÉXITO -->
+        <div class="success-box" *ngIf="successMsg">
+          <i class="fa-solid fa-circle-check"></i>
+          <h3>{{ successMsg }}</h3>
+          <p>Ya puedes iniciar sesión con tu nueva contraseña</p>
+          <a routerLink="/login" class="btn-login">
+            <i class="fa-solid fa-right-to-bracket"></i>
+            Ir al inicio de sesión
+          </a>
+        </div>
+
+        <!-- BOTONES -->
+        <div class="button-group" *ngIf="!successMsg">
+          <button type="button" class="btn-secondary" (click)="goBackToStep1()" [disabled]="loading">
+            <i class="fa-solid fa-arrow-left"></i> Cambiar correo
+          </button>
+          <button type="submit" class="btn-restablecer" [disabled]="loading">
+            <span *ngIf="!loading">Restablecer contraseña</span>
+            <span *ngIf="loading">
+              <i class="fa-solid fa-spinner fa-spin"></i> Procesando...
+            </span>
+          </button>
+        </div>
+      </form>
+
+      <!-- ENLACE DE REGRESO -->
+      <div class="back-to-login">
+        <a routerLink="/login">
+          <i class="fa-solid fa-arrow-left"></i>
+          Volver al inicio de sesión
+        </a>
+      </div>
+    </section>
+  </main>
+</div>

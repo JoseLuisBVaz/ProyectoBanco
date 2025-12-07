@@ -1,0 +1,46 @@
+<app-navbar class="top-navbar"></app-navbar>
+<div class="container">
+
+  <main class="main-content">
+    <section class="welcome-section">
+      <h2 class="welcome-title">¡Bienvenido!</h2>
+      <div class="user-name">
+        Juan Alberto Sanchez<br>Sandoval
+      </div>
+      <div class="user-photo">
+        <img src= "assets/icons/profile.png" alt="Usuario" class="profile-img">
+      </div>
+      <div class="user-role">
+        <span class="role-icon">ID</span>
+        <span class="role-label">ID Gerente</span>
+      </div>
+    </section>
+
+    <section class="news-section">
+      <div class="news-header">
+        <span class="news-icon">!</span>
+        <h3>¡Jety ofrece novedades!</h3>
+      </div>
+      <p class="news-desc">Empieza ahora para saber que podemos ofrecer</p>
+      <div class="news-buttons">
+        <button class="btn btn-primary" [routerLink]="['/formulario']">Crear Cuenta</button>
+        <button class="btn btn-secondary" [routerLink]="['/prestamo']">Prestamos</button>
+        <button class="btn btn-primary" [routerLink]="['/cancelacion']">Cancelar Cuenta</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <h2>JETY</h2>
+      <div class="footer-links">
+        <span style="cursor: pointer;" routerLink="/progreso">Términos y condiciones</span> |
+        <span style="cursor: pointer;" routerLink="/progreso">Aviso Legal</span> |
+        <span style="cursor: pointer;" routerLink="/progreso">Costos y comisiones</span>
+      </div>
+      <p class="footer-text">
+        © Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.
+      </p>
+    </div>
+  </footer>
+</div>

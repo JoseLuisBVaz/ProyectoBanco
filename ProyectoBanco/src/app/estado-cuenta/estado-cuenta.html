@@ -1,0 +1,199 @@
+<app-navbar class="top-navbar"></app-navbar>
+
+<div class="home-container">
+  <section class="home-panel">
+    <h2 class="home-title">Estado de Cuenta</h2>
+    
+    <div class="account-card colorful" 
+         *ngIf="selectedAccount" 
+         [ngStyle]="cardStyle"
+         [class.clickable]="accounts.length > 1"
+         (click)="accounts.length > 1 && toggleAccountSelector()">
+      <div class="account-row">
+        <div class="account-left">
+          <div class="account-name">
+            {{ selectedAccount.accType || 'Cuenta' }}
+            <span class="badge">
+              <i [ngClass]="selectedAccount.accType === 'Credito' ? 'fa-solid fa-credit-card' : 'fa-solid fa-money-check'"></i>
+              {{ selectedAccount.accType }}
+            </span>
+          </div>
+          <div class="account-num">{{ maskAcc(selectedAccount.accNum) }}</div>
+          <div class="account-clabe">CLABE: {{ selectedAccount.clabe }}</div>
+        </div>
+        <div class="account-right">
+          <div class="account-balance">${{ selectedAccount.balance | number:'1.2-2' }}</div>
+          <div class="account-cardnum">{{ maskCard(selectedAccount.cardNum) }}</div>
+          <div class="change-account-hint" *ngIf="accounts.length > 1">
+            <i class="fa-solid fa-chevron-down"></i> Cambiar cuenta
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="other-accounts" *ngIf="showAccountSelector && accounts.length > 1">
+      <h3 class="other-title">Selecciona una cuenta</h3>
+      <div class="other-list">
+        <div class="other-item" 
+             *ngFor="let acc of accounts"
+             [class.selected]="acc.accountId === selectedAccount?.accountId"
+             (click)="selectAccount(acc)">
+          <div class="other-left">
+            <div class="other-name">{{ maskAcc(acc.accNum) }} 
+              <span class="badge">
+                <i [ngClass]="acc.accType === 'Credito' ? 'fa-solid fa-credit-card' : 'fa-solid fa-money-check'"></i>
+                {{ acc.accType }}
+              </span>
+            </div>
+            <div class="other-clabe">CLABE: {{ acc.clabe }}</div>
+          </div>
+          <div class="other-right">
+            <div class="other-balance">${{ acc.balance | number:'1.2-2' }}</div>
+            <div class="other-cardnum">{{ maskCard(acc.cardNum) }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="error-box" *ngIf="errorMsg">
+      <i class="fa-solid fa-exclamation-circle"></i>
+      {{ errorMsg }}
+    </div>
+
+    <div class="loading-container" *ngIf="isLoading">
+      <div class="spinner"></div>
+      <p>Cargando movimientos...</p>
+    </div>
+
+    <div class="filters-section" *ngIf="!isLoading && movements.length > 0">
+      <h3 class="section-title">Filtros</h3>
+      
+      <div class="filters-grid">
+        <div class="filter-item">
+          <label for="filter-type">Tipo de movimiento:</label>
+          <select id="filter-type" [(ngModel)]="filterType" (ngModelChange)="applyFilters()" class="filter-select">
+            <option value="all">Todos</option>
+            <option value="transfer_out">Transferencias enviadas</option>
+            <option value="transfer_in">Transferencias recibidas</option>
+            <option value="deposit">Depósitos</option>
+            <option value="withdrawal">Retiros</option>
+          </select>
+        </div>
+
+        <div class="filter-item">
+          <label for="filter-from">Desde:</label>
+          <input type="date" id="filter-from" [(ngModel)]="filterDateFrom" (ngModelChange)="applyFilters()" class="filter-input">
+        </div>
+
+        <div class="filter-item">
+          <label for="filter-to">Hasta:</label>
+          <input type="date" id="filter-to" [(ngModel)]="filterDateTo" (ngModelChange)="applyFilters()" class="filter-input">
+        </div>
+
+        <div class="filter-item filter-search">
+          <label for="filter-search">Buscar:</label>
+          <input type="text" id="filter-search" [(ngModel)]="searchText" (ngModelChange)="applyFilters()" 
+                 placeholder="Descripción, cuenta..." class="filter-input">
+        </div>
+      </div>
+
+      <button class="btn-reset" (click)="resetFilters()">
+        <i class="fa-solid fa-filter-circle-xmark"></i>
+        Limpiar filtros
+      </button>
+    </div>
+
+    <div class="movements-section" *ngIf="!isLoading && filteredMovements.length > 0">
+      <div class="movements-header">
+        <h3 class="section-title">
+          Movimientos 
+          <span class="count-badge">{{ filteredMovements.length }}</span>
+        </h3>
+        <button 
+          class="email-statement-btn red"
+          (click)="sendStatementByEmail()"
+          [disabled]="isSendingEmail"
+          title="Solicitar estado de cuenta en PDF por correo">
+          <i class="fas fa-file-pdf"></i>
+          {{ isSendingEmail ? 'Enviando PDF...' : 'Solicitar PDF' }}
+        </button>
+      </div>
+
+      <div class="movements-table-container">
+        <table class="movements-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Tipo</th>
+              <th>Descripción</th>
+              <th class="text-right">Monto</th>
+              <th class="text-right">Comisión</th>
+              <th class="text-right">Saldo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let mov of paginatedMovements" [ngClass]="getMovementClass(mov.type)">
+              <td class="date-cell">{{ formatDate(mov.date) }}</td>
+              <td class="type-cell">
+                <div class="type-badge" [ngClass]="getMovementClass(mov.type)">
+                  <i class="fa-solid" [ngClass]="getMovementIcon(mov.type)"></i>
+                  <span class="type-label">{{ getMovementLabel(mov.type) }}</span>
+                </div>
+              </td>
+              <td class="description-cell">
+                <div class="description-text" [title]="mov.description || 'Sin descripción'">
+                  {{ mov.description || 'Sin descripción' }}
+                </div>
+                <div class="account-info" *ngIf="mov.origin && mov.type === 'transfer_in'" [title]="'Origen: ' + mov.origin">
+                  <small>Origen: {{ mov.origin }}</small>
+                </div>
+                <div class="account-info" *ngIf="mov.destiny && mov.type === 'transfer_out'" [title]="'Destino: ' + mov.destiny">
+                  <small>Destino: {{ mov.destiny }}</small>
+                </div>
+              </td>
+              <td class="amount-cell text-right" [ngClass]="getMovementClass(mov.type)">
+                <span class="amount-value">
+                  {{ isNegative(mov.type) ? '-' : '+' }}${{ mov.amount | number:'1.2-2' }}
+                </span>
+              </td>
+              <td class="fee-cell text-right">
+                <span *ngIf="mov.fee > 0" class="fee-value">-${{ mov.fee | number:'1.2-2' }}</span>
+                <span *ngIf="mov.fee === 0" class="fee-none">-</span>
+              </td>
+              <td class="balance-cell text-right">
+                <span class="balance-value">${{ mov.balance | number:'1.2-2' }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination" *ngIf="totalPages > 1">
+        <button class="pagination-btn" (click)="prevPage()" [disabled]="currentPage === 1">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        
+        <span class="pagination-info">
+          Página {{ currentPage }} de {{ totalPages }}
+        </span>
+        
+        <button class="pagination-btn" (click)="nextPage()" [disabled]="currentPage === totalPages">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="!isLoading && filteredMovements.length === 0 && movements.length === 0">
+      <i class="fa-solid fa-inbox"></i>
+      <h3>No hay movimientos</h3>
+      <p>Aún no tienes movimientos en esta cuenta</p>
+    </div>
+
+    <div class="empty-state" *ngIf="!isLoading && filteredMovements.length === 0 && movements.length > 0">
+      <i class="fa-solid fa-filter"></i>
+      <h3>No se encontraron movimientos</h3>
+      <p>Intenta ajustar los filtros de búsqueda</p>
+    </div>
+
+  </section>
+</div>

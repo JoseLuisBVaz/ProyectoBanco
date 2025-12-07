@@ -1,0 +1,281 @@
+<app-navbar class="top-navbar"></app-navbar>
+
+<div class="home-container">
+  <section class="home-panel">
+    <h2 class="home-title">Línea de Crédito</h2>
+    
+    <!-- Tarjeta de cuenta de crédito -->
+    <div class="account-card colorful" 
+         *ngIf="selectedAccount" 
+         [ngStyle]="cardStyle"
+         [class.clickable]="creditAccounts.length > 1"
+         (click)="creditAccounts.length > 1 && toggleAccountSelector()">
+      <div class="account-row">
+        <div class="account-left">
+          <div class="account-name">
+            {{ selectedAccount.accType || 'Crédito' }}
+            <span class="badge">
+              <i class="fa-solid fa-credit-card"></i>
+              {{ selectedAccount.accType }}
+            </span>
+          </div>
+          <div class="account-num">{{ maskAcc(selectedAccount.accNum) }}</div>
+          <div class="account-clabe">CLABE: {{ selectedAccount.clabe }}</div>
+        </div>
+        <div class="account-right">
+          <div class="account-cardnum">{{ maskCard(selectedAccount.cardNum) }}</div>
+          <div class="change-account-hint" *ngIf="creditAccounts.length > 1">
+            <i class="fa-solid fa-chevron-down"></i> Cambiar cuenta
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Selector de otras cuentas de crédito -->
+    <div class="other-accounts" *ngIf="showAccountSelector && creditAccounts.length > 1">
+      <h3 class="other-title">Selecciona una cuenta de crédito</h3>
+      <div class="other-list">
+        <div class="other-item" 
+             *ngFor="let acc of creditAccounts"
+             [class.selected]="acc.accountId === selectedAccount?.accountId"
+             (click)="selectAccount(acc)">
+          <div class="other-left">
+            <div class="other-name">{{ maskAcc(acc.accNum) }} 
+              <span class="badge">
+                <i class="fa-solid fa-credit-card"></i>
+                {{ acc.accType }}
+              </span>
+            </div>
+            <div class="other-clabe">CLABE: {{ acc.clabe }}</div>
+          </div>
+          <div class="other-right">
+            <div class="other-cardnum">{{ maskCard(acc.cardNum) }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mensajes de error/éxito -->
+    <div class="error-box" *ngIf="errorMsg && !isLoading">
+      <i class="fa-solid fa-exclamation-circle"></i>
+      {{ errorMsg }}
+    </div>
+
+    <div class="success-box" *ngIf="successMsg">
+      <i class="fa-solid fa-check-circle"></i>
+      {{ successMsg }}
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-container" *ngIf="isLoading">
+      <div class="spinner"></div>
+      <p>Cargando información de crédito...</p>
+    </div>
+
+    <!-- Información del crédito -->
+    <div class="credit-info-section" *ngIf="!isLoading && selectedAccount && creditInfo">
+      <h3 class="section-title">
+        <i class="fa-solid fa-chart-pie"></i>
+        Información del Crédito
+      </h3>
+
+      <div class="credit-stats">
+        <div class="stat-item">
+          <div class="stat-label">Límite de Crédito</div>
+          <div class="stat-value limit">${{ creditInfo.creditLimit | number:'1.2-2' }}</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Crédito Usado</div>
+          <div class="stat-value used">${{ creditInfo.used | number:'1.2-2' }}</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Crédito Disponible</div>
+          <div class="stat-value available">${{ creditInfo.available | number:'1.2-2' }}</div>
+        </div>
+      </div>
+
+      <div class="progress-container">
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="creditInfo.usedPercentage"></div>
+        </div>
+        <div class="progress-label">{{ creditInfo.usedPercentage }}% utilizado</div>
+      </div>
+    </div>
+
+    <!-- Formulario de préstamo -->
+    <div class="dispose-section" *ngIf="!isLoading && selectedAccount && creditInfo">
+      <h3 class="section-title">
+        <i class="fa-solid fa-money-bill-wave"></i>
+        Solicitar Préstamo
+      </h3>
+
+      <div class="dispose-form">
+        <div class="form-row">
+          <div class="form-group" *ngIf="creditAccounts.length > 1">
+            <label for="creditAccount">Tarjeta de Crédito</label>
+            <select 
+              id="creditAccount" 
+              [(ngModel)]="selectedAccountId"
+              (change)="onCreditAccountChange()"
+              class="form-select">
+              <option *ngFor="let acc of creditAccounts" [value]="acc.accountId">
+                •••• {{ acc.accNum.slice(-4) }} - ${{ acc.balance | number:'1.2-2' }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="amount">Monto a Solicitar</label>
+            <div class="input-with-icon">
+              <i class="fa-solid fa-dollar-sign"></i>
+              <input 
+                type="number" 
+                id="amount" 
+                [(ngModel)]="disposeAmount" 
+                placeholder="0.00"
+                min="0"
+                [max]="creditInfo.available"
+                step="0.01"
+                class="form-input">
+            </div>
+            <small class="input-hint">Disponible: ${{ creditInfo.available | number:'1.2-2' }}</small>
+          </div>
+
+          <div class="form-group full-width">
+            <label for="description">Descripción (Opcional)</label>
+            <textarea 
+              id="description" 
+              [(ngModel)]="disposeDescription" 
+              placeholder="Ej: Compra de electrodoméstico"
+              rows="2"
+              maxlength="300"
+              class="form-textarea"></textarea>
+          </div>
+        </div>
+
+        <button 
+          class="btn-dispose" 
+          (click)="disposeCredit()"
+          [disabled]="isDisposing || !disposeAmount || disposeAmount <= 0 || disposeAmount > creditInfo.available">
+          <i class="fa-solid" [ngClass]="isDisposing ? 'fa-spinner fa-spin' : 'fa-hand-holding-dollar'"></i>
+          {{ isDisposing ? 'Procesando...' : 'Solicitar Préstamo' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Historial de préstamos -->
+    <div class="history-section" *ngIf="!isLoading && selectedAccount">
+      <div class="history-header">
+        <h3 class="section-title">
+          Historial de Préstamos
+          <span class="count-badge" *ngIf="filteredDisposals.length > 0">{{ filteredDisposals.length }}</span>
+        </h3>
+        <button 
+          class="email-history-btn"
+          (click)="sendHistoryByEmail()"
+          [disabled]="isSendingEmail || filteredDisposals.length === 0"
+          title="Enviar historial por correo">
+          <i class="fas fa-envelope"></i>
+          {{ isSendingEmail ? 'Enviando...' : 'Enviar por correo' }}
+        </button>
+      </div>
+
+      <div class="history-table-container" *ngIf="filteredDisposals.length > 0">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Descripción</th>
+              <th class="text-right">Monto Prestado</th>
+              <th class="text-right">Disponible Después</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let disposal of paginatedDisposals">
+              <td class="date-cell">{{ formatDate(disposal.date) }}</td>
+              <td class="description-cell">
+                <div class="description-text" [title]="disposal.description">
+                  {{ disposal.description || 'Sin descripción' }}
+                </div>
+              </td>
+              <td class="amount-cell text-right">
+                <span class="amount-value disposed">+${{ disposal.amount | number:'1.2-2' }}</span>
+              </td>
+              <td class="available-cell text-right">
+                <span class="available-value">${{ disposal.availableAfter | number:'1.2-2' }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination" *ngIf="filteredDisposals.length > 0 && totalPages > 1">
+        <button class="pagination-btn" (click)="prevPage()" [disabled]="currentPage === 1">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        
+        <span class="pagination-info">
+          Página {{ currentPage }} de {{ totalPages }}
+        </span>
+        
+        <button class="pagination-btn" (click)="nextPage()" [disabled]="currentPage === totalPages">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+
+      <!-- Estado vacío dentro de la sección de historial -->
+      <div class="empty-state" *ngIf="filteredDisposals.length === 0">
+        <i class="fa-solid fa-file-invoice-dollar"></i>
+        <h3>No hay préstamos</h3>
+        <p>Aún no has solicitado préstamos de crédito</p>
+      </div>
+    </div>
+
+    <!-- Informe de Pago -->
+    <div class="payment-info-section" *ngIf="!isLoading && selectedAccount && creditInfo && creditInfo.used > 0">
+      <h3 class="section-title">
+        <i class="fa-solid fa-calendar-check"></i>
+        Informe de Pago
+      </h3>
+      
+      <div class="payment-summary">
+        <div class="payment-item highlight">
+          <div class="payment-label">
+            <i class="fas fa-exclamation-circle"></i>
+            Total Adeudado
+          </div>
+          <div class="payment-value debt-amount">${{ creditInfo.used | number:'1.2-2' }}</div>
+        </div>
+        
+        <div class="payment-item">
+          <div class="payment-label">
+            <i class="fas fa-calendar-alt"></i>
+            Fecha Límite de Pago
+          </div>
+          <div class="payment-value">{{ getPaymentDueDate() }}</div>
+        </div>
+        
+        <div class="payment-item">
+          <div class="payment-label">
+            <i class="fas fa-hand-holding-usd"></i>
+            Pago Mínimo Sugerido
+          </div>
+          <div class="payment-value">${{ getMinimumPayment() | number:'1.2-2' }}</div>
+        </div>
+        
+        <div class="payment-note">
+          <i class="fas fa-info-circle"></i>
+          <p>Para evitar cargos adicionales, realiza tu pago antes de la fecha límite.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Estado vacío cuando no hay cuenta -->
+    <div class="empty-state" *ngIf="!isLoading && !selectedAccount && creditAccounts.length === 0">
+      <i class="fa-solid fa-credit-card"></i>
+      <h3>No tienes cuenta de crédito</h3>
+      <p>Solicita una línea de crédito en tu sucursal más cercana</p>
+    </div>
+
+  </section>
+</div>

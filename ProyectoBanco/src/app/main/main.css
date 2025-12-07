@@ -1,0 +1,231 @@
+body, html {
+    height: 100%;
+    margin: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f5f6fa;
+    width: 100vw;
+    min-height: 100vh;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+.main-login-bg {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    z-index: 0;
+    top: 0;
+    left: 0;
+}
+
+.main-login-container {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    width: 100%;
+    height: 100%;
+    max-width: 100vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0;
+    box-sizing: border-box;
+    justify-content: flex-start;
+}
+
+.main-login-header {
+    width: 100%;
+    max-width: 100vw;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 auto 2rem auto;
+    padding: 2rem 3vw 0 3vw;
+    box-sizing: border-box;
+}
+
+.main-login-user, .main-login-menu {
+    background: #fff;
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: #1976d2;
+    box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08);
+}
+
+.main-login-title {
+    font-size: 2.2rem;
+    font-weight: bold;
+    color: #1a2aff;
+    letter-spacing: 2px;
+    text-align: center;
+    flex: 1;
+}
+
+.main-login-card {
+    width: clamp(300px, 90%, 900px);
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 4px 24px rgba(25, 118, 210, 0.10);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    margin-top: 1.5rem;
+}
+
+.main-login-img img {
+    width: 100%;
+    height: auto;
+    max-height: 340px;
+    object-fit: cover;
+    display: block;
+    border-radius: 24px 24px 0 0;
+}
+
+.main-login-info {
+    background: rgba(255,255,255,0.92);
+    border-radius: 0 0 24px 24px;
+    margin-top: -40px;
+    margin-bottom: 0;
+    padding: 2.2rem 2.5rem 1.5rem 2.5rem;
+    box-shadow: 0 8px 32px rgba(25, 118, 210, 0.07);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.main-login-info p {
+    font-size: 1.1rem;
+    color: #222;
+    text-align: center;
+    margin-bottom: 1.7rem;
+    font-weight: 500;
+}
+
+.main-login-buttons {
+    display: flex;
+    gap: 1.2rem;
+    justify-content: center;
+    width: 100%;
+}
+
+.btn-register, .btn-login {
+    border: none;
+    border-radius: 22px;
+    font-size: 1.15rem;
+    font-weight: bold;
+    padding: 0.7rem 2.2rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(25, 118, 210, 0.10);
+}
+
+.btn-register {
+    background: #00b0ff;
+    color: #fff;
+}
+
+.btn-register:hover {
+    background: #0091ea;
+}
+
+.btn-login {
+    background: #fff;
+    color: #1976d2;
+    border: 2px solid #1976d2;
+}
+
+.btn-login:hover {
+    background: #1976d2;
+    color: #fff;
+}
+
+.roles-menu {
+    position: absolute;
+    top: 60px;
+    right: 70px;
+    background: #fff;
+    border-radius: 22px;
+    box-shadow: 0 4px 18px rgba(25, 118, 210, 0.18);
+    padding: 1.1rem 2.2rem 1.1rem 1.5rem;
+    min-width: 200px;
+    z-index: 10;
+    display: none;
+    flex-direction: column;
+    align-items: flex-start;
+    animation: fadeIn 0.2s;
+}
+
+.roles-menu.show {
+    display: flex;
+}
+
+.roles-title {
+    font-weight: bold;
+    color: #222;
+    margin-bottom: 0.7rem;
+    font-size: 1.1rem;
+}
+
+.roles-option {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-size: 1.07rem;
+    color: #1976d2;
+    padding: 0.4rem 0;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-radius: 8px;
+    width: 100%;
+}
+
+.roles-option:hover {
+    background: #e3f2fd;
+}
+
+.menu-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #fff;
+  padding: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.menu-icon:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 950px) {
+    .main-login-card {
+        width: 95%;
+        margin-top: 1rem;
+    }
+    .main-login-header {
+        padding: 2rem 2vw 0 2vw;
+    }
+}
+
+@media (max-width: 600px) {
+    .main-login-img img {
+        max-height: 180px;
+    }
+    .main-login-info {
+        padding: 1.2rem 1rem 1rem 1rem;
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }        
+}

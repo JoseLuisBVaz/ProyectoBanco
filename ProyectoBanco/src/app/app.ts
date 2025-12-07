@@ -1,12 +1,13 @@
 import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { Navbar } from './navbar/navbar';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, Navbar],
-  templateUrl: './main.html',
-  styleUrl: './app.css'
+  standalone: true,
+  imports: [ RouterOutlet, FormsModule],
+  templateUrl: './app.html',
+  styleUrls: ['./app.css']
 })
 export class App {
   protected readonly title = signal('ProyectoBanco');
