@@ -4,6 +4,7 @@ const PDFDocument = require('pdfkit');
 const emailService = require('../services/emailService');
 const passwordResetService = require('../services/passwordResetService');
 const pdfService = require('../services/pdfService');
+const dreamWalletAPI = require('../services/dreamWalletAPI');
 
 // ==================== UTILIDADES ====================
 
@@ -416,7 +417,7 @@ const transferFunds = (req, res) => {
   if (isNaN(numericAmount) || numericAmount <= 0) {
     return res.status(400).json({ 
       success: false,
-      msg: 'El monto debe ser un n�mero mayor a 0' 
+      msg: 'El monto debe ser un número mayor a 0' 
     });
   }
 
@@ -424,6 +425,20 @@ const transferFunds = (req, res) => {
   const bancoOrigenFinal = banco_origen || 'Banco JETY';
   const bancoDestinoFinal = banco_destino || 'Banco JETY';
 
+  // ==================== DETECTAR TRANSFERENCIA EXTERNA ====================
+  // Si el banco destino NO es Banco JETY, es una transferencia interbancaria
+  if (bancoDestinoFinal !== 'Banco JETY') {
+    return handleExternalTransfer(req, res, {
+      origin,
+      destiny,
+      amount: numericAmount,
+      description,
+      banco_origen: bancoOrigenFinal,
+      banco_destino: bancoDestinoFinal
+    });
+  }
+
+  // ==================== TRANSFERENCIA INTERNA (COMO ANTES) ====================
   const sql = `CALL sp_transfer_funds(?, ?, ?, ?, ?, ?)`;
   const params = [origin, destiny, numericAmount, description || null, bancoOrigenFinal, bancoDestinoFinal];
   
@@ -442,11 +457,11 @@ const transferFunds = (req, res) => {
       const tranId = row.tranId || null;
       const fee = row.fee || 0;
       
-      // ==================== ENVIAR CORREOS DESPU�S DE LA TRANSFERENCIA ====================
-      // Enviar correos de forma as�ncrona sin bloquear la respuesta
+      // ==================== ENVIAR CORREOS DESPUÉS DE LA TRANSFERENCIA ====================
+      // Enviar correos de forma asíncrona sin bloquear la respuesta
       sendTransferEmails(origin, destiny, numericAmount, description, tranId, fee, bancoOrigenFinal, bancoDestinoFinal)
         .catch(emailErr => {
-          console.error('? [TRANSFER] Error al enviar correos:', emailErr);
+          console.error('📧 [TRANSFER] Error al enviar correos:', emailErr);
           // No afectar la respuesta de la transferencia si falla el correo
         });
       
@@ -467,6 +482,155 @@ const transferFunds = (req, res) => {
     }
   });
 };
+
+// ==================== MANEJAR TRANSFERENCIA EXTERNA ====================
+async function handleExternalTransfer(req, res, transferData) {
+  const { origin, destiny, amount, description, banco_origen, banco_destino } = transferData;
+  
+  let connection;
+  
+  try {
+    // Obtener conexión para transacción
+    connection = await new Promise((resolve, reject) => {
+      db.getConnection((err, conn) => {
+        if (err) return reject(err);
+        resolve(conn);
+      });
+    });
+
+    // Iniciar transacción
+    await new Promise((resolve, reject) => {
+      connection.beginTransaction((err) => {
+        if (err) return reject(err);
+        resolve();
+      });
+    });
+
+    // 1. Verificar saldo de la cuenta origen
+    const originAccount = await new Promise((resolve, reject) => {
+      const query = 'SELECT mainId, balance, accNum, clabe FROM cAccount WHERE accNum = ? OR clabe = ?';
+      connection.query(query, [origin, origin], (err, results) => {
+        if (err) return reject(err);
+        if (!results || results.length === 0) {
+          return reject(new Error('Cuenta de origen no encontrada'));
+        }
+        resolve(results[0]);
+      });
+    });
+
+    // Calcular comisión (ejemplo: 0.5% con mínimo de $5 y máximo de $100)
+    const feePercentage = 0.005; // 0.5%
+    let fee = amount * feePercentage;
+    fee = Math.max(5, Math.min(fee, 100)); // Entre $5 y $100
+    fee = Math.round(fee * 100) / 100; // Redondear a 2 decimales
+
+    const totalAmount = amount + fee;
+
+    // Verificar saldo suficiente
+    if (originAccount.balance < totalAmount) {
+      await new Promise((resolve, reject) => {
+        connection.rollback(() => {
+          connection.release();
+          resolve();
+        });
+      });
+      return res.status(400).json({
+        success: false,
+        msg: `Saldo insuficiente. Se requiere $${totalAmount.toFixed(2)} (monto: $${amount.toFixed(2)} + comisión: $${fee.toFixed(2)})`,
+        saldoRequerido: totalAmount,
+        saldoActual: originAccount.balance
+      });
+    }
+
+    // 2. Descontar el monto + comisión de la cuenta origen
+    await new Promise((resolve, reject) => {
+      const updateQuery = 'UPDATE cAccount SET balance = balance - ? WHERE accNum = ? OR clabe = ?';
+      connection.query(updateQuery, [totalAmount, origin, origin], (err, result) => {
+        if (err) return reject(err);
+        if (result.affectedRows === 0) {
+          return reject(new Error('No se pudo actualizar el saldo de la cuenta origen'));
+        }
+        resolve();
+      });
+    });
+
+    // 3. Registrar la transferencia en la tabla transfer
+    const tranId = await new Promise((resolve, reject) => {
+      const insertQuery = `
+        INSERT INTO transfer (origin, banco_origen, destiny, banco_destino, ammount, fee, description, doDate)
+        VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+      `;
+      connection.query(insertQuery, [origin, banco_origen, destiny, banco_destino, amount, fee, description || 'Transferencia interbancaria'], (err, result) => {
+        if (err) return reject(err);
+        resolve(result.insertId);
+      });
+    });
+
+    // 4. Enviar la transferencia al banco externo
+    const externalResponse = await dreamWalletAPI.enviarTransferencia({
+      cuentaOrigen: origin,
+      cuentaDestino: destiny,
+      monto: amount,
+      concepto: description || 'Transferencia desde Banco JETY',
+      bancoOrigen: banco_origen,
+      referencia: `JETY-${tranId}`
+    });
+
+    if (!externalResponse.success) {
+      // Si falla el envío externo, hacer rollback
+      await new Promise((resolve, reject) => {
+        connection.rollback(() => {
+          connection.release();
+          resolve();
+        });
+      });
+
+      return res.status(500).json({
+        success: false,
+        msg: 'Error al enviar la transferencia al banco externo',
+        error: externalResponse.error,
+        banco_destino: banco_destino
+      });
+    }
+
+    // 5. Commit de la transacción si todo salió bien
+    await new Promise((resolve, reject) => {
+      connection.commit((err) => {
+        if (err) return reject(err);
+        connection.release();
+        resolve();
+      });
+    });
+
+    // 6. Respuesta exitosa
+    return res.json({
+      success: true,
+      tranId: tranId,
+      fee: fee,
+      banco_origen: banco_origen,
+      banco_destino: banco_destino,
+      msg: 'Transferencia interbancaria realizada exitosamente',
+      external_response: externalResponse.data
+    });
+
+  } catch (error) {
+    // Rollback en caso de error
+    if (connection) {
+      await new Promise((resolve) => {
+        connection.rollback(() => {
+          connection.release();
+          resolve();
+        });
+      });
+    }
+
+    console.error('❌ [TRANSFER] Error en transferencia externa:', error);
+    return res.status(500).json({
+      success: false,
+      msg: error.message || 'Error al procesar la transferencia externa'
+    });
+  }
+}
 
 // ==================== FUNCI�N AUXILIAR PARA ENVIAR CORREOS DE TRANSFERENCIA ====================
 async function sendTransferEmails(origin, destiny, amount, description, tranId, fee, bancoOrigen, bancoDestino) {

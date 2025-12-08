@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const usuariosRoutes = require('./routes/usuarios');
+const interbancaria = require('./routes/interbancaria');
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use((req, res, next) => {
 
 // === RUTAS ===
 app.use('/api/usuarios', usuariosRoutes);
+app.use('/api/interbancaria', interbancaria);
 
 // === MANEJO DE ERRORES 404 ===
 app.use((req, res) => {
