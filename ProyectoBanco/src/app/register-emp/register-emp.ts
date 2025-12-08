@@ -97,7 +97,7 @@ export class Register {
 
     console.log('Datos enviados al backend:', userData);
 
-    this.http.post('http://localhost:3000/api/usuarios/register', userData).subscribe({
+    this.http.post('http://18.116.122.121:3000/api/usuarios/register', userData).subscribe({
       next: () => {
         alert('Registro exitoso');
         this.router.navigate(['/login']);

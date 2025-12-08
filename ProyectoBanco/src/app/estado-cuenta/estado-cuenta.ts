@@ -308,7 +308,7 @@ export class EstadoCuenta implements OnInit, OnDestroy {
     this.isSendingEmail = true;
     this.errorMsg = '';
 
-    const url = `http://localhost:3000/api/usuarios/send-account-statement`;
+    const url = `http://18.116.122.121:3000/api/usuarios/send-account-statement`;
     const body = { accountId: this.selectedAccount.accountId };
 
     this.http.post<any>(url, body).subscribe({

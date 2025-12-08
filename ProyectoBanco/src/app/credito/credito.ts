@@ -124,7 +124,7 @@ export class Credito implements OnInit, OnDestroy {
     }
     this.errorMsg = '';
     
-    this.http.get<any>(`http://localhost:3000/api/usuarios/accounts/${mainId}`).subscribe(
+    this.http.get<any>(`http://18.116.122.121:3000/api/usuarios/accounts/${mainId}`).subscribe(
       response => {
         console.log('Response completo:', response);
         
@@ -187,7 +187,7 @@ export class Credito implements OnInit, OnDestroy {
     
     console.log('Cargando info de crédito para accountId:', this.selectedAccount.accountId);
     
-    this.http.get<any>(`http://localhost:3000/api/usuarios/credit-info/${this.selectedAccount.accountId}`).subscribe(
+    this.http.get<any>(`http://18.116.122.121:3000/api/usuarios/credit-info/${this.selectedAccount.accountId}`).subscribe(
       response => {
         console.log('Response de credit-info:', response);
         if (response.success && response.creditInfo) {
@@ -210,7 +210,7 @@ export class Credito implements OnInit, OnDestroy {
   loadHistory(): void {
     if (!this.selectedAccount) return;
     
-    this.http.get<any>(`http://localhost:3000/api/usuarios/credit-history/${this.selectedAccount.accountId}`).subscribe(
+    this.http.get<any>(`http://18.116.122.121:3000/api/usuarios/credit-history/${this.selectedAccount.accountId}`).subscribe(
       response => {
         if (response.success && response.disposals) {
           this.disposals = response.disposals;
@@ -254,7 +254,7 @@ export class Credito implements OnInit, OnDestroy {
       description: this.disposeDescription || 'Préstamo de crédito'
     };
     
-    this.http.post<any>('http://localhost:3000/api/usuarios/dispose-credit', data).subscribe(
+    this.http.post<any>('http://18.116.122.121:3000/api/usuarios/dispose-credit', data).subscribe(
       response => {
         if (response.success) {
           this.successMsg = `Préstamo exitoso de $${this.disposeAmount.toFixed(2)}`;
@@ -359,7 +359,7 @@ export class Credito implements OnInit, OnDestroy {
     this.errorMsg = '';
     this.successMsg = '';
     
-    const url = `http://localhost:3000/api/usuarios/send-credit-history`;
+    const url = `http://18.116.122.121:3000/api/usuarios/send-credit-history`;
     const body = { accountId: this.selectedAccount.accountId };
     
     this.http.post<any>(url, body).subscribe({

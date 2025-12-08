@@ -89,7 +89,7 @@ export class DetallesCuenta implements OnInit, OnDestroy {
 
   private loadUserInfo(mainId: number) {
     console.log('[User] Cargando info de usuario para mainId:', mainId);
-    this.http.get<any>(`http://localhost:3000/api/usuarios/user-info/${mainId}`).subscribe({
+    this.http.get<any>(`http://18.116.122.121:3000/api/usuarios/user-info/${mainId}`).subscribe({
       next: (response) => {
         console.log('[User] Response de user-info:', response);
         if (response.success) {
@@ -109,7 +109,7 @@ export class DetallesCuenta implements OnInit, OnDestroy {
 
   private loadAccounts(mainId: number) {
     console.log('[User] Cargando cuentas para mainId:', mainId);
-    this.http.get<any>(`http://localhost:3000/api/usuarios/accounts/${mainId}`).subscribe({
+    this.http.get<any>(`http://18.116.122.121:3000/api/usuarios/accounts/${mainId}`).subscribe({
       next: (response) => {
         console.log('[User] Response de cuentas:', response);
         if (response.success && response.data) {
@@ -134,7 +134,7 @@ export class DetallesCuenta implements OnInit, OnDestroy {
   }
 
   private loadMovements(mainId: number) {
-    this.http.get<any>(`http://localhost:3000/api/usuarios/movements/${mainId}`).subscribe({
+    this.http.get<any>(`http://18.116.122.121:3000/api/usuarios/movements/${mainId}`).subscribe({
       next: (response) => {
         if (response.success && response.data) {
           this.movements = response.data.map((mov: Movement) => ({

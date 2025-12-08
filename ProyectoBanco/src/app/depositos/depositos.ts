@@ -356,7 +356,7 @@ export class Depositos implements OnInit, OnDestroy {
       return;
     }
     
-    const url = `http://localhost:3000/api/usuarios/deposit-pdf/${this.lastDepositId}`;
+    const url = `http://18.116.122.121:3000/api/usuarios/deposit-pdf/${this.lastDepositId}`;
     window.open(url, '_blank');
   }
 

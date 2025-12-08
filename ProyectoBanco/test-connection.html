@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Conexión AWS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            background: white;
+        }
+        .success { border-left: 4px solid #4CAF50; }
+        .error { border-left: 4px solid #f44336; }
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:active { background: #1976D2; }
+    </style>
+</head>
+<body>
+    <h1>Test de Conexión al Servidor AWS</h1>
+    <div id="info"></div>
+    
+    <button onclick="testConnection()">🔍 Probar Conexión</button>
+    <button onclick="testLogin()">🔐 Probar Login</button>
+    <button onclick="clearResults()">🗑️ Limpiar</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_URL = 'http://18.116.122.121:3000/api/usuarios';
+        
+        function addResult(message, isSuccess) {
+            const div = document.createElement('div');
+            div.className = 'result ' + (isSuccess ? 'success' : 'error');
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong><br>${message}`;
+            document.getElementById('results').insertBefore(div, document.getElementById('results').firstChild);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        async function testConnection() {
+            addResult('🔵 Intentando conectar al servidor...', true);
+            
+            try {
+                const response = await fetch(`${API_URL}/main`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ CONEXIÓN EXITOSA<br>Status: ${response.status}<br>Usuarios encontrados: ${data.length}`, true);
+                } else {
+                    addResult(`⚠️ Respuesta no OK<br>Status: ${response.status}`, false);
+                }
+            } catch (error) {
+                addResult(`❌ ERROR DE CONEXIÓN<br>${error.message}<br><br>Posibles causas:<br>- WiFi/datos móviles desactivados<br>- Firewall bloqueando<br>- Servidor AWS apagado`, false);
+            }
+        }
+        
+        async function testLogin() {
+            const email = prompt('Email:', 'test@test.com');
+            const password = prompt('Password:', '');
+            
+            if (!email || !password) {
+                addResult('❌ Cancelado por usuario', false);
+                return;
+            }
+            
+            addResult(`🔵 Intentando login con ${email}...`, true);
+            
+            try {
+                const response = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mail: email, password: password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addResult(`✅ LOGIN EXITOSO<br>Usuario: ${data.user.mail}<br>Rol: ${data.user.rol}`, true);
+                } else {
+                    addResult(`❌ LOGIN FALLIDO<br>${data.msg || 'Usuario o contraseña incorrectos'}`, false);
+                }
+            } catch (error) {
+                addResult(`❌ ERROR EN LOGIN<br>${error.message}`, false);
+            }
+        }
+        
+        // Info del dispositivo
+        document.getElementById('info').innerHTML = `
+            <div class="result">
+                <strong>Información:</strong><br>
+                User Agent: ${navigator.userAgent}<br>
+                Online: ${navigator.onLine ? '✅ Sí' : '❌ No'}<br>
+                API URL: ${API_URL}
+            </div>
+        `;
+    </script>
+</body>
+</html>

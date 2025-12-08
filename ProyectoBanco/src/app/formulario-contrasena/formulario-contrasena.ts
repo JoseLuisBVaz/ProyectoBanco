@@ -37,7 +37,7 @@ export class FormularioContrasena {
   resendTimer: number = 60;
   private timerInterval: any;
 
-  private apiUrl = 'http://localhost:3000/api/usuarios';
+  private apiUrl = 'http://18.116.122.121:3000/api/usuarios';
 
   constructor(
     private http: HttpClient,

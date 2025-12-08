@@ -6,13 +6,14 @@ const config: CapacitorConfig = {
   webDir: 'dist/ProyectoBanco/browser',
   server: {
     androidScheme: 'https',
-    cleartext: true // Permite conexiones HTTP (útil para desarrollo)
+    cleartext: true
   },
   android: {
     buildOptions: {
       keystorePath: undefined,
       keystoreAlias: undefined
-    }
+    },
+    allowMixedContent: true
   }
 };
 

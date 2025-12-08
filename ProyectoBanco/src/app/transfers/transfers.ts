@@ -366,7 +366,7 @@ export class Transfers implements OnInit, OnDestroy {
       return;
     }
     
-    const url = `http://localhost:3000/api/usuarios/transfer-pdf/${this.lastTransferId}`;
+    const url = `http://18.116.122.121:3000/api/usuarios/transfer-pdf/${this.lastTransferId}`;
     window.open(url, '_blank');
   }
 
@@ -377,7 +377,7 @@ export class Transfers implements OnInit, OnDestroy {
       return;
     }
     
-    const url = `http://localhost:3000/api/usuarios/receipt/${this.lastTransferId}`;
+    const url = `http://18.116.122.121:3000/api/usuarios/receipt/${this.lastTransferId}`;
     window.open(url, '_blank');
   }
 
